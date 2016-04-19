@@ -155,7 +155,7 @@ class PartialEnvironmentCreateTool(DeploymentTool):
         add_emr_engine_sub_graphs(output_config)
         add_dynamodb_engine(output_config)
         add_redshift_engine(output_config)
-        add_s3_engine(output_config)
+        add_s3_engine (output_config)
 
         _logger.info('creating and waiting for remaining stacks')
         engine_worker_stack_name = self._create_stack('engine-worker', output_config)
