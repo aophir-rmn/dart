@@ -4,17 +4,10 @@ from dart.client.python.dart_client import Dart
 from dart.config.config import configuration
 from dart.engine.no_op.metadata import NoOpActionTypes
 from dart.model.engine import Engine, EngineData
-from dart.model.exception import DartRequestException
-from retrying import retry
 
 _logger = logging.getLogger(__name__)
 
 
-def retry_if_service_unavailable_error(exception):
-    return isinstance(exception, DartRequestException) and exception.response.status_code == 503
-
-
-@retry(stop_max_attempt_number=10, wait_fixed=5000, retry_on_exception=retry_if_service_unavailable_error)
 def add_no_op_engine(config):
     engine_config = config['engines']['no_op_engine']
     opts = engine_config['options']
