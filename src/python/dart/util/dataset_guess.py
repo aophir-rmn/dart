@@ -1,11 +1,12 @@
 import boto3
 import bz2
 import csv
-from dart.model.dataset import DataType, Column, Dataset, DatasetData
+from dart.model.dataset import DataType, Column, Dataset, DatasetData, DataFormat, FileFormat, RowFormat, LoadType
 from datetime import datetime
 import dateutil.parser
 import magic
 import math
+import os
 import re
 from s3 import get_bucket_name, get_key_name
 import zlib
@@ -23,7 +24,13 @@ def infer_dataset_data(s3_path, max_lines):
     guesses, has_header, compression = get_guesses(s3_path, max_lines)
     columns = columns_with_best_guess(guesses, has_header)
     location = guess_location(s3_path)
-    return Dataset(data=DatasetData(location=location, columns=columns, compression=compression))
+    return Dataset(data=DatasetData(name='guessed_dataset',
+                                    table_name='public',
+                                    data_format=DataFormat(file_format=FileFormat.TEXTFILE, row_format=RowFormat.DELIMITED),
+                                    location=location,
+                                    columns=columns,
+                                    compression=compression,
+                                    load_type=LoadType.INSERT))
 
 
 def guess_location(s3_path):
@@ -32,11 +39,7 @@ def guess_location(s3_path):
     :param s3_path: The full s3 path to a sample delimited dataset
         file.
     """
-    split_path = s3_path.split('/')
-    location = ''
-    for i in xrange(0, len(split_path)-1):
-        location += split_path[i]+'/'
-    return location
+    return os.path.dirname(s3_path)
 
 
 def get_guesses(s3_path, max_lines=1000):
@@ -97,9 +100,9 @@ def get_ascii_guesses(preview, stream, chunk_size, max_lines):
             break
         data += chunk
         if '\n' in data:
-            data, max_lines_reached = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
+            guesses, data, lines_read, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
             first_row = False
-            if max_lines_reached:
+            if lines_read >= max_lines:
                 return guesses, has_header, COMPRESSION_TYPE
     return guesses, has_header, COMPRESSION_TYPE
 
@@ -137,9 +140,9 @@ def get_gzip_guesses(preview, stream, chunk_size, max_lines):
             break
         data += d.decompress(chunk)
         if '\n' in data:
-            data, max_lines_reached = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
+            guesses, data, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
             first_row = False
-            if max_lines_reached:
+            if lines_read >= max_lines:
                 return guesses, has_header, COMPRESSION_TYPE
     return guesses, has_header, COMPRESSION_TYPE
 
@@ -176,9 +179,9 @@ def get_bzip_guesses(preview, stream, chunk_size, max_lines):
             break
         data += bz2.BZ2Decompressor().decompress(chunk)
         if '\n' in data:
-            data, max_lines_reached = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
+            guesses, data, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses, dialect, has_header)
             first_row = False
-            if max_lines_reached:
+            if lines_read >= max_lines:
                 return guesses, has_header, COMPRESSION_TYPE
     return guesses, has_header, COMPRESSION_TYPE
 
@@ -215,9 +218,9 @@ def analyze_data(data, lines_read, max_lines, first_row, guesses, dialect, has_h
             guesses = analyze_row(row, guesses, dialect)
             lines_read += 1
         else:
-            return data, True
+            return guesses, data, lines_read
     data = ''
-    return data, False
+    return guesses, data, lines_read
 
 
 def analyze_header(row, guesses, dialect, has_header):
@@ -263,9 +266,10 @@ def analyze_row(row, guesses, dialect):
     for idx, value in enumerate(cur_row):
         value = value.strip('"')
         guess = guess_data_type(value)
-        guesses[idx]['guess_set'].add(guess)
+        guesses[idx]['guesses'].add(guess)
+
         if guess == DataType.VARCHAR:
-            current_max = guesses[idx].get('varcharlength', 0)
+            current_max = guesses[idx].get('varcharlength', 1)
             guesses[idx]['varcharlength'] = max(current_max, len(value))
         if guess == 'null':
             guesses[idx]['varcharlength'] = 1
@@ -316,7 +320,7 @@ def guess_data_type(value):
             return 'null'
 
 
-def best_guess(guess_set):
+def best_guess_from_set(guess_set):
     """
     :type guess_set: set
     :param guess_set: The set contatining all possible guesses
@@ -336,10 +340,11 @@ def best_guess(guess_set):
         'null': 0
     }
     max_val = -1
-    for guess in guess_set:
-        if hierarchy[guess] > max_val:
-            max_val = hierarchy[guess]
-            best = guess
+    best = None
+    for data_type_guess in guess_set:
+        if hierarchy[data_type_guess] > max_val:
+            max_val = hierarchy[data_type_guess]
+            best = data_type_guess
     return best
 
 
@@ -354,15 +359,18 @@ def columns_with_best_guess(guesses, has_header):
     """
     columns = []
     for idx in guesses:
-        guess_set = guesses[idx]['guess_set']
-        data_type = best_guess(guess_set)
+        guess_set = guesses[idx]['guesses']
+        data_type = best_guess_from_set(guess_set)
+        length = 1
+
         if data_type == DataType.VARCHAR or data_type == 'null':
             max_len = guesses[idx]['varcharlength']
+            # Round up length to nearest power of 2
             length = 2 ** (int(math.log(max_len, 2)) + 1)
             data_type = DataType.VARCHAR
 
         columns.append(Column
-                       (name=guesses[idx]['name'] if has_header else 'col_{}'.format(idx),
+                       (name=guesses[idx]['name'] if has_header else 'col_{}'.format(idx+1),
                         data_type=data_type,
                         length=length if length else 0))
     return columns

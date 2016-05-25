@@ -1,0 +1,15 @@
+<md-dialog aria-label="edit entity" class="dt-modal">
+    <md-dialog-content>
+
+        <form name="entityEditForm">
+            <div sf-schema="schema" sf-form="form" sf-model="entity"></div>
+
+            <md-progress-circular md-mode="indeterminate" ng-show="!schema || working"></md-progress-circular>
+
+            <md-button ng-if="!showSave" class="md-raised" ng-click="onCancel()"> OK </md-button>
+            <md-button ng-if="showSave" class="md-raised" ng-click="onCancel()"> Cancel </md-button>
+            <md-button ng-if="showSave" class="md-raised md-primary" ng-click="onSubmit(entity, entityEditForm)"> Save </md-button>
+        </form>
+
+    </md-dialog-content>
+</md-dialog>

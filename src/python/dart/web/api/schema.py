@@ -6,6 +6,7 @@ from dart.schema.dataset import dataset_schema
 from dart.schema.datastore import datastore_schema
 from dart.schema.engine import engine_schema
 from dart.schema.event import event_schema
+from dart.schema.dataset_guess import dataset_guess_schema
 from dart.schema.subscription import subscription_schema
 from dart.schema.trigger import trigger_type_schema, trigger_schema
 from dart.schema.workflow import workflow_schema, workflow_instance_schema
@@ -28,6 +29,12 @@ def get_engine_json_schema():
 @jsonapi
 def get_dataset_json_schema():
     return {'results': dataset_schema()}
+
+
+@api_schema_bp.route('/schema/dataset/guess', methods=['GET'])
+@jsonapi
+def get_dataset_guess_schema():
+    return {'results': dataset_guess_schema()}
 
 
 @api_schema_bp.route('/schema/engine/<engine_name>/datastore', methods=['GET'])

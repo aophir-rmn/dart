@@ -1,5 +1,13 @@
-<md-button class="md-fab md-primary"
-           aria-label="create new"
-           ng-click="showNewEntityDialog($event)">
-    <md-icon>add</md-icon>
-</md-button>
+<md-menu>
+    <md-button class="md-fab md-primary"
+               aria-label="create new"
+               ng-click="$mdOpenMenu($event)">
+        <md-icon>add</md-icon>
+    </md-button>
+    <md-menu-content>
+        <md-menu-item ng-repeat="d in [{label: 'dataset'}, {label: 'dataset_from_existing_s3_path'}]">
+            <md-button ng-click="onCreateNew(d)"> {{d.label}} </md-button>
+        </md-menu-item>
+    </md-menu-content>
+</md-menu>
+

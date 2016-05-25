@@ -1,10 +1,13 @@
 angular
-    .module('dart.controllers.entity_modal', [])
-    .controller('EntityModalController', ['$scope', '$mdDialog', 'entity', 'getSchema', 'saveEntity',
-        function($scope, $mdDialog, entity, getSchema, saveEntity) {
+    .module('dart.controllers.dataset_guess_entity_modal', [])
+    .controller('DatasetGuessEntityModalController', ['$scope', '$mdDialog', 'entity', 'getSchema', 'getDatasetGuess', 'saveEntity',
+        function($scope, $mdDialog, entity, getSchema, getDatasetGuess, saveEntity) {
             $scope.form = ["*"];
             $scope.entity = entity;
             $scope.showSave = saveEntity;
+            getDatasetGuess(entity).then(function(response) {
+                    $scope.entity = response.results;
+                });
             getSchema().then(function (response) {
                     $scope.schema = response.results;
                 });
