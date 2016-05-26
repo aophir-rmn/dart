@@ -1,8 +1,11 @@
 import logging
 import logging.config
+import imp
 import os
+import uuid
 
 from flask import Flask, jsonify
+from flask_login import LoginManager, login_required, logout_user, login_user, current_user, user_unauthorized
 
 from dart.config.config import configuration
 from dart.context.context import AppContext
@@ -10,6 +13,7 @@ from dart.context.database import db
 from dart.model.exception import DartValidationException
 from dart.web.api.graph import api_graph_bp
 from dart.web.ui.admin.admin import admin_bp
+from dart.web.api.auth import login_manager, auth_bp
 from dart.web.api.action import api_action_bp
 from dart.web.api.dataset import api_dataset_bp
 from dart.web.api.datastore import api_datastore_bp
@@ -43,9 +47,17 @@ app.dart_context = AppContext(
 )
 
 app.config.update(config['flask'])
+app.config['SECRET_KEY'] = str(uuid.uuid4())
 db.init_app(app)
 
+app.config['auth'] = config['auth']
+# auth_module = imp.find_module(config['auth']['module'])
+app.auth_module = imp.load_source(config['auth']['module'], config['auth'].get('module_source'))
+app.auth_class = getattr(app.auth_module, config['auth']['class'])
+login_manager.init_app(app)
+
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(api_dataset_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_datastore_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_engine_bp, url_prefix=api_version_prefix)

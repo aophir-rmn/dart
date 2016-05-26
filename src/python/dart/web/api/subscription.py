@@ -1,7 +1,9 @@
 import json
-from flask import Blueprint, request, current_app
 
+from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
+
 from jsonpatch import JsonPatch
 
 from dart.model.subscription import Subscription, SubscriptionState, SubscriptionElementState
@@ -16,6 +18,7 @@ api_subscription_bp = Blueprint('api_subscription', __name__)
 @api_subscription_bp.route('/dataset/<dataset>/subscription', methods=['POST'])
 @fetch_model
 @jsonapi
+@login_required
 def post_subscription(dataset):
     subscription = Subscription.from_dict(request.get_json())
     subscription.data.dataset_id = dataset.id
@@ -26,12 +29,14 @@ def post_subscription(dataset):
 @api_subscription_bp.route('/subscription/<subscription>', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_subscription(subscription):
     return {'results': subscription.to_dict()}
 
 
 @api_subscription_bp.route('/subscription', methods=['GET'])
 @jsonapi
+@login_required
 def find_subscriptions():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -48,6 +53,7 @@ def find_subscriptions():
 @api_subscription_bp.route('/subscription/<subscription>/element_stats', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_subscription_element_stats(subscription):
     stats = subscription_element_service().get_subscription_element_stats(subscription.id)
     return {'results': [s.to_dict() for s in stats]}
@@ -56,6 +62,7 @@ def get_subscription_element_stats(subscription):
 @api_subscription_bp.route('/subscription/<subscription>/elements', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def find_subscription_elements(subscription):
     """ :type subscription: dart.model.subscription.Subscription """
     state = request.args.get('state')
@@ -70,6 +77,7 @@ def find_subscription_elements(subscription):
 @api_subscription_bp.route('/action/<action>/subscription/elements', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def find_action_subscription_elements(action):
     """ :type action: dart.model.action.Action """
     if 'subscription_id' not in action.data.args:
@@ -110,6 +118,7 @@ def subscription_elements(action_id, state, subscription_id, gte_processed=None,
 @api_subscription_bp.route('/subscription/<subscription>', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def put_subscription(subscription):
     """ :type subscription: dart.model.subscription.Subscription """
     return update_subscription(subscription, Subscription.from_dict(request.get_json()))
@@ -118,6 +127,7 @@ def put_subscription(subscription):
 @api_subscription_bp.route('/subscription/<subscription>', methods=['PATCH'])
 @fetch_model
 @jsonapi
+@login_required
 def patch_subscription(subscription):
     """ :type subscription: dart.model.subscription.Subscription """
     p = JsonPatch(request.get_json())
@@ -145,6 +155,7 @@ def update_subscription(subscription, updated_subscription):
 @api_subscription_bp.route('/subscription/<subscription>', methods=['DELETE'])
 @fetch_model
 @jsonapi
+@login_required
 def delete_subscription(subscription):
     subscription_service().delete_subscription(subscription.id)
     return {'results': 'OK'}

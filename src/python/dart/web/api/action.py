@@ -2,6 +2,7 @@ import json
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
 from jsonpatch import JsonPatch
 
 from dart.message.trigger_proxy import TriggerProxy
@@ -19,6 +20,7 @@ api_action_bp = Blueprint('api_action', __name__)
 @api_action_bp.route('/datastore/<datastore>/action', methods=['POST'])
 @fetch_model
 @jsonapi
+@login_required
 def post_datastore_actions(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     request_json = request.get_json()
@@ -41,6 +43,7 @@ def post_datastore_actions(datastore):
 @api_action_bp.route('/workflow/<workflow>/action', methods=['POST'])
 @fetch_model
 @jsonapi
+@login_required
 def post_workflow_actions(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
     request_json = request.get_json()
@@ -62,6 +65,7 @@ def post_workflow_actions(workflow):
 
 @api_action_bp.route('/action', methods=['GET'])
 @jsonapi
+@login_required
 def get_datastore_actions():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -86,6 +90,7 @@ def get_datastore_actions():
 @api_action_bp.route('/action/<action>', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_action(action):
     return {'results': action.to_dict()}
 
@@ -93,6 +98,7 @@ def get_action(action):
 @api_action_bp.route('/action/<action>', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def put_action(action):
     """ :type action: dart.model.action.Action """
     return update_action(action, Action.from_dict(request.get_json()))
@@ -101,6 +107,7 @@ def put_action(action):
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
 @fetch_model
 @jsonapi
+@login_required
 def patch_action(action):
     """ :type action: dart.model.action.Action """
     p = JsonPatch(request.get_json())
@@ -129,6 +136,7 @@ def update_action(action, updated_action):
 @api_action_bp.route('/action/<action>', methods=['DELETE'])
 @fetch_model
 @jsonapi
+@login_required
 def delete_action(action):
     action_service().delete_action(action.id)
     return {'results': 'OK'}

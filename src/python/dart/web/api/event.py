@@ -1,6 +1,7 @@
 import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
 from jsonpatch import JsonPatch
 
 from dart.model.event import Event
@@ -13,6 +14,7 @@ api_event_bp = Blueprint('api_event', __name__)
 
 @api_event_bp.route('/event', methods=['POST'])
 @jsonapi
+@login_required
 def post_event():
     event = event_service().save_event(Event.from_dict(request.get_json()))
     return {'results': event.to_dict()}
@@ -21,12 +23,14 @@ def post_event():
 @api_event_bp.route('/event/<event>', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_event(event):
     return {'results': event.to_dict()}
 
 
 @api_event_bp.route('/event', methods=['GET'])
 @jsonapi
+@login_required
 def find_events():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -43,6 +47,7 @@ def find_events():
 @api_event_bp.route('/event/<event>', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def put_event(event):
     """ :type event: dart.model.event.Event """
     return update_event(event, Event.from_dict(request.get_json()))
@@ -51,6 +56,7 @@ def put_event(event):
 @api_event_bp.route('/event/<event>', methods=['PATCH'])
 @fetch_model
 @jsonapi
+@login_required
 def patch_event(event):
     """ :type event: dart.model.event.Event """
     p = JsonPatch(request.get_json())
@@ -74,6 +80,7 @@ def update_event(event, updated_event):
 @api_event_bp.route('/event/<event>', methods=['DELETE'])
 @fetch_model
 @jsonapi
+@login_required
 def delete_event(event):
     event_service().delete_event(event.id)
     return {'results': 'OK'}

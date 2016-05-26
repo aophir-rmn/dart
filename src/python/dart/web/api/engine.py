@@ -2,6 +2,7 @@ import json
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
 
 from dart.message.trigger_proxy import TriggerProxy
 from dart.model.action import ActionState
@@ -20,6 +21,7 @@ api_engine_bp = Blueprint('api_engine', __name__)
 
 @api_engine_bp.route('/engine', methods=['POST'])
 @jsonapi
+@login_required
 def post_engine():
     engine = engine_service().save_engine(Engine.from_dict(request.get_json()))
     return {'results': engine.to_dict()}
@@ -28,12 +30,14 @@ def post_engine():
 @api_engine_bp.route('/engine/<engine>', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_engine(engine):
     return {'results': engine.to_dict()}
 
 
 @api_engine_bp.route('/engine', methods=['GET'])
 @jsonapi
+@login_required
 def find_engines():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -50,6 +54,7 @@ def find_engines():
 @api_engine_bp.route('/engine/<engine>', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def put_engine(engine):
     engine = engine_service().update_engine(engine, Engine.from_dict(request.get_json()))
     return {'results': engine.to_dict()}
@@ -58,6 +63,7 @@ def put_engine(engine):
 @api_engine_bp.route('/engine/action/<action>/checkout', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def action_checkout(action):
     """ :type action: dart.model.action.Action """
     results = validate_engine_action(action, ActionState.PENDING)
@@ -73,6 +79,7 @@ def action_checkout(action):
 @api_engine_bp.route('/engine/action/<action>/checkin', methods=['PUT'])
 @fetch_model
 @jsonapi
+@login_required
 def action_checkin(action):
     """ :type action: dart.model.action.Action """
     results = validate_engine_action(action, ActionState.RUNNING)
@@ -111,6 +118,7 @@ def validate_engine_action(action, state):
 @api_engine_bp.route('/engine/<engine>', methods=['DELETE'])
 @fetch_model
 @jsonapi
+@login_required
 def delete_engine(engine):
     engine_service().delete_engine(engine)
     return {'results': 'OK'}
@@ -119,6 +127,7 @@ def delete_engine(engine):
 @api_engine_bp.route('/engine/<engine>/subgraph_definition', methods=['POST'])
 @fetch_model
 @jsonapi
+@login_required
 def post_subgraph_definition(engine):
     subgraph_definition = engine_service().save_subgraph_definition(
         SubGraphDefinition.from_dict(request.get_json()), engine, trigger_service().trigger_schemas()
@@ -129,6 +138,7 @@ def post_subgraph_definition(engine):
 @api_engine_bp.route('/subgraph_definition/<subgraph_definition>', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_subgraph_definition(subgraph_definition):
     return {'results': subgraph_definition.to_dict()}
 
@@ -136,6 +146,7 @@ def get_subgraph_definition(subgraph_definition):
 @api_engine_bp.route('/engine/<engine>/subgraph_definition', methods=['GET'])
 @fetch_model
 @jsonapi
+@login_required
 def get_subgraph_definitions(engine):
     return {'results': engine_service().get_subgraph_definitions(engine.data.name)}
 
@@ -143,6 +154,7 @@ def get_subgraph_definitions(engine):
 @api_engine_bp.route('/subgraph_definition/<subgraph_definition>', methods=['DELETE'])
 @fetch_model
 @jsonapi
+@login_required
 def delete_subgraph_definition(subgraph_definition):
     engine_service().delete_subgraph_definition(subgraph_definition.id)
     return {'results': 'OK'}

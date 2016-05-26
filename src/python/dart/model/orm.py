@@ -1,7 +1,7 @@
 import json
 
 from flask.ext.jsontools import JsonSerializableBase
-from sqlalchemy import BigInteger, Column, Integer, TIMESTAMP, String, Text
+from sqlalchemy import BigInteger, Column, Integer, TIMESTAMP, String, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from dart.model.action import Action
 
@@ -15,6 +15,7 @@ from dart.model.message import Message
 from dart.model.mutex import Mutex
 from dart.model.subscription import Subscription, SubscriptionElement
 from dart.model.trigger import Trigger
+from dart.model.user import User
 from dart.model.workflow import Workflow, WorkflowInstance
 from dart.util.json_util import DartJsonEncoder
 
@@ -116,3 +117,13 @@ class MutexDao(db.Model, VersionedAuditableSerializable):
     __modelclass__ = Mutex
     name = Column(String(length=255), unique=True, nullable=False)
     state = Column(String(length=50), nullable=False)
+
+
+class UserDao(db.Model, VersionedAuditableSerializable):
+    __tablename__ = 'user'
+    __modelclass__ = User
+    email = Column(String(length=255), unique=True, nullable=False)
+    first_name = Column(String(length=255), unique=False, nullable=True)
+    last_name = Column(String(length=255), unique=False, nullable=True)
+    is_authenticated = Column(Boolean, server_default='false', nullable=False)
+    session_expiration = Column(TIMESTAMP, server_default=db.func.current_timestamp())
