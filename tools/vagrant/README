@@ -1,0 +1,7 @@
+1. Run: vagrant plugin install vagrant-vbguest (that allows for guest additions to be added to your vagrant guest machine).
+
+2. The id_rsa needs to have the passphrase removed in order to git clone without a script hanging (asking for passphrase).
+   -- ssh-keygen -p -P <old-passphrase>
+      a. Enter file location (ideally ./ssh_files/id_rsa)
+      b. Enter <enter> (empty passphrase) twice
+   -- We also need a known_host file that knows the host we are dwonloading from: E.g. [aaa.bbb.com]:7999,[72.249.148.199]:7999 ssh-rsa <key>
