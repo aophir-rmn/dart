@@ -10,11 +10,12 @@ Vagrant.configure(2) do |config|
   config.vm.define :dart do |t|
   end
  
-  # forwarding ports for dokcer, postgres, elasticmq, nginx/flask
+  # forwarding ports for dokcer, postgres, elasticmq, nginx/flask (5000)
   config.vm.network "forwarded_port", guest: 2376, host: 2376, protocol: "tcp" # docker
   config.vm.network "forwarded_port", guest: 5432, host: 5432, protocol: "tcp" # postgres
   config.vm.network "forwarded_port", guest: 9324, host: 9324, protocol: "tcp" # elasticmq
-  config.vm.network "forwarded_port", guest: 8080, host: 8008, protocol: "tcp" # nginx/flask
+  config.vm.network "forwarded_port", guest: 8080, host: 8008, protocol: "tcp" # nginx
+  config.vm.network "forwarded_port", guest: 5000, host: 5000, protocol: "tcp" # flask
 
   # Files in the same folder as the Vagrantfile will be synched in guest machine via /vagrant_data
   config.vm.synced_folder ".", "/vagrant_data"
@@ -26,7 +27,9 @@ Vagrant.configure(2) do |config|
   end
  
   # yum install need packages, git clone repo and  pip installs (all the tools needed).
-  config.vm.provision :shell, :path => "setup.sh"
+  # config.vm.provision :shell, :path => "setup.sh", :env => { :AWS_SECRET_ACCESS_KEY => "", :AWS_ACCESS_KEY_ID => "", :DART_ROLE => "web", :DART_CONFIG => "/home/vagrant/projects/dart-config/dart-local.yaml" }
+  # :privileged => false means we run as the vagrant user (not running using sudo which creating root permissions on files)
+  config.vm.provision "shell", path: "setup.sh", :privileged => false
 
   config.vm.provision "docker" do |d|
       d.build_image "/tmp/elasticmq", args: "-t 'dart-elasticmq'"

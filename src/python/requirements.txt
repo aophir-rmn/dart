@@ -15,5 +15,5 @@ pytz==2015.7
 PyYAML==3.11
 requests==2.7.0
 retrying==1.3.3
-uwsgi==2.0.10
+uwsgi==2.0.11.2
 sqlalchemy-redshift==0.4.0
