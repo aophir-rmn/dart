@@ -1,0 +1,61 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = "centos/7"
+
+  config.vm.define :collector do |t|
+  end
+
+  config.vm.network "forwarded_port", guest: 80, host: 8080, protocol: "tcp" # nginx
+
+  config.vm.synced_folder ".", "/vagrant_data"
+
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = true
+    vb.memory = "1024"
+  end
+  
+   config.vm.provision "shell", :privileged => false, inline: <<-SHELL
+     sudo yum install epel-release -y
+     sudo yum -y install nginx vim-enhanced net-tools mlocate
+     sudo service nginx start
+     sudo systemctl enable nginx
+
+     # setting up example setup server blocks:
+     ########################################
+
+     # The sample server blocks index.html files 
+     sudo mkdir -p /var/www/example.com/html
+     sudo mkdir -p /var/www/test.com/html
+     sudo cp /vagrant_data/nginx/example.html /var/www/example.com/html/index.html
+     sudo cp /vagrant_data/nginx/test.html /var/www/test.com/html/index.html
+     sudo chown -R $USER:$USER /var/www/
+     sudo chmod -R 755 /var/www
+
+     # new conf files to serve example.com and test.com
+     sudo cp /vagrant_data/nginx/example.conf /etc/nginx/conf.d/
+     sudo cp /vagrant_data/nginx/test.conf /etc/nginx/conf.d/
+
+     # misc setup
+     sudo updatedb
+     sudo setenforce 0
+     sudo cp /vagrant_data/selinux.conf /etc/selinux/config # disable selinux
+
+     # restarting the nginx to use the new settings
+     sudo nginx -s reload
+
+   SHELL
+
+end
