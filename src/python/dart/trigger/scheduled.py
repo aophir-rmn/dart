@@ -8,6 +8,7 @@ from dart.context.locator import injectable
 from dart.model.trigger import TriggerType, TriggerState
 from dart.message.call import TriggerCall
 from dart.trigger.base import TriggerProcessor, execute_trigger
+from dart.model.exception import DartValidationException
 
 _logger = logging.getLogger(__name__)
 
@@ -40,8 +41,10 @@ class ScheduledTriggerProcessor(TriggerProcessor):
         """ :type trigger: dart.model.trigger.Trigger
             :type trigger_service: dart.service.trigger.TriggerService """
 
+        self._validate_aws_cron_expression(trigger.data.args['cron_pattern'])
         # http://boto3.readthedocs.org/en/latest/reference/services/events.html#CloudWatchEvents.Client.put_rule
         client = boto3.client('events')
+
         client.put_rule(
             Name=self._get_cloudwatch_events_rule_name(trigger),
             ScheduleExpression='cron(%s)' % trigger.data.args['cron_pattern'],
@@ -123,3 +126,12 @@ class ScheduledTriggerProcessor(TriggerProcessor):
                 msg = 'Failed on -- Target Id %s, ErrorCode %s, ErrorMessage: %s\n'
                 error_msg += msg % (failure['TargetId'], failure['ErrorCode'], failure['ErrorMessage'])
             raise Exception(error_msg)
+
+    @staticmethod
+    def _validate_aws_cron_expression(cron_expression):
+        # See the Note on: http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/ScheduledEvents.html
+        cron_pattern_split = cron_expression.split()
+        if '?' not in [cron_pattern_split[2], cron_pattern_split[4]]:
+            raise DartValidationException('CRON Validation Error: Support for specifying both a day-of-week and a '
+                                          'day-of-month value is not complete (you must currently use the "?"'
+                                          'character in one of these fields).')
