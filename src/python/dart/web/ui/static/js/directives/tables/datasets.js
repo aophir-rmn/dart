@@ -38,7 +38,7 @@ angular
                         if (mode === 'duplicate') {
                             saveFunc = function (entity) { return DatasetService.saveEntity(entity) }
                         }
-                        EntityModalService.showDialog(ev, e, false,
+                        EntityModalService.showDialog(ev, e,
                             function () {
                                 return DatasetService.getSchema().then(function(response) {
                                     if (mode === 'view') {

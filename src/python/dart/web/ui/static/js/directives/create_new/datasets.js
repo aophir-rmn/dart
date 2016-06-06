@@ -16,7 +16,6 @@ angular
                                 null,
                                 {},
                                 function () { return DatasetService.getSchema() },
-                                function (entity) { return DatasetService.getDatasetGuess(entity)},
                                 function (entity) { return DatasetService.saveEntity(entity) }
                             );
                         }
