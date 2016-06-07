@@ -16,6 +16,7 @@ from dart.model.mutex import Mutex
 from dart.model.subscription import Subscription, SubscriptionElement
 from dart.model.trigger import Trigger
 from dart.model.user import User
+from dart.model.api_key import ApiKey
 from dart.model.workflow import Workflow, WorkflowInstance
 from dart.util.json_util import DartJsonEncoder
 
@@ -127,3 +128,11 @@ class UserDao(db.Model, VersionedAuditableSerializable):
     last_name = Column(String(length=255), unique=False, nullable=True)
     is_authenticated = Column(Boolean, server_default='false', nullable=False)
     session_expiration = Column(TIMESTAMP, server_default=db.func.current_timestamp())
+
+
+class ApiKeyDao(db.Model, VersionedAuditableSerializable):
+    __tablename__ = 'api_key'
+    __modelclass__ = ApiKey
+    user_id = Column(String(length=36), unique=False, nullable=False)
+    api_key = Column(String(length=255), unique=True, nullable=False)
+    api_secret = Column(String(length=255), unique=False, nullable=False)

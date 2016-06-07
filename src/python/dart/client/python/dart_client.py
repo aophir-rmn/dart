@@ -3,6 +3,10 @@ import time
 
 import jsonpatch
 import requests
+import hmac
+import hashlib
+
+from datetime import datetime
 
 from dart.model.action import Action, ActionState
 from dart.model.dataset import Dataset
@@ -19,9 +23,11 @@ from dart.model.workflow import Workflow, WorkflowInstance, WorkflowInstanceStat
 
 
 class Dart(object):
-    def __init__(self, host, port=80, api_version=1):
+    def __init__(self, host, credential, secret, port=80, api_version=1):
         self._host = host
         self._port = port
+        self._credential = credential
+        self._secret = secret
         self._api_version = api_version
         self._base_url = 'http://%s:%s/api/%s' % (self._host, self._port, self._api_version)
 
@@ -360,7 +366,15 @@ class Dart(object):
         return self._request('get', '/graph/%s/%s' % (entity_type, entity_id), model_class=Graph)
 
     def _get_response_data(self, method, url_prefix, data=None, params=None):
-        response = requests.request(method, self._base_url + '/' + url_prefix.lstrip('/'), json=data, params=params)
+        timestamp = datetime.utcnow()
+        signature = hmac.new(key=self._credential,
+                             msg='{}{}'.format(timestamp.isoformat(), self._secret),
+                             digestmod=hashlib.sha256).hexdigest()
+        headers = {
+            'x-dart-date': timestamp.isoformat(),
+            'Authorization': 'Credential={} Signature={}'.format(self._credential, signature)
+        }
+        response = requests.request(method, self._base_url + '/' + url_prefix.lstrip('/'), headers=headers, json=data, params=params)
         try:
             data = response.json()
             if data['results'] == 'ERROR':

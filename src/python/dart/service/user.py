@@ -18,7 +18,7 @@ class UserService(object):
 
     @staticmethod
     def save_user(user, commit=True, flush=False):
-        """ :type workflow: dart.model.workflow.Workflow """
+        """ :type user: dart.model.user.User """
         user_dao = UserDao()
         for key, value in user.to_dict().iteritems():
             setattr(user_dao, key, value)

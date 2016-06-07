@@ -10,7 +10,7 @@ from flask_login import LoginManager, login_required, logout_user, login_user, c
 from dart.config.config import configuration
 from dart.context.context import AppContext
 from dart.context.database import db
-from dart.model.exception import DartValidationException
+from dart.model.exception import DartValidationException, DartAuthenticationException
 from dart.web.api.graph import api_graph_bp
 from dart.web.ui.admin.admin import admin_bp
 from dart.web.api.auth import login_manager, auth_bp
@@ -51,7 +51,6 @@ app.config['SECRET_KEY'] = str(uuid.uuid4())
 db.init_app(app)
 
 app.config['auth'] = config['auth']
-# auth_module = imp.find_module(config['auth']['module'])
 app.auth_module = imp.load_source(config['auth']['module'], config['auth'].get('module_source'))
 app.auth_class = getattr(app.auth_module, config['auth']['class'])
 login_manager.init_app(app)
@@ -75,6 +74,13 @@ app.register_blueprint(index_bp)
 def handle_dart_validation_exception(e):
     response = jsonify({'results': 'ERROR', 'error_message': e.message})
     response.status_code = 400
+    return response
+
+
+@app.errorhandler(DartAuthenticationException)
+def handle_dart_authentication_errors(e):
+    response = jsonify({'restults': 'Error', 'error_message': 'DART was unable to authenticate your request'})
+    response.status_code = 401
     return response
 
 
