@@ -1,0 +1,41 @@
+version: '2'
+services:
+  {{ database_container }}:
+    image: postgres:9.4.1
+    ports:
+      - {{ database_port }}:{{ database_port }}
+    environment:
+      - POSTGRES_USER=dart
+      - POSTGRES_PASSWORD=dartis4datamarts
+  {{ sqs_container }}:
+    build: {{ synched_folder }}{{ sqs_container }}
+    ports:
+      - {{ sqs_port }}:{{ sqs_port }}
+  {{ flask_webapp }}:
+    build: {{ synched_folder }}{{ flask_webapp }}
+    ports:
+      - {{ webapp_port }}:{{ webapp_port }}
+    volumes:
+      - {{ vagrant_code_dir }}:{{ docker_code_dir }}
+    links:
+      - {{ database_container }}:{{ database_container }}
+      - {{ sqs_container }}:{{ sqs_container }}
+  {{ engine_worker }}:
+    build: {{ synched_folder }}{{ engine_worker }}
+    volumes:
+      - {{ vagrant_code_dir }}:{{ docker_code_dir }}
+    links:
+      - {{ database_container }}:{{ database_container }}
+  {{ trigger_worker }}:
+    build: {{ synched_folder }}{{ trigger_worker }}
+    volumes:
+      - {{ vagrant_code_dir }}:{{ docker_code_dir }}
+    links:
+      - {{ database_container }}:{{ database_container }}
+  {{ subscription_worker }}:
+    build: {{ synched_folder }}{{ subscription_worker }}
+    volumes:
+      - {{ vagrant_code_dir }}:{{ docker_code_dir }}
+    links:
+      - {{ database_container }}:{{ database_container }}
+
