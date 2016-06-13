@@ -217,7 +217,7 @@ python trigger.py
 ```
 cd src/python/dart/worker
 export PYTHONPATH=/full-path-to-your-dart-project-root/src/python:${PYTHONPATH}
-export DART_ROLE=web
+export DART_ROLE=worker
 export DART_CONFIG=../my-dart-config-project/dart-config-local.yaml
 python engine.py
 ```
