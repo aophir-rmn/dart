@@ -4,7 +4,7 @@ from dart.client.python.dart_client import Dart
 from dart.engine.no_op.metadata import NoOpActionTypes
 from dart.model.action import ActionData, Action, ActionState
 from dart.model.dataset import Column, DataFormat, FileFormat, RowFormat, DatasetData, Dataset
-from dart.model.dataset import DataType
+from dart.model.dataset import DataType, LoadType
 from dart.model.datastore import Datastore, DatastoreData, DatastoreState
 from dart.model.event import Event, EventState
 from dart.model.event import EventData
@@ -25,18 +25,36 @@ class TestEntityGraph(unittest.TestCase):
 
         cs = [Column('c1', DataType.VARCHAR, 50), Column('c2', DataType.BIGINT)]
         df = DataFormat(FileFormat.PARQUET, RowFormat.NONE)
-        dataset_data = DatasetData('test-dataset0', 'test_dataset_table0', 's3://test/dataset/0/%s' + random_id(), df, cs)
+        dataset_data = DatasetData(name='test-dataset0',
+                                   table_name='test_dataset_table0',
+                                   load_type=LoadType.INSERT,
+                                   location=('s3://test/dataset/0/%s' + random_id()),
+                                   data_format=df,
+                                   columns=cs,
+                                   tags=[])
         self.dataset0 = self.dart.save_dataset(Dataset(data=dataset_data))
 
         cs = [Column('c1', DataType.VARCHAR, 50), Column('c2', DataType.BIGINT)]
         df = DataFormat(FileFormat.PARQUET, RowFormat.NONE)
         dataset1_location = 's3://test/dataset/1/%s' + random_id()
-        dataset_data = DatasetData('test-dataset1', 'test_dataset_table1', dataset1_location, df, cs)
+        dataset_data = DatasetData(name='test-dataset1',
+                                   table_name='test_dataset_table1',
+                                   load_type=LoadType.INSERT,
+                                   location=dataset1_location,
+                                   data_format=df,
+                                   columns=cs,
+                                   tags=[])
         self.dataset1 = self.dart.save_dataset(Dataset(data=dataset_data))
 
         cs = [Column('c1', DataType.VARCHAR, 50), Column('c2', DataType.BIGINT)]
         df = DataFormat(FileFormat.PARQUET, RowFormat.NONE)
-        dataset_data = DatasetData('test-dataset2-no-show', 'test_dataset_table2', 's3://test/dataset/2/%s' + random_id(), df, cs)
+        dataset_data = DatasetData(name='test-dataset2-no-show',
+                                   table_name='test_dataset_table2',
+                                   load_type=LoadType.INSERT,
+                                   location=('s3://test/dataset/2/%s' + random_id()),
+                                   data_format=df,
+                                   columns=cs,
+                                   tags=[])
         self.dataset2 = self.dart.save_dataset(Dataset(data=dataset_data))
 
         s = Subscription(data=SubscriptionData('test-subscription0', self.dataset0.id))
