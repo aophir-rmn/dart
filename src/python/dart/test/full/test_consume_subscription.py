@@ -4,7 +4,7 @@ import unittest
 from dart.client.python.dart_client import Dart
 from dart.engine.no_op.metadata import NoOpActionTypes
 from dart.model.action import ActionData, Action, ActionState
-from dart.model.dataset import Column, DatasetData, Dataset, DataFormat, DataType, FileFormat, RowFormat
+from dart.model.dataset import Column, DatasetData, Dataset, DataFormat, DataType, FileFormat, RowFormat, LoadType
 from dart.model.datastore import Datastore, DatastoreData, DatastoreState
 from dart.model.subscription import Subscription, SubscriptionData, SubscriptionElementStats, SubscriptionElementState, \
     SubscriptionState
@@ -22,7 +22,12 @@ class TestConsumeSubscription(unittest.TestCase):
 
         cs = [Column('c1', DataType.VARCHAR, 50), Column('c2', DataType.BIGINT)]
         df = DataFormat(FileFormat.TEXTFILE, RowFormat.DELIMITED)
-        dataset_data = DatasetData('test-dataset', 'test_dataset_table', 's3://' + os.environ['DART_TEST_BUCKET'] + '/impala', df, cs)
+        dataset_data = DatasetData(name='test-dataset', table_name='test_dataset_table',
+                                   load_type=LoadType.INSERT,
+                                   location=('s3://' + os.environ['DART_TEST_BUCKET'] + '/impala'),
+                                   data_format=df,
+                                   columns=cs,
+                                   tags=[])
         self.dataset = self.dart.save_dataset(Dataset(data=dataset_data))
 
         start = 's3://' + os.environ['DART_TEST_BUCKET'] + '/impala/impala'
