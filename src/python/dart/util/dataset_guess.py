@@ -1,15 +1,16 @@
 import boto3
 import bz2
 import csv
-from dart.model.dataset import DataType, Column, Dataset, DatasetData, DataFormat, FileFormat, RowFormat, LoadType
-from datetime import datetime
 import dateutil.parser
 import magic
 import math
 import os
 import re
-from s3 import get_bucket_name, get_key_name
 import zlib
+
+from datetime import datetime
+from dart.model.dataset import DataType, Column, Dataset, DatasetData, DataFormat, FileFormat, RowFormat, LoadType
+from s3 import get_bucket_name, get_key_name
 
 
 def infer_dataset_data(s3_path, max_lines):
@@ -52,9 +53,10 @@ def get_guesses(s3_path, max_lines=1000):
     :param max_lines: The maximum number of lines to peek.
     """
     chunk_size = 1024
-    client = boto3.client('s3')
     bucket = get_bucket_name(s3_path)
-    key = get_key_name(s3_path)
+    client = boto3.client('s3')
+    # Dart assumes s3_path could be a prefix. If so, Dart will get the first key object in the given prefix
+    key = client.list_objects_v2(Bucket=bucket, MaxKeys=1, Prefix=get_key_name(s3_path))['Contents'][0]['Key']
     stream = client.get_object(Bucket=bucket, Key=key)['Body']
     # Read the first chunk of the file stream
     preview = stream.read(chunk_size)
