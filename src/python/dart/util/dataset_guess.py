@@ -56,7 +56,7 @@ def get_guesses(s3_path, max_lines=1000):
     bucket = get_bucket_name(s3_path)
     client = boto3.client('s3')
     # Dart assumes s3_path could be a prefix. If so, Dart will get the first key object in the given prefix
-    key = client.list_objects_v2(Bucket=bucket, MaxKeys=1, Prefix=get_key_name(s3_path))['Contents'][0]['Key']
+    key = client.list_objects(Bucket=bucket, MaxKeys=1, Prefix=get_key_name(s3_path))['Contents'][0]['Key']
     stream = client.get_object(Bucket=bucket, Key=key)['Body']
     # Read the first chunk of the file stream
     preview = stream.read(chunk_size)
