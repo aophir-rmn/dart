@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -x
+set -e
+
+echo "Starting additional setup steps for dart local deployment"
+
+# we run these commands after we logged out since we need the new dockr group to be persisted (A linux feature).
+echo "Step 1/6: Enable docker-service and install docker-compose"
+sudo systemctl enable docker.service &&
+sudo systemctl start docker.service &&
+sudo pip install docker-compose &&
+sudo yum upgrade python* -y 
+
+# working directory for the rest of the script
+pushd {{ synched_folder }}
+
+# launch db/sqs/web containers
+echo "Step 2/6: Bringing up a minimal set of containers using docker-compose"
+docker-compose up -d --build {{flask_webapp }} {{ database_container }} {{ sqs_container }}
+
+set +e
+# create database tables
+echo "Step 3/6: creating all tables in local database"
+STOP=1; 
+while [ $STOP -gt 0 ]; do 
+  docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; 
+  STOP=$?; 
+  sleep 1; 
+done
+
+# launch worker containers
+echo "Step 4/6: Bringing up a minimal set of containers using docker-compose"
+docker-compose up -d --build {{ engine_worker }} {{ trigger_worker }} {{ subscription_worker }}
+
+# populate engine table
+echo "Step 5/6: Adding no-op engine entry in the engine table"
+STOP=1; 
+while [ $STOP -gt 0 ]; do 
+  docker-compose exec web python /tmp/src/python/dart/engine/no_op/add_engine.py; 
+  STOP=$?; 
+  sleep 1; 
+done
+set -e
+
+# run unit-tests
+echo "Step 6/6: Adding no-op engine entry in the engine table"
+docker-compose exec web python -m unittest discover {{ docker_code_dir }}/src/python/dart/test/schema/ "test_*.py"
+docker-compose exec web python -m unittest discover {{ docker_code_dir }}/src/python/dart/test/graph "test_*.py"
+docker-compose exec web python -m unittest discover {{ docker_code_dir }}/src/python/dart/test/crud "test_*.py"
+
+echo "Done dart local deployment"

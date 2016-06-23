@@ -1,0 +1,40 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:9.4.1
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=dart
+      - POSTGRES_PASSWORD=dartis4datamarts
+  elasticmq:
+    build: /vagrant_data/docker_files/elasticmq
+    ports:
+      - 9324:9324
+  web:
+    build: /vagrant_data/docker_files/web
+    ports:
+      - 5000:5000
+    volumes:
+      - /vagrant_data/dart:/tmp
+    links:
+      - postgres:postgres
+      - elasticmq:elasticmq
+  engine:
+    build: /vagrant_data/docker_files/engine
+    volumes:
+      - /vagrant_data/dart:/tmp
+    links:
+      - postgres:postgres
+  trigger:
+    build: /vagrant_data/docker_files/trigger
+    volumes:
+      - /vagrant_data/dart:/tmp
+    links:
+      - postgres:postgres
+  subscription:
+    build: /vagrant_data/docker_files/subscription
+    volumes:
+      - /vagrant_data/dart:/tmp
+    links:
+      - postgres:postgres

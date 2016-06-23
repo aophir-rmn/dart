@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -x
+set -e
+
+pip install -r {{ docker_code_dir }}/src/python/requirements.txt
+
+{% for run in additional_run_steps %}
+{{ run }}
+{% endfor %}
+
+pushd {{ container_work_dir }}
+{{ container_cmd }}
