@@ -61,3 +61,12 @@ script:
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/graph "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/crud "test_*.py"  
 
+# send notifications to DWH_alerts room
+notifications:
+  hipchat:
+    rooms:
+      - secure: "ctwA9HNOFoyANK8Zx1g6IudJCfogemb41MY/8o1cusRl9Yv21ypT5vJq1H5m6rJ+mmj3OXvbuw6YtneWksnFOgDW/3M1X3DHF2xsMWOzUwTDgx0pbSI9Bo7YKyUQtXkx0pXFvlUy7WbJmauMUV2whO9kFv/n9XZyWkOWenxlgSw+cc2z0+mk1HOXApcAqgwAOg5drlIbq5aRT+FYh3Gwtv0Pyqqm1MpiPi2QodY4j320g0+Sry96P+Hzjfj2HoO7gc7s8YH+6THLXY4gatkwDyvKXqqM4tMDIoz1RM/aPvz6axLKDu7SvUnhrplIH5NGQaogMmEsI5ASBPCMTBiLxs5/ON1zXn9hdIVXstJEsmohDu7wfhWJBmh/omcyMd+JESwYOjsuqSjT7XyRPbofWY5H7DI/oeWFYsNil2J/yCbfVd7YLoYdJjZWoEoocJnaH0HQ9m+fzozPVZeZvJ1hyDfFpP62JYFTn9RWwPUio8q8eCz89xllAJOqTry65t0HgQGz/iVAq6MOP5OH/3j43ThGEacMm911SLqN+0HHBsWaemlREKrchgk0fNm1sEcRt4z/4Prnk2lKHhzXYrbFp69jJrbHreu1ES6i6LTMQp50DwcCyySY1oOsX961k2ll83VnncPCDyJVzOgXxKRnHN5x/HC+B3OnpN5nx+Jq3XU="
+    template:
+      - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}'
+    on_success: change
+    on_failure: always
