@@ -9,7 +9,7 @@ from dart.model.workflow import Workflow, WorkflowState, WorkflowInstanceState
 from dart.service.filter import FilterService
 from dart.service.workflow import WorkflowService
 from dart.service.trigger import TriggerService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 
 api_workflow_bp = Blueprint('api_workflow', __name__)
@@ -17,6 +17,7 @@ api_workflow_bp = Blueprint('api_workflow', __name__)
 
 @api_workflow_bp.route('/datastore/<datastore>/workflow', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def post_workflow(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
@@ -91,6 +92,7 @@ def _find_workflow_instances(workflow=None):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 def put_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
@@ -99,6 +101,7 @@ def put_workflow(workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 def patch_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
@@ -129,6 +132,7 @@ def update_workflow(workflow, updated_workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>/do-manual-trigger', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def trigger_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
@@ -146,6 +150,7 @@ def trigger_workflow(workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 def delete_workflow(workflow):
     workflow_service().delete_workflow(workflow.id)
@@ -154,6 +159,7 @@ def delete_workflow(workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>/instance', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 def delete_workflow_instances(workflow):
     workflow_service().delete_workflow_instances(workflow.id)

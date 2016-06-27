@@ -7,7 +7,7 @@ from dart.service.datastore import DatastoreService
 from dart.service.graph.resolve import GraphEntityResolverService
 from dart.service.graph.entity import GraphEntityService
 from dart.service.workflow import WorkflowService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 api_graph_bp = Blueprint('api_graph', __name__)
 
@@ -119,6 +119,7 @@ def get_sub_graphs():
 
 
 @api_graph_bp.route('/graph/sub_graph', methods=['POST'])
+@accounting_track
 @jsonapi
 def post_entity_map():
     results, error = graph_entity_resolver_service().save_entities(request.get_json(), request.args.get('debug'))

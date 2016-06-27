@@ -6,7 +6,7 @@ from dart.model.trigger import Trigger
 from dart.service.filter import FilterService
 from dart.service.trigger import TriggerService
 from dart.service.workflow import WorkflowService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 
 api_trigger_bp = Blueprint('api_trigger', __name__)
@@ -14,6 +14,7 @@ api_trigger_bp = Blueprint('api_trigger', __name__)
 
 @api_trigger_bp.route('/trigger', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def post_trigger():
     trigger = Trigger.from_dict(request.get_json())
@@ -58,6 +59,7 @@ def get_trigger_types():
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 def put_trigger(trigger):
     """ :type trigger: dart.model.trigger.Trigger """
@@ -66,6 +68,7 @@ def put_trigger(trigger):
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 def patch_trigger(trigger):
     """ :type trigger: dart.model.trigger.Trigger """
@@ -91,6 +94,7 @@ def update_trigger(trigger, updated_trigger):
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 def delete_trigger(trigger):
     trigger_service().delete_trigger(trigger.id)

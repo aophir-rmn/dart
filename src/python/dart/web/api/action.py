@@ -11,13 +11,14 @@ from dart.service.action import ActionService
 from dart.service.datastore import DatastoreService
 from dart.service.filter import FilterService
 from dart.service.order_by import OrderByService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 api_action_bp = Blueprint('api_action', __name__)
 
 
 @api_action_bp.route('/datastore/<datastore>/action', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def post_datastore_actions(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
@@ -40,6 +41,7 @@ def post_datastore_actions(datastore):
 
 @api_action_bp.route('/workflow/<workflow>/action', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def post_workflow_actions(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
@@ -92,6 +94,7 @@ def get_action(action):
 
 @api_action_bp.route('/action/<action>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 def put_action(action):
     """ :type action: dart.model.action.Action """
@@ -100,6 +103,7 @@ def put_action(action):
 
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 def patch_action(action):
     """ :type action: dart.model.action.Action """
@@ -128,6 +132,7 @@ def update_action(action, updated_action):
 
 @api_action_bp.route('/action/<action>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 def delete_action(action):
     action_service().delete_action(action.id)
