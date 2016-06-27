@@ -65,6 +65,7 @@ through a REST api call.
 ###### trigger
 A trigger initiates a workflow.  There are several types of triggers available:
 * scheduled - triggers a workflow based on a CRON schedule
+* workflow_completion - triggering upon successful workflow completion
 * subscription_batch - creates subscription element batches based on a file size threshold, and triggers workflows as
 they are ready
 * super - takes other triggers as inputs and fires when __ALL__ have fired or __ANY__ have fired
