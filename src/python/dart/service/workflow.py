@@ -191,12 +191,21 @@ class WorkflowService(object):
         db.session.delete(workflow_dao)
         db.session.commit()
 
-    @staticmethod
     @retry_stale_data
-    def delete_workflow_instances(workflow_id):
+    def delete_workflow_instances(self, workflow_id):
         # We delete with synchronize_session=False here to avoid sqlalchemy blowing up.  It basically means
         # sqlalchemy will not try to figure out which session objects to invalidate (which is fine since the
         # session will expire after the commit anyways)
+        offset = 0
+        while True:
+            # Find all workflow instances
+            workflow_instances = self.find_workflow_instances(workflow_id, 20, offset)
+            if workflow_instances is None:
+                break
+            # Iterate and delete all actions in each workflow instance
+            for workflow_instance in workflow_instances:
+                self._action_service.delete_actions_in_workflow_instance(workflow_instance.id)
+            offset += 20
         WorkflowInstanceDao.query.filter(WorkflowInstanceDao.data['workflow_id'].astext == workflow_id).delete(False)
         db.session.commit()
 

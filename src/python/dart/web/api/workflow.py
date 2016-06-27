@@ -6,6 +6,7 @@ from dart.model.datastore import DatastoreState
 from dart.model.query import Filter, Operator
 
 from dart.model.workflow import Workflow, WorkflowState, WorkflowInstanceState
+from dart.service.action import ActionService
 from dart.service.filter import FilterService
 from dart.service.workflow import WorkflowService
 from dart.service.trigger import TriggerService
@@ -153,6 +154,7 @@ def trigger_workflow(workflow):
 @accounting_track
 @jsonapi
 def delete_workflow(workflow):
+    action_service().delete_actions_in_workflow(workflow.id)
     workflow_service().delete_workflow(workflow.id)
     return {'results': 'OK'}
 
@@ -164,6 +166,11 @@ def delete_workflow(workflow):
 def delete_workflow_instances(workflow):
     workflow_service().delete_workflow_instances(workflow.id)
     return {'results': 'OK'}
+
+
+def action_service():
+    """ :rtype: dart.service.filter.ActionService """
+    return current_app.dart_context.get(ActionService)
 
 
 def filter_service():
