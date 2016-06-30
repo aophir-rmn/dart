@@ -35,6 +35,11 @@ before_install:
   - cp tools/vagrant/docker_files/docker-compose.yml .
   - cp -r tools/vagrant/docker_files /vagrant_data
 
+  # These are unit tests that are not running in a docker-container.
+  - pip install -r src/python/requirements.txt
+  - nosetests tools/vagrant
+  - cd src && PYTHONPATH=$PYTHONPATH:..:./python/ nosetests python/dart/test/accounting
+
 install:
   # install docker version DOCKER_VERSION
   - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine=${DOCKER_VERSION}
@@ -42,20 +47,17 @@ install:
   - sudo /etc/init.d/postgresql stop
   # Build docker containers needed to run unit-tests against
   - docker-compose up -d --build
+  - docker-compose logs web
 
 before_script:
   # try to create the DB tables until you succeed.  
-  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 2; done
+  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; docker-compose logs web; docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 5; done
 
   # try to populate the engine table until you succeed.  
   - STOP=1; while [ $STOP -gt 0 ]; do docker-compose exec web python /tmp/src/python/dart/engine/no_op/add_engine.py; STOP=$?; sleep 2; done
 
 # commands to run tests
 script:
-  # This is an example for tests not running in a docker-container.
-  - nosetests tools/vagrant 
-  - docker-compose ps 
-
   # Running unit-tests against the containers
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/schema/ "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/graph "test_*.py"

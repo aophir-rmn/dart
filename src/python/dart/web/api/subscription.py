@@ -7,7 +7,7 @@ from jsonpatch import JsonPatch
 from dart.model.subscription import Subscription, SubscriptionState, SubscriptionElementState
 from dart.service.filter import FilterService
 from dart.service.subscription import SubscriptionService, SubscriptionElementService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 
 api_subscription_bp = Blueprint('api_subscription', __name__)
@@ -15,6 +15,7 @@ api_subscription_bp = Blueprint('api_subscription', __name__)
 
 @api_subscription_bp.route('/dataset/<dataset>/subscription', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 def post_subscription(dataset):
     subscription = Subscription.from_dict(request.get_json())
@@ -109,6 +110,7 @@ def subscription_elements(action_id, state, subscription_id, gte_processed=None,
 
 @api_subscription_bp.route('/subscription/<subscription>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 def put_subscription(subscription):
     """ :type subscription: dart.model.subscription.Subscription """
@@ -117,6 +119,7 @@ def put_subscription(subscription):
 
 @api_subscription_bp.route('/subscription/<subscription>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 def patch_subscription(subscription):
     """ :type subscription: dart.model.subscription.Subscription """
@@ -144,6 +147,7 @@ def update_subscription(subscription, updated_subscription):
 
 @api_subscription_bp.route('/subscription/<subscription>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 def delete_subscription(subscription):
     subscription_service().delete_subscription(subscription.id)
