@@ -30,7 +30,7 @@ def engine_schema():
             'tags': tag_list_schema(),
         },
         'additionalProperties': False,
-        'required': ['name']
+        'required': ['name', 'user_id']
     })
 
 

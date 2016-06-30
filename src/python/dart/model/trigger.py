@@ -43,7 +43,7 @@ class Trigger(BaseModel):
 @dictable
 class TriggerData(BaseModel):
     def __init__(self, name, trigger_type_name, workflow_ids=None, args=None, state=TriggerState.INACTIVE,
-                 extra_data=None, tags=None):
+                 extra_data=None, tags=None, user_id='anonymous'):
         """
         :type name: str
         :type trigger_type_name: str
@@ -60,3 +60,4 @@ class TriggerData(BaseModel):
         self.args = args
         self.state = state
         self.extra_data = extra_data
+        self.user_id = user_id

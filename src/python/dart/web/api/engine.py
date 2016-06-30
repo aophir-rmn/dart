@@ -85,7 +85,9 @@ def find_engines():
 @accounting_track
 @jsonapi
 def put_engine(engine):
-    engine = engine_service().update_engine(engine, Engine.from_dict(request.get_json()))
+    js = request.get_json()
+    engineFromJS = Engine.from_dict(js)
+    engine = engine_service().update_engine(engine, engineFromJS)
     return {'results': engine.to_dict()}
 
 
