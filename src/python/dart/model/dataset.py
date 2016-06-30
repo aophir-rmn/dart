@@ -45,7 +45,7 @@ class DatasetData(BaseModel):
     def __init__(self, name, table_name, location, load_type, data_format, columns=None, primary_keys=None,
                  merge_keys=None, sort_keys=None, distribution_keys=None, batch_merge_sort_keys=None,
                  compression=Compression.NONE, partitions=None, hive_compatible_partition_folders=False,
-                 description=None, tags=None):
+                 description=None, tags=None, user_id='anonymous'):
         """
         :type name: str
         :type table_name: str
@@ -80,6 +80,7 @@ class DatasetData(BaseModel):
         self.hive_compatible_partition_folders = hive_compatible_partition_folders
         self.description = description
         self.tags = tags or []
+        self.user_id = user_id
 
 
 @dictable

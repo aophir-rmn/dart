@@ -63,7 +63,7 @@ class ActionData(BaseModel):
                  end_time=None, progress=None, order_idx=None, error_message=None, on_failure=OnFailure.DEACTIVATE,
                  on_failure_email=None, on_success_email=None, engine_name=None, datastore_id=None, workflow_id=None,
                  workflow_instance_id=None, workflow_action_id=None, first_in_workflow=False, last_in_workflow=False,
-                 ecs_task_arn=None, extra_data=None, tags=None):
+                 ecs_task_arn=None, extra_data=None, tags=None, user_id='anonymous'):
         """
         :type name: str
         :type action_type_name: str
@@ -112,3 +112,4 @@ class ActionData(BaseModel):
         self.ecs_task_arn = ecs_task_arn
         self.extra_data = extra_data
         self.tags = tags or []
+        self.user_id = user_id

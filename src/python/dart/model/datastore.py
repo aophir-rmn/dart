@@ -33,7 +33,7 @@ class DatastoreState(object):
 class DatastoreData(BaseModel):
     def __init__(self, name, engine_name=None, workflow_datastore_id=None, host=None, port=None, connection_url=None,
                  s3_artifacts_path=None, s3_logs_path=None, state=DatastoreState.INACTIVE, concurrency=1, args=None,
-                 extra_data=None, tags=None):
+                 extra_data=None, tags=None, user_id='anonymous'):
         """
         :type name: str
         :type engine_name: str
@@ -62,3 +62,4 @@ class DatastoreData(BaseModel):
         self.args = args
         self.extra_data = extra_data
         self.tags = tags or []
+        self.user_id = user_id
