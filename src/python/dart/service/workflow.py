@@ -200,7 +200,7 @@ class WorkflowService(object):
         while True:
             # Find all workflow instances
             workflow_instances = self.find_workflow_instances(workflow_id, 20, offset)
-            if workflow_instances is None:
+            if not workflow_instances:
                 break
             # Iterate and delete all actions in each workflow instance
             for workflow_instance in workflow_instances:
