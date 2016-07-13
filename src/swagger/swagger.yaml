@@ -1,0 +1,2864 @@
+#
+# TODO:
+# - filters (specified as strings now)
+#
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Dart API"
+paths:
+  /action:
+    get:
+      summary: "returns the actions matching the filters or all actions if no filters are specified"
+      tags:
+        - "action"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "limit"
+          type: "integer"
+          in: "query"
+        - name: "offset"
+          type: "integer"
+          in: "query"
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+        - name: "order_by"
+          type: string
+          in: query
+          required: false
+        - name: "datastore_id"
+          type: "string"
+          in: "query"
+        - name: "workflow_id"
+          type: "string"
+          in: "query"
+      responses:
+        "200":
+          description: "returns the actions matching the filters or all actions if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Action"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /action/{action_id}:
+    parameters:
+      - name: "action_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "return the action"
+      tags:
+        - "action"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: returns the action
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Action"
+    put:
+      summary: "update the action"
+      tags:
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "action"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Action"
+      responses:
+        "200":
+          description: returns the action
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Action"
+    patch:
+      summary: "patch the action using JSON Patch"
+      tags:
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "patch"
+          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
+          in: "body"
+          required: true
+          schema:
+            $ref: '#/definitions/JSONPatch'
+      responses:
+        "200":
+          description: returns the action
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Action"
+    delete:
+      summary: "delete the action"
+      tags:
+        - "action"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /action/{action_id}/subscription/elements:
+    get:
+      summary: "get the subscription elements for an action"
+      tags:
+        - "action"
+        - "subscription"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "action_id"
+          type: "string"
+          in: "path"
+          required: true
+      responses:
+        "200":
+          description: "the subscription elements"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  type: object
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+        "400":
+          description: "if the action doesn't have a subscription"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /dataset:
+    get:
+      summary: "returns the datasets matching the filters or all datasets if no filters are specified"
+      tags:
+        - "dataset"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "limit"
+          type: "integer"
+          in: "query"
+        - name: "offset"
+          type: "integer"
+          in: "query"
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "returns the datasets matching the filters or all datasets if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Dataset"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+    post:
+      summary: "create a dataset"
+      tags:
+        - "dataset"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "dataset"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Dataset"
+      responses:
+        "200":
+          description: returns the created Dataset
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Dataset"
+  /dataset/guess:
+    get:
+      summary: "best guess of the dataset"
+      tags:
+        - "dataset"
+      produces:
+        - "application/json"
+      parameters:
+        - name: s3_path
+          in: query
+          type: string
+          required: true
+        - name: max_lines
+          in: query
+          type: integer
+          required: true
+      responses:
+        "200":
+          description: returns the dataset
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Dataset"
+  /dataset/{dataset_id}:
+    parameters:
+      - name: "dataset_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "get a dataset"
+      tags:
+        - "dataset"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: returns the dataset
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Dataset"
+    put:
+      summary: "update a dataset"
+      tags:
+        - "dataset"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "dataset"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Dataset"
+      responses:
+        "200":
+          description: returns the dataset
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Dataset"
+    delete:
+      summary: "delete a dataset"
+      tags:
+        - "dataset"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /dataset/{dataset_id}/subscription:
+    post:
+      summary: "create a subscription to a dataset"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "dataset_id"
+          type: "string"
+          in: "path"
+          required: true
+        - name: "subscription"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Subscription"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /datastore:
+    post:
+      summary: "create a datastore"
+      tags:
+        - "datastore"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "datastore"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Datastore"
+      responses:
+        "200":
+          description: returns the created datastore
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Datastore"
+    get:
+      summary: "find datastores"
+      tags:
+        - "datastore"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "limit"
+          type: "integer"
+          in: "query"
+        - name: "offset"
+          type: "integer"
+          in: "query"
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "returns the datastores matching the filters or all datastores if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Datastore"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /datastore/{datastore_id}:
+    parameters:
+      - name: "datastore_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "return the datastore"
+      tags:
+        - "datastore"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: returns the datastore
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Datastore"
+    put:
+      summary: "update the datastore"
+      tags:
+        - "datastore"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "datastore"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Datastore"
+      responses:
+        "200":
+          description: returns the datastore
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Datastore"
+        "400":
+          description: "datastore is not in a valid state"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    patch:
+      summary: "patch the datastore using JSON Patch"
+      tags:
+        - "datastore"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "patch"
+          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/JSONPatch"
+      responses:
+        "200":
+          description: returns the datastore
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Datastore"
+        "400":
+          description: "datastore is not in a valid state"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    delete:
+      summary: "delete the datastore"
+      tags:
+        - "datastore"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /datastore/{datastore_id}/action:
+    parameters:
+      - name: "datastore_id"
+        type: "string"
+        in: "path"
+        required: true
+    post:
+      summary: "create an action for a datastore"
+      tags:
+        - "datastore"
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "actions"
+          in: "body"
+          required: true
+          schema:
+            # TODO: method also accepts a single action
+            type: array
+            items:
+              $ref: "#/definitions/Action"
+      responses:
+        "200":
+          description: "the created actions"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Action"
+  /datastore/{datastore_id}/workflow:
+    parameters:
+      - name: "datastore_id"
+        type: "string"
+        in: "path"
+        required: true
+    post:
+      summary: "create a workflow associated with the datastore"
+      tags:
+        - "datastore"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "workflow"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Workflow"
+      responses:
+        "200":
+          description: returns the created Workflow
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Workflow"
+  /engine:
+    get:
+      summary: "find engines"
+      tags:
+        - "engine"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "returns the engines matching the filters or all engines if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Engine"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+    post:
+      summary: "create an engine"
+      tags:
+        - "engine"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "engine"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Engine"
+      responses:
+        "200":
+          description: "the engine"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Engine"
+  /engine/{engine_id}:
+    parameters:
+      - name: "engine_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "get an engine instance"
+      tags:
+        - "engine"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the engine"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Engine"
+    put:
+      summary: "update an engine"
+      tags:
+        - "engine"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "engine"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Engine"
+      responses:
+        "200":
+          description: "the engine"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Engine"
+    delete:
+      summary: "delete an engine"
+      tags:
+        - "engine"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /engine/{engine_id}/subgraph_definition:
+    parameters:
+      - name: "engine_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "return the subgraph definition for the engine"
+      tags:
+        - "engine"
+        - "subgraph definition"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the subgraph definition"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/SubGraphDefinition"
+    post:
+      summary: "create the subgraph definition for the engine"
+      tags:
+        - "engine"
+        - "subgraph definition"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "subgraph_definition"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/SubGraphDefinition"
+      responses:
+        "200":
+          description: "the subgraph definition"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/SubGraphDefinition"
+  /engine/action/{action_id}/checkout:
+    put:
+      summary: "Checkout the action"
+      tags:
+        - "engine"
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "action_id"
+          type: "string"
+          in: "path"
+          required: true
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/ActionContext"
+        "400":
+          description: "engine action is not in a valid state"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+        "404":
+          description: "engine or datastore not found"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /engine/action/{action_id}/checkin:
+    put:
+      summary: "Checkin the action"
+      tags:
+        - "engine"
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "action_id"
+          type: "string"
+          in: "path"
+          required: true
+        - name: "action_result"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/ActionResult"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+        "400":
+          description: "engine action is not in a valid state"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+        "404":
+          description: "engine or datastore not found"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /event:
+    post:
+      summary: "create an event"
+      tags:
+        - "event"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "event"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Event"
+      responses:
+        "200":
+          description: returns the event
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Event"
+    get:
+      summary: "find events"
+      tags:
+        - "event"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "limit"
+          type: "integer"
+          in: "query"
+        - name: "offset"
+          type: "integer"
+          in: "query"
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "returns the events matching the filters or all events if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Event"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /event/{event_id}:
+    parameters:
+      - name: "event_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "get an event"
+      tags:
+        - "event"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: returns the event
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Event"
+    put:
+      summary: "update an event"
+      tags:
+        - "event"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "event"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Event"
+      responses:
+        "200":
+          description: returns the event
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Event"
+    patch:
+      summary: "patch update an event"
+      tags:
+        - "event"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "patch"
+          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/JSONPatch"
+      responses:
+        "200":
+          description: returns the event
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Event"
+    delete:
+      summary: "delete an event"
+      tags:
+        - "event"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /graph/entity_identifiers:
+    get:
+      summary: "get the graph entity identifiers"
+      tags:
+        - "graph"
+        - "graph entity identifier"
+      produces:
+        - "application/json"
+      parameters:
+        - name: search
+          in: query
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entity identifiers"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntityIdentifier"
+        "400":
+          description: "error occurred"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /graph/action/{action_id}:
+    get:
+      summary: "get the action graph entities"
+      tags:
+        - "graph"
+        - "action"
+      produces:
+        - "application/json"
+      parameters:
+        - name: action_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/dataset/{dataset_id}:
+    get:
+      summary: "get the dataset graph entities"
+      tags:
+        - "graph"
+        - "dataset"
+      produces:
+        - "application/json"
+      parameters:
+        - name: dataset_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/datastore/{datastore_id}:
+    get:
+      summary: "get the datastore graph entities"
+      tags:
+        - "graph"
+        - "datastore"
+      produces:
+        - "application/json"
+      parameters:
+        - name: datastore_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/event/{event_id}:
+    get:
+      summary: "get the event graph entities"
+      tags:
+        - "graph"
+        - "event"
+      produces:
+        - "application/json"
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/subscription/{subscription_id}:
+    get:
+      summary: "get the subscription graph entities"
+      tags:
+        - "graph"
+        - "subscription"
+      produces:
+        - "application/json"
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/trigger/{trigger_id}:
+    get:
+      summary: "get the trigger graph entities"
+      tags:
+        - "graph"
+        - "trigger"
+      produces:
+        - "application/json"
+      parameters:
+        - name: trigger_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/workflow/{workflow_id}:
+    get:
+      summary: "get the workflow graph entities"
+      tags:
+        - "graph"
+        - "workflow"
+      produces:
+        - "application/json"
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/GraphEntity"
+  /graph/sub_graph:
+    get:
+      summary: "get the sub graphs"
+      tags:
+        - "graph"
+        - "subgraph"
+      produces:
+        - "application/json"
+      parameters:
+        - name: related_type
+          in: query
+          type: string
+        - name: related_id
+          in: query
+          type: string
+        - name: engine_name
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "returns the sub graphs"
+          schema:
+            type: object
+            properties:
+              results:
+                type: object
+                #$ref: "#/definitions/SubGraph"
+        "404":
+          description: "error occurred"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    post:
+      summary: "create a new sub graph"
+      tags:
+        - "graph"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: debug
+          in: query
+          type: boolean
+        - name: graph_entities
+          in: body
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/GraphEntity"
+      responses:
+        "200":
+          description: "returns the graph entities"
+          schema:
+            type: object
+            properties:
+              results:
+                type: object
+                #$ref: "#/definitions/GraphEntity"
+        "400":
+          description: "error occurred"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/engine:
+    get:
+      summary: "get the engine JSON Schema"
+      tags:
+        - "schema"
+        - "engine"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/dataset:
+    get:
+      summary: "get the dataset JSON Schema"
+      tags:
+        - "schema"
+        - "dataset"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/dataset/guess:
+    get:
+      summary: "get the JSON Schema for the dataset guess"
+      tags:
+        - "schema"
+        - "dataset"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/engine/{engine_name}/datastore:
+    get:
+      summary: "get the datastore JSON Schema for the named engine"
+      tags:
+        - "schema"
+        - "engine"
+        - "datastore"
+      produces:
+        - "application/json"
+      parameters:
+        - name: engine_name
+          in: path
+          type: string
+          required: true
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+        "400":
+          description: "if engine is unknown"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/datastore:
+    get:
+      summary: "get the datastore JSON Schema"
+      tags:
+        - "schema"
+        - "datastore"
+      produces:
+        - "application/json"
+      parameters:
+        - name: datastore_id
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+        "404":
+          description: "if the optionally specified datastore could not be found"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/action:
+    get:
+      summary: "get the action JSON Schema"
+      tags:
+        - "schema"
+        - "action"
+      produces:
+        - "application/json"
+      parameters:
+        - name: action_id
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+        "404":
+          description: "if the optionally specified action could not be found"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/action/{action_name}:
+    get:
+      summary: "get the action JSON Schema by action name"
+      tags:
+        - "schema"
+        - "action"
+      produces:
+        - "application/json"
+      parameters:
+        - name: action_name
+          in: path
+          type: string
+          required: true
+        - name: action_id
+          in: query
+          type: string
+        - name: datastore_id
+          in: query
+          type: string
+        - name: workflow_id
+          in: query
+          type: string
+        - name: engine_name
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+        "400":
+          description: "if the optionally specified action is unknown"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+        "404":
+          description: "if the optionally specified action could not be found"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/workflow:
+    get:
+      summary: "get the workflow JSON Schema"
+      tags:
+        - "schema"
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/workflow/instance:
+    get:
+      summary: "get the workflow instance JSON Schema"
+      tags:
+        - "schema"
+        - "workflow instance"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/trigger_type:
+    get:
+      summary: "get the trigger type JSON schema"
+      tags:
+        - "schema"
+        - "trigger type"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/trigger:
+    get:
+      summary: "get the trigger JSON schema"
+      tags:
+        - "schema"
+        - "trigger"
+      produces:
+        - "application/json"
+      parameters:
+        - name: trigger_type_name
+          in: query
+          type: string
+        - name: trigger_id
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+        "400":
+          description: "if the optionally specified trigger is unknown"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /schema/event:
+    get:
+      summary: "get the event JSON schema"
+      tags:
+        - "schema"
+        - "event"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /schema/subscription:
+    get:
+      summary: "get the subscription JSON schema"
+      tags:
+        - "schema"
+        - "subscription"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns the JSON Schema"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/JSONSchema"
+  /subgraph_definition/{subgraph_definition_id}:
+    parameters:
+      - name: "subgraph_definition_id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "get the subgraph definition"
+      tags:
+        - "subgraph definition"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the subgraph definition"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/SubGraphDefinition"
+    delete:
+      summary: "delete the subgraph definition"
+      tags:
+        - "subgraph definition"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /subscription:
+    get:
+      summary: "find subscriptions"
+      tags:
+        - "subscription"
+      produces:
+        - "application/json"
+      parameters:
+        - name: limit
+          in: query
+          type: integer
+        - name: offset
+          in: query
+          type: integer
+        - name: filters
+          in: query
+          type: string
+      responses:
+        "200":
+          description: "the subscriptions"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Subscription"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /subscription/{subscription_id}:
+    parameters:
+      - name: subscription_id
+        in: path
+        type: string
+        required: true
+    get:
+      summary: "get a subscription"
+      tags:
+        - "subscription"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the subscription"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Subscription"
+    put:
+      summary: "update a subscription"
+      tags:
+        - "subscription"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the subscription"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Subscription"
+        "400":
+          description: "subscription is in an invalid state to update"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    patch:
+      summary: "update a subscription using a JSON Patch"
+      tags:
+        - "subscription"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the subscription"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Subscription"
+        "400":
+          description: "subscription is in an invalid state to update"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    delete:
+      summary: "delete a subscription"
+      tags:
+        - "subscription"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "ok"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /subscription/{subscription_id}/element_stats:
+    get:
+      summary: "get the element statistics for a subscription"
+      tags:
+        - "subscription"
+      produces:
+        - "application/json"
+      parameters:
+        - name: subscription_id
+          in: path
+          type: string
+          required: true
+      responses:
+        "200":
+          description: "the element statistics"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  type: object
+  /subscription/{subscription_id}/elements:
+    get:
+      summary: "get the elements for a subscription"
+      tags:
+        - "subscription"
+      produces:
+        - "application/json"
+      parameters:
+        - name: subscription_id
+          in: path
+          type: string
+          required: true
+        - name: state
+          in: query
+          type: string
+        - name: processed_after_s3_path
+          in: query
+          type: string
+        - name: limit
+          in: query
+          type: integer
+        - name: offset
+          in: query
+          type: integer
+      responses:
+        "200":
+          description: "the subscription elements"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  type: object
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /trigger:
+    post:
+      summary: "create a new trigger"
+      tags:
+        - "trigger"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: trigger
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Trigger"
+      responses:
+        "200":
+          description: "the trigger"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Trigger"
+    get:
+      summary: "find triggers"
+      tags:
+        - "trigger"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+        - name: limit
+          in: query
+          type: integer
+        - name: offset
+          in: query
+          type: integer
+      responses:
+        "200":
+          description: "the triggers"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Trigger"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /trigger/{trigger_id}:
+    parameters:
+      - name: trigger_id
+        in: path
+        type: string
+        required: true
+    get:
+      summary: "get a trigger"
+      tags:
+        - "trigger"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the trigger"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Trigger"
+    put:
+      summary: "update a trigger"
+      tags:
+        - "trigger"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: trigger
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Trigger"
+      responses:
+        "200":
+          description: "the trigger"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Trigger"
+    patch:
+      summary: "patch a trigger"
+      tags:
+        - "trigger"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: patch
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/JSONPatch"
+      responses:
+        "200":
+          description: "the trigger"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Trigger"
+    delete:
+      summary: "delete a trigger"
+      tags:
+        - "trigger"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "ok"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /trigger_type:
+    get:
+      summary: "get trigger types"
+      tags:
+        - "trigger"
+      produces:
+        - "application/json"
+      parameters:
+        - name: limit
+          in: query
+          type: integer
+        - name: offset
+          in: query
+          type: integer
+      responses:
+        "200":
+          description: "the trigger types"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/TriggerType"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /workflow:
+    get:
+      summary: "find workflows, optionally using filters"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "filters"
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "returns the workflows matching the filters or all workflows if no filters are specified."
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Workflow"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /workflow/{workflow_id}:
+    parameters:
+      - name: "workflow_id"
+        description: "the workflow id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "find a workflow by id"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the workflow"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Workflow"
+    put:
+      summary: "update a workflow"
+      tags:
+        - "workflow"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "workflow"
+          description: "the workflow"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Workflow"
+      responses:
+        "200":
+          description: "returns the updated workflow"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Workflow"
+        "400":
+          description: "workflow is in an invalid state to update"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+    patch:
+      summary: "update a workflow using a JSON patch"
+      tags:
+        - "workflow"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "patch"
+          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/JSONPatch"
+      responses:
+        "200":
+          description: "returns the updated workflow"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/Workflow"
+    delete:
+      description: "delete a workflow"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /workflow/{workflow_id}/action:
+    parameters:
+      - name: "workflow_id"
+        description: "the workflow id"
+        type: "string"
+        in: "path"
+        required: true
+    post:
+      summary: "create an action for a workflow"
+      tags:
+        - "workflow"
+        - "action"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "actions"
+          in: "body"
+          required: true
+          schema:
+            # TODO: method also accepts a single action
+            type: array
+            items:
+              $ref: "#/definitions/Action"
+      responses:
+        "200":
+          description: "the created actions"
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Action"
+  /workflow/{workflow_id}/do-manual-trigger:
+    parameters:
+      - name: "workflow_id"
+        description: "the workflow id"
+        type: "string"
+        in: "path"
+        required: true
+    post:
+      summary: "manually trigger a workflow"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+        "400":
+          description: "failed to trigger the workflow"
+          schema:
+            $ref: "#/definitions/ErrorResult"
+  /workflow/{workflow_id}/instance:
+    parameters:
+      -
+        name: "workflow_id"
+        description: "the workflow id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      summary: "find the instances for the specified workflow"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the workflow instance"
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/WorkflowInstance"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+    delete:
+      summary: "delete workflow instances associated with this workflow"
+      tags:
+        - "workflow"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "returns a success message"
+          schema:
+            $ref: "#/definitions/OKResult"
+  /workflow/instance:
+    get:
+      tags:
+        - "workflow instance"
+      produces:
+        - "application/json"
+      parameters:
+        - name: filters
+          type: string
+          in: query
+          required: false
+      responses:
+        "200":
+          description: "find workflow instances"
+          schema:
+            type: object
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/WorkflowInstance"
+              limit:
+                type: "integer"
+              offset:
+                type: "integer"
+              total:
+                type: "integer"
+  /workflow/instance/{workflow_instance_id}:
+    parameters:
+      -
+        name: "workflow_instance_id"
+        description: "the workflow instance id"
+        type: "string"
+        in: "path"
+        required: true
+    get:
+      tags:
+        - "workflow instance"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "the workflow instance"
+          schema:
+            type: object
+            properties:
+              results:
+                $ref: "#/definitions/WorkflowInstance"
+#
+# Definitions are auto-generated by dart.tool.export_swagger_definitions
+# Do not manually edit!
+#
+definitions:
+  Action:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/ActionData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  ActionContext:
+    type: object
+  ActionData:
+    additionalProperties: false
+    properties:
+      action_type_name:
+        type: string
+      args:
+        additionalProperties: false
+        properties: {}
+        type: object
+      datastore_id:
+        type: string
+      ecs_task_arn:
+        type: string
+      end_time:
+        type: string
+      engine_name:
+        type: string
+      error_message:
+        type: string
+        x-schema-form:
+          type: textarea
+      extra_data:
+        type: object
+      first_in_workflow:
+        default: false
+        type: boolean
+      last_in_workflow:
+        default: false
+        type: boolean
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      on_failure:
+        default: DEACTIVATE
+        description: applies to the workflow if this is a workflow action template,
+          otherwise the datastore
+        enum:
+        - DEACTIVATE
+        - CONTINUE
+        type: string
+      on_failure_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      on_success_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      order_idx:
+        minimum: 0.0
+        type: number
+      progress:
+        type: number
+      queued_time:
+        type: string
+      start_time:
+        type: string
+      state:
+        default: HAS_NEVER_RUN
+        enum:
+        - HAS_NEVER_RUN
+        - QUEUED
+        - PENDING
+        - RUNNING
+        - FINISHING
+        - COMPLETED
+        - FAILED
+        - TEMPLATE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+      workflow_action_id:
+        type: string
+      workflow_id:
+        type: string
+      workflow_instance_id:
+        type: string
+    required:
+    - action_type_name
+    - engine_name
+    - name
+    type: object
+  ActionResult:
+    type: object
+  ActionType:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      params_json_schema:
+        type: object
+    type: object
+  Column:
+    additionalProperties: false
+    properties:
+      data_type:
+        enum:
+        - STRING
+        - VARCHAR
+        - BIGINT
+        - INT
+        - SMALLINT
+        - DOUBLE
+        - FLOAT
+        - NUMERIC
+        - BOOLEAN
+        - DATE
+        - DATETIME
+        - TIMESTAMP
+        type: string
+      date_pattern:
+        type: string
+      description:
+        type: string
+      is_nullable:
+        default: true
+        type: boolean
+      length:
+        minimum: 1
+        type: integer
+      name:
+        maxLength: 255
+        pattern: ^[a-zA-Z0-9_]+$
+        type: string
+      path:
+        type: string
+      precision:
+        type: integer
+      scale:
+        type: integer
+    required:
+    - name
+    - data_type
+    type: object
+  DataFormat:
+    additionalProperties: false
+    properties:
+      delimited_by:
+        type: string
+      escaped_by:
+        type: string
+      file_format:
+        enum:
+        - TEXTFILE
+        - PARQUET
+        - RCFILE
+        type: string
+      null_string:
+        type: string
+      num_header_rows:
+        default: 0
+        minimum: 0
+        type: integer
+      quoted_by:
+        type: string
+      regex_input:
+        type: string
+      regex_output:
+        type: string
+      row_format:
+        enum:
+        - DELIMITED
+        - JSON
+        - REGEX
+        - NONE
+        type: string
+    required:
+    - file_format
+    - row_format
+    type: object
+  Dataset:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/DatasetData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  DatasetData:
+    additionalProperties: false
+    properties:
+      batch_merge_sort_keys:
+        default: []
+        items:
+          maxLength: 127
+          pattern: ^[a-zA-Z0-9_]+ (ASC|DESC)$
+          type: string
+        type: array
+        x-schema-form:
+          title: '{{ value || ''upsert_sort_key '' + $index }}'
+          type: tabarray
+      columns:
+        items:
+          $ref: '#/definitions/Column'
+        minItems: 1
+        type: array
+        x-schema-form:
+          title: '{{ value.name || ''column '' + $index }}'
+          type: tabarray
+      compression:
+        enum:
+        - NONE
+        - BZ2
+        - GZIP
+        - SNAPPY
+        type: string
+      data_format:
+        $ref: '#/definitions/DataFormat'
+      description:
+        type: string
+      distribution_keys:
+        default: []
+        items:
+          maxLength: 127
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        type: array
+        x-schema-form:
+          title: '{{ value || ''distribution_key '' + $index }}'
+          type: tabarray
+      hive_compatible_partition_folders:
+        default: false
+        type: boolean
+      load_type:
+        enum:
+        - INSERT
+        - MERGE
+        - RELOAD_ALL
+        - RELOAD_LAST
+        type: string
+      location:
+        pattern: ^s3://.+$
+        type: string
+      merge_keys:
+        default: []
+        items:
+          maxLength: 127
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        type: array
+        x-schema-form:
+          title: '{{ value || ''merge_key '' + $index }}'
+          type: tabarray
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      partitions:
+        items:
+          $ref: '#/definitions/Column'
+        minItems: 0
+        type:
+        - array
+        - 'null'
+        x-schema-form:
+          title: '{{ value.name || ''column '' + $index }}'
+          type: tabarray
+      primary_keys:
+        default: []
+        items:
+          maxLength: 127
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        type: array
+        x-schema-form:
+          title: '{{ value || ''primary_key '' + $index }}'
+          type: tabarray
+      sort_keys:
+        default: []
+        items:
+          maxLength: 127
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        type: array
+        x-schema-form:
+          title: '{{ value || ''sort_key '' + $index }}'
+          type: tabarray
+      table_name:
+        minLength: 1
+        pattern: ^[a-zA-Z0-9_]+$
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    - table_name
+    - location
+    - load_type
+    - data_format
+    - columns
+    - compression
+    type: object
+  Datastore:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/DatastoreData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  DatastoreData:
+    additionalProperties: false
+    properties:
+      args:
+        type: 'null'
+      concurrency:
+        default: 1
+        maximum: 10
+        minimum: 1
+        type: integer
+      connection_url:
+        type: string
+      engine_name:
+        pattern: ^[a-zA-Z0-9_]+$
+        type: string
+      extra_data:
+        type: object
+      host:
+        type: string
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      port:
+        type: integer
+      s3_artifacts_path:
+        type: string
+      s3_logs_path:
+        type: string
+      state:
+        default: INACTIVE
+        enum:
+        - INACTIVE
+        - ACTIVE
+        - DONE
+        - TEMPLATE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+      workflow_datastore_id:
+        type: string
+    required:
+    - name
+    - engine_name
+    type: object
+  Engine:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/EngineData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  EngineData:
+    additionalProperties: false
+    properties:
+      description:
+        type: string
+      ecs_task_definition:
+        type: object
+      ecs_task_definition_arn:
+        type: string
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      options_json_schema:
+        type: object
+      supported_action_types:
+        items:
+          $ref: '#/definitions/ActionType'
+        minItems: 1
+        type: array
+        x-schema-form:
+          title: '{{ value.name }}'
+          type: tabarray
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    type: object
+  ErrorResult:
+    properties:
+      error_message:
+        type: string
+      results:
+        enum:
+        - ERROR
+        type: string
+    type: object
+  Event:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/EventData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  EventData:
+    additionalProperties: false
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      state:
+        default: INACTIVE
+        enum:
+        - ACTIVE
+        - INACTIVE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    type: object
+  GraphEntity:
+    properties:
+      entity_id:
+        type: string
+      entity_type:
+        type: string
+      name:
+        type: string
+      related_id:
+        type: string
+      related_is_a:
+        type: string
+      related_type:
+        type: string
+      state:
+        type: string
+      sub_type:
+        type: string
+    type: object
+  GraphEntityIdentifier:
+    properties:
+      entity_id:
+        type: string
+      entity_type:
+        type: string
+      name:
+        type: string
+    type: object
+  JSONPatch:
+    description: JSON Patch object as defined by http://json.schemastore.org/json-patch
+    type: object
+  JSONSchema:
+    description: JSON Schema object as defined by http://json-schema.org/schema
+    type: object
+  OKResult:
+    properties:
+      results:
+        enum:
+        - OK
+        type: string
+    type: object
+  SubGraph:
+    type: object
+  SubGraphDefinition:
+    type: object
+  Subscription:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/SubscriptionData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  SubscriptionData:
+    additionalProperties: false
+    properties:
+      dataset_id:
+        type: string
+      failed_time:
+        type: string
+      generating_time:
+        type: string
+      initial_active_time:
+        type: string
+      message_id:
+        type: string
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      on_failure_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      on_success_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      queued_time:
+        type: string
+      s3_path_end_prefix_exclusive:
+        description: The exclusive s3 path end prefix
+        pattern: ^s3://.+$
+        type: string
+      s3_path_regex_filter:
+        description: A regex pattern the s3 path must match
+        type: string
+      s3_path_start_prefix_inclusive:
+        description: The inclusive s3 path start prefix
+        pattern: ^s3://.+$
+        type: string
+      state:
+        default: INACTIVE
+        enum:
+        - INACTIVE
+        - QUEUED
+        - GENERATING
+        - FAILED
+        - ACTIVE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    - dataset_id
+    type: object
+  Trigger:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/TriggerData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  TriggerData:
+    additionalProperties: false
+    properties:
+      args:
+        type: object
+      extra_data:
+        type: object
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      state:
+        default: INACTIVE
+        enum:
+        - ACTIVE
+        - INACTIVE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+      trigger_type_name:
+        type: string
+      workflow_ids:
+        default: []
+        items:
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''workflow_id '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    - trigger_type_name
+    - args
+    type: object
+  TriggerType:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      params_json_schema:
+        type: object
+    type: object
+  Workflow:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/WorkflowData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  WorkflowData:
+    additionalProperties: false
+    properties:
+      concurrency:
+        default: 1
+        maximum: 10
+        minimum: 1
+        type: integer
+      datastore_id:
+        type: string
+      engine_name:
+        type: string
+      name:
+        maxLength: 50
+        pattern: ^[a-zA-Z0-9_-]+$
+        type: string
+      on_failure:
+        default: DEACTIVATE
+        description: applies to the datastore
+        enum:
+        - DEACTIVATE
+        - CONTINUE
+        type: string
+      on_failure_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      on_started_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      on_success_email:
+        default: []
+        items:
+          pattern: ^\S+@\S+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''email '' + $index }}'
+          type: tabarray
+      state:
+        default: INACTIVE
+        enum:
+        - ACTIVE
+        - INACTIVE
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+    required:
+    - name
+    - datastore_id
+    type: object
+  WorkflowInstance:
+    additionalProperties: false
+    properties:
+      created:
+        type: string
+      data:
+        $ref: '#/definitions/WorkflowInstanceData'
+      id:
+        type: string
+      updated:
+        type: string
+      version_id:
+        type: integer
+    required:
+    - data
+    type: object
+  WorkflowInstanceData:
+    additionalProperties: false
+    properties:
+      datastore_id:
+        type: string
+      end_time:
+        type: string
+      engine_name:
+        type: string
+      error_message:
+        type: string
+        x-schema-form:
+          type: textarea
+      queued_time:
+        type: string
+      start_time:
+        type: string
+      state:
+        default: QUEUED
+        enum:
+        - QUEUED
+        - RUNNING
+        - COMPLETED
+        - FAILED
+        type: string
+      tags:
+        default: []
+        items:
+          maxLength: 30
+          pattern: ^[a-zA-Z0-9_]+$
+          type: string
+        minItems: 0
+        type: array
+        x-schema-form:
+          title: '{{ value || ''tag '' + $index }}'
+          type: tabarray
+      trigger_id:
+        type: string
+      trigger_type:
+        type: string
+      workflow_id:
+        type: string
+    type: object
+
