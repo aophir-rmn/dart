@@ -1,34 +1,39 @@
-#
-# TODO:
-# - filters (specified as strings now)
-#
 swagger: "2.0"
 info:
-  version: "1.0.0"
-  title: "Dart API"
+  version: "1.0.dev"
+  title: "Dart REST API"
+  description: |
+    *DRAFT*
+
+    Dart, short for "data mart à la carte", is a self-service data workflow solution that
+    facilitates the creation, transformation, and movement of data using data engines,
+    primarily in the context of AWS. Put another way, it is a system to facilitate moving
+    data in and out of datastores like S3, RDS, Redshift, EMR, DynamoDB, something custom, etc.
+
+    This document describes the Dart REST API using the Swagger 2.0 format. Portions of
+    the API are not fully documented due to limitations of the Swagger 2.0 specification
+    and the complexity of this API. These APIs will be marked with *NOTE* and will provide
+    more details in the descriptive text.
+  contact:
+    url: https://github.com/RetailMeNotSandbox/dart
+  license:
+    name: MIT
+    url: https://raw.githubusercontent.com/RetailMeNotSandbox/dart/master/LICENSE.txt
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
 paths:
   /action:
     get:
       summary: "returns the actions matching the filters or all actions if no filters are specified"
       tags:
         - "action"
-      produces:
-        - "application/json"
       parameters:
-        - name: "limit"
-          type: "integer"
-          in: "query"
-        - name: "offset"
-          type: "integer"
-          in: "query"
-        - name: "filters"
-          type: string
-          in: query
-          required: false
-        - name: "order_by"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
+        - $ref: '#/parameters/orderByParam'
         - name: "datastore_id"
           type: "string"
           in: "query"
@@ -61,8 +66,6 @@ paths:
       summary: "return the action"
       tags:
         - "action"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: returns the action
@@ -75,10 +78,6 @@ paths:
       summary: "update the action"
       tags:
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "action"
           in: "body"
@@ -97,17 +96,8 @@ paths:
       summary: "patch the action using JSON Patch"
       tags:
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
-        - name: "patch"
-          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
-          in: "body"
-          required: true
-          schema:
-            $ref: '#/definitions/JSONPatch'
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: returns the action
@@ -120,8 +110,6 @@ paths:
       summary: "delete the action"
       tags:
         - "action"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -133,8 +121,6 @@ paths:
       tags:
         - "action"
         - "subscription"
-      produces:
-        - "application/json"
       parameters:
         - name: "action_id"
           type: "string"
@@ -165,19 +151,10 @@ paths:
       summary: "returns the datasets matching the filters or all datasets if no filters are specified"
       tags:
         - "dataset"
-      produces:
-        - "application/json"
       parameters:
-        - name: "limit"
-          type: "integer"
-          in: "query"
-        - name: "offset"
-          type: "integer"
-          in: "query"
-        - name: "filters"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "returns the datasets matching the filters or all datasets if no filters are specified."
@@ -198,10 +175,6 @@ paths:
       summary: "create a dataset"
       tags:
         - "dataset"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "dataset"
           in: "body"
@@ -221,8 +194,6 @@ paths:
       summary: "best guess of the dataset"
       tags:
         - "dataset"
-      produces:
-        - "application/json"
       parameters:
         - name: s3_path
           in: query
@@ -250,8 +221,6 @@ paths:
       summary: "get a dataset"
       tags:
         - "dataset"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: returns the dataset
@@ -264,10 +233,6 @@ paths:
       summary: "update a dataset"
       tags:
         - "dataset"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "dataset"
           in: "body"
@@ -286,8 +251,6 @@ paths:
       summary: "delete a dataset"
       tags:
         - "dataset"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -296,10 +259,6 @@ paths:
   /dataset/{dataset_id}/subscription:
     post:
       summary: "create a subscription to a dataset"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "dataset_id"
           type: "string"
@@ -320,10 +279,6 @@ paths:
       summary: "create a datastore"
       tags:
         - "datastore"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "datastore"
           in: "body"
@@ -342,19 +297,10 @@ paths:
       summary: "find datastores"
       tags:
         - "datastore"
-      produces:
-        - "application/json"
       parameters:
-        - name: "limit"
-          type: "integer"
-          in: "query"
-        - name: "offset"
-          type: "integer"
-          in: "query"
-        - name: "filters"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "returns the datastores matching the filters or all datastores if no filters are specified."
@@ -381,8 +327,6 @@ paths:
       summary: "return the datastore"
       tags:
         - "datastore"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: returns the datastore
@@ -395,10 +339,6 @@ paths:
       summary: "update the datastore"
       tags:
         - "datastore"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "datastore"
           in: "body"
@@ -421,17 +361,8 @@ paths:
       summary: "patch the datastore using JSON Patch"
       tags:
         - "datastore"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
-        - name: "patch"
-          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
-          in: "body"
-          required: true
-          schema:
-            $ref: "#/definitions/JSONPatch"
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: returns the datastore
@@ -448,8 +379,6 @@ paths:
       summary: "delete the datastore"
       tags:
         - "datastore"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -466,19 +395,20 @@ paths:
       tags:
         - "datastore"
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "actions"
           in: "body"
           required: true
           schema:
-            # TODO: method also accepts a single action
             type: array
             items:
               $ref: "#/definitions/Action"
+          description: |
+            ~~~~
+            NOTE: This parameter is specified as an array because Swagger 2.0 does
+            not support the oneOf construct. This API also supports passing a single
+            Action object.
+            ~~~~
       responses:
         "200":
           description: "the created actions"
@@ -499,10 +429,6 @@ paths:
       summary: "create a workflow associated with the datastore"
       tags:
         - "datastore"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "workflow"
           in: "body"
@@ -522,13 +448,10 @@ paths:
       summary: "find engines"
       tags:
         - "engine"
-      produces:
-        - "application/json"
       parameters:
-        - name: "filters"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "returns the engines matching the filters or all engines if no filters are specified."
@@ -549,10 +472,6 @@ paths:
       summary: "create an engine"
       tags:
         - "engine"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "engine"
           in: "body"
@@ -577,8 +496,6 @@ paths:
       summary: "get an engine instance"
       tags:
         - "engine"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the engine"
@@ -591,10 +508,6 @@ paths:
       summary: "update an engine"
       tags:
         - "engine"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "engine"
           in: "body"
@@ -613,8 +526,6 @@ paths:
       summary: "delete an engine"
       tags:
         - "engine"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -631,8 +542,6 @@ paths:
       tags:
         - "engine"
         - "subgraph definition"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the subgraph definition"
@@ -646,10 +555,6 @@ paths:
       tags:
         - "engine"
         - "subgraph definition"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "subgraph_definition"
           in: "body"
@@ -670,10 +575,6 @@ paths:
       tags:
         - "engine"
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "action_id"
           type: "string"
@@ -698,10 +599,6 @@ paths:
       tags:
         - "engine"
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "action_id"
           type: "string"
@@ -730,10 +627,6 @@ paths:
       summary: "create an event"
       tags:
         - "event"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "event"
           in: "body"
@@ -752,19 +645,10 @@ paths:
       summary: "find events"
       tags:
         - "event"
-      produces:
-        - "application/json"
       parameters:
-        - name: "limit"
-          type: "integer"
-          in: "query"
-        - name: "offset"
-          type: "integer"
-          in: "query"
-        - name: "filters"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "returns the events matching the filters or all events if no filters are specified."
@@ -791,8 +675,6 @@ paths:
       summary: "get an event"
       tags:
         - "event"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: returns the event
@@ -805,10 +687,6 @@ paths:
       summary: "update an event"
       tags:
         - "event"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "event"
           in: "body"
@@ -827,17 +705,8 @@ paths:
       summary: "patch update an event"
       tags:
         - "event"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
-        - name: "patch"
-          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
-          in: "body"
-          required: true
-          schema:
-            $ref: "#/definitions/JSONPatch"
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: returns the event
@@ -850,8 +719,6 @@ paths:
       summary: "delete an event"
       tags:
         - "event"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -863,8 +730,6 @@ paths:
       tags:
         - "graph"
         - "graph entity identifier"
-      produces:
-        - "application/json"
       parameters:
         - name: search
           in: query
@@ -888,8 +753,6 @@ paths:
       tags:
         - "graph"
         - "action"
-      produces:
-        - "application/json"
       parameters:
         - name: action_id
           in: path
@@ -909,8 +772,6 @@ paths:
       tags:
         - "graph"
         - "dataset"
-      produces:
-        - "application/json"
       parameters:
         - name: dataset_id
           in: path
@@ -930,8 +791,6 @@ paths:
       tags:
         - "graph"
         - "datastore"
-      produces:
-        - "application/json"
       parameters:
         - name: datastore_id
           in: path
@@ -951,8 +810,6 @@ paths:
       tags:
         - "graph"
         - "event"
-      produces:
-        - "application/json"
       parameters:
         - name: event_id
           in: path
@@ -972,8 +829,6 @@ paths:
       tags:
         - "graph"
         - "subscription"
-      produces:
-        - "application/json"
       parameters:
         - name: subscription_id
           in: path
@@ -993,8 +848,6 @@ paths:
       tags:
         - "graph"
         - "trigger"
-      produces:
-        - "application/json"
       parameters:
         - name: trigger_id
           in: path
@@ -1014,8 +867,6 @@ paths:
       tags:
         - "graph"
         - "workflow"
-      produces:
-        - "application/json"
       parameters:
         - name: workflow_id
           in: path
@@ -1035,8 +886,6 @@ paths:
       tags:
         - "graph"
         - "subgraph"
-      produces:
-        - "application/json"
       parameters:
         - name: related_type
           in: query
@@ -1064,10 +913,6 @@ paths:
       summary: "create a new sub graph"
       tags:
         - "graph"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: debug
           in: query
@@ -1098,8 +943,6 @@ paths:
       tags:
         - "schema"
         - "engine"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1114,8 +957,6 @@ paths:
       tags:
         - "schema"
         - "dataset"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1130,8 +971,6 @@ paths:
       tags:
         - "schema"
         - "dataset"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1147,8 +986,6 @@ paths:
         - "schema"
         - "engine"
         - "datastore"
-      produces:
-        - "application/json"
       parameters:
         - name: engine_name
           in: path
@@ -1172,8 +1009,6 @@ paths:
       tags:
         - "schema"
         - "datastore"
-      produces:
-        - "application/json"
       parameters:
         - name: datastore_id
           in: query
@@ -1196,8 +1031,6 @@ paths:
       tags:
         - "schema"
         - "action"
-      produces:
-        - "application/json"
       parameters:
         - name: action_id
           in: query
@@ -1220,8 +1053,6 @@ paths:
       tags:
         - "schema"
         - "action"
-      produces:
-        - "application/json"
       parameters:
         - name: action_name
           in: path
@@ -1261,8 +1092,6 @@ paths:
       tags:
         - "schema"
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1277,8 +1106,6 @@ paths:
       tags:
         - "schema"
         - "workflow instance"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1293,8 +1120,6 @@ paths:
       tags:
         - "schema"
         - "trigger type"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1309,8 +1134,6 @@ paths:
       tags:
         - "schema"
         - "trigger"
-      produces:
-        - "application/json"
       parameters:
         - name: trigger_type_name
           in: query
@@ -1336,8 +1159,6 @@ paths:
       tags:
         - "schema"
         - "event"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1352,8 +1173,6 @@ paths:
       tags:
         - "schema"
         - "subscription"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns the JSON Schema"
@@ -1372,8 +1191,6 @@ paths:
       summary: "get the subgraph definition"
       tags:
         - "subgraph definition"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the subgraph definition"
@@ -1386,8 +1203,6 @@ paths:
       summary: "delete the subgraph definition"
       tags:
         - "subgraph definition"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -1398,18 +1213,10 @@ paths:
       summary: "find subscriptions"
       tags:
         - "subscription"
-      produces:
-        - "application/json"
       parameters:
-        - name: limit
-          in: query
-          type: integer
-        - name: offset
-          in: query
-          type: integer
-        - name: filters
-          in: query
-          type: string
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "the subscriptions"
@@ -1436,8 +1243,6 @@ paths:
       summary: "get a subscription"
       tags:
         - "subscription"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the subscription"
@@ -1450,10 +1255,12 @@ paths:
       summary: "update a subscription"
       tags:
         - "subscription"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
+      parameters:
+        - name: subscription
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Subscription"
       responses:
         "200":
           description: "the subscription"
@@ -1470,10 +1277,8 @@ paths:
       summary: "update a subscription using a JSON Patch"
       tags:
         - "subscription"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
+      parameters:
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: "the subscription"
@@ -1490,8 +1295,6 @@ paths:
       summary: "delete a subscription"
       tags:
         - "subscription"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "ok"
@@ -1502,8 +1305,6 @@ paths:
       summary: "get the element statistics for a subscription"
       tags:
         - "subscription"
-      produces:
-        - "application/json"
       parameters:
         - name: subscription_id
           in: path
@@ -1524,8 +1325,6 @@ paths:
       summary: "get the elements for a subscription"
       tags:
         - "subscription"
-      produces:
-        - "application/json"
       parameters:
         - name: subscription_id
           in: path
@@ -1564,10 +1363,6 @@ paths:
       summary: "create a new trigger"
       tags:
         - "trigger"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: trigger
           in: body
@@ -1586,19 +1381,10 @@ paths:
       summary: "find triggers"
       tags:
         - "trigger"
-      produces:
-        - "application/json"
       parameters:
-        - name: "filters"
-          type: string
-          in: query
-          required: false
-        - name: limit
-          in: query
-          type: integer
-        - name: offset
-          in: query
-          type: integer
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "the triggers"
@@ -1625,8 +1411,6 @@ paths:
       summary: "get a trigger"
       tags:
         - "trigger"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the trigger"
@@ -1639,10 +1423,6 @@ paths:
       summary: "update a trigger"
       tags:
         - "trigger"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: trigger
           in: body
@@ -1661,16 +1441,8 @@ paths:
       summary: "patch a trigger"
       tags:
         - "trigger"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
-        - name: patch
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/JSONPatch"
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: "the trigger"
@@ -1683,8 +1455,6 @@ paths:
       summary: "delete a trigger"
       tags:
         - "trigger"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "ok"
@@ -1695,15 +1465,9 @@ paths:
       summary: "get trigger types"
       tags:
         - "trigger"
-      produces:
-        - "application/json"
       parameters:
-        - name: limit
-          in: query
-          type: integer
-        - name: offset
-          in: query
-          type: integer
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
       responses:
         "200":
           description: "the trigger types"
@@ -1725,13 +1489,10 @@ paths:
       summary: "find workflows, optionally using filters"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       parameters:
-        - name: "filters"
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "returns the workflows matching the filters or all workflows if no filters are specified."
@@ -1759,8 +1520,6 @@ paths:
       summary: "find a workflow by id"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the workflow"
@@ -1773,10 +1532,6 @@ paths:
       summary: "update a workflow"
       tags:
         - "workflow"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "workflow"
           description: "the workflow"
@@ -1800,17 +1555,8 @@ paths:
       summary: "update a workflow using a JSON patch"
       tags:
         - "workflow"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
-        - name: "patch"
-          description: "a json patch object as defined by http://json.schemastore.org/json-patch"
-          in: "body"
-          required: true
-          schema:
-            $ref: "#/definitions/JSONPatch"
+        - $ref: '#/parameters/patchParam'
       responses:
         "200":
           description: "returns the updated workflow"
@@ -1823,8 +1569,6 @@ paths:
       description: "delete a workflow"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -1842,19 +1586,20 @@ paths:
       tags:
         - "workflow"
         - "action"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - name: "actions"
           in: "body"
           required: true
           schema:
-            # TODO: method also accepts a single action
             type: array
             items:
               $ref: "#/definitions/Action"
+          description: |
+            ~~~~
+            NOTE: This parameter is specified as an array because Swagger 2.0 does
+            not support the oneOf construct. This API also supports passing a single
+            Action object.
+            ~~~~
       responses:
         "200":
           description: "the created actions"
@@ -1876,8 +1621,6 @@ paths:
       summary: "manually trigger a workflow"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -1899,8 +1642,6 @@ paths:
       summary: "find the instances for the specified workflow"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the workflow instance"
@@ -1921,8 +1662,6 @@ paths:
       summary: "delete workflow instances associated with this workflow"
       tags:
         - "workflow"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "returns a success message"
@@ -1932,13 +1671,10 @@ paths:
     get:
       tags:
         - "workflow instance"
-      produces:
-        - "application/json"
       parameters:
-        - name: filters
-          type: string
-          in: query
-          required: false
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/offsetParam'
+        - $ref: '#/parameters/filtersParam'
       responses:
         "200":
           description: "find workflow instances"
@@ -1966,8 +1702,6 @@ paths:
     get:
       tags:
         - "workflow instance"
-      produces:
-        - "application/json"
       responses:
         "200":
           description: "the workflow instance"
@@ -1976,10 +1710,53 @@ paths:
             properties:
               results:
                 $ref: "#/definitions/WorkflowInstance"
+parameters:
+  limitParam:
+    name: "limit"
+    type: "integer"
+    in: "query"
+    description: |
+      Specify the maximum number of records that should be returned by this request.
+  offsetParam:
+    name: "offset"
+    type: "integer"
+    in: "query"
+    description: |
+      Specify the starting index for the next chunk of results to be returned by this request.
+  filtersParam:
+    name: filters
+    in: query
+    type: string
+    description: |
+      ~~~~
+      NOTE: This parameter is specified as a string because Swagger 2.0 does
+      not support passing object or array types as query string parameters.
+      ~~~~
+      To use, pass a URL encoded JSON array of Filter objects (as defined in
+      the definitions section).
+  orderByParam:
+    name: "order_by"
+    type: string
+    in: query
+    description: |
+      ~~~~
+      NOTE: This parameter is specified as a string because Swagger 2.0 does
+      not support passing object or array types as query string parameters.
+      ~~~~
+      To use, pass a URL encoded JSON array of OrderBy objects (as defined in
+      the definitions section).
+  patchParam:
+    name: "patch"
+    description: "a JSON Patch object"
+    in: "body"
+    required: true
+    schema:
+      $ref: '#/definitions/JSONPatch'
 #
 # Definitions are auto-generated by dart.tool.export_swagger_definitions
 # Do not manually edit!
 #
+
 definitions:
   Action:
     additionalProperties: false
@@ -2508,6 +2285,26 @@ definitions:
     required:
     - name
     type: object
+  Filter:
+    properties:
+      key:
+        type: string
+      operator:
+        enum:
+        - '='
+        - '>='
+        - '>'
+        - IN
+        - <=
+        - LIKE
+        - <
+        - '!='
+        - NOT_LIKE
+        - '~'
+        type: string
+      value:
+        type: string
+    type: object
   GraphEntity:
     properties:
       entity_id:
@@ -2547,6 +2344,16 @@ definitions:
       results:
         enum:
         - OK
+        type: string
+    type: object
+  OrderBy:
+    properties:
+      direction:
+        enum:
+        - ASC
+        - DESC
+        type: string
+      key:
         type: string
     type: object
   SubGraph:

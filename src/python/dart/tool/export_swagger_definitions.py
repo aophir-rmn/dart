@@ -5,6 +5,7 @@ try:
 except ImportError:
     from yaml import Dumper
 
+from dart.model.query import Operator, Direction
 from dart.schema.action import action_schema
 from dart.schema.dataset import columns_schema, dataset_schema
 from dart.schema.datastore import datastore_schema
@@ -26,11 +27,13 @@ def main():
             'Engine': engine_schema(),
             'ErrorResult': error_result_schema(),
             'Event': event_schema(),
+            'Filter': filter_schema(),
             'GraphEntityIdentifier': graph_entity_identifier_schema(),
             'GraphEntity': graph_entity_schema(),
             'JSONPatch': json_patch_schema(),
             'JSONSchema': json_schema_schema(),
             'OKResult': ok_result_schema(),
+            'OrderBy': order_by_schema(),
             'SubGraph': sub_graph_schema(),
             'SubGraphDefinition': {'type': 'object'}, #subgraph_definition_schema([{'type': 'object'}], [{'type': 'object'}], {'type': 'object'}),
             'Subscription': subscription_schema(),
@@ -62,6 +65,24 @@ def error_result_schema():
                 'enum': ["ERROR"]
             },
             'error_message': {
+                'type': 'string'
+            }
+        }
+    }
+
+
+def filter_schema():
+    return {
+        'type': 'object',
+        'properties': {
+            'key': {
+                'type': 'string'
+            },
+            'operator': {
+                'type': 'string',
+                'enum': [getattr(Operator, attr) for attr in dir(Operator) if not attr.startswith('__')]
+            },
+            'value': {
                 'type': 'string'
             }
         }
@@ -138,6 +159,21 @@ def ok_result_schema():
             'results': {
                 'type': 'string',
                 'enum': ["OK"]
+            }
+        }
+    }
+
+
+def order_by_schema():
+    return {
+        'type': 'object',
+        'properties': {
+            'key': {
+                'type': 'string'
+            },
+            'direction': {
+                'type': 'string',
+                'enum': [getattr(Direction, attr) for attr in dir(Direction) if not attr.startswith('__')]
             }
         }
     }

@@ -285,4 +285,5 @@ elements
 
 ## REST api documentation
 
+See the draft API specification in Swagger 2.0 format at `src/swagger/swagger.yaml`.
 See the source code at `src/python/dart/web/api`.
