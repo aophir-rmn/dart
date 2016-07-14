@@ -1,3 +1,8 @@
+#
+# Usage:
+# - Delete everything following and including "definitions:" from src/swagger/swagger.yaml
+# - python src/python/dart/tool/export_swagger_definitions.py >> src/swagger/swagger.yaml
+#
 import sys
 from yaml import dump
 try:

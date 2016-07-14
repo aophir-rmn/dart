@@ -98,6 +98,7 @@ dart (with a particular event id) in order to trigger dart workflows.
 *feel free to create and use an isolated python virtualenv*
 ```
 pip install -r src/python/requirements.txt
+pip install -e src/python/.
 ```
 
 ###### docker setup
