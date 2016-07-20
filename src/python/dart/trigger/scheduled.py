@@ -19,7 +19,12 @@ scheduled_trigger = TriggerType(
     params_json_schema={
         'type': 'object',
         'properties': {
-            'cron_pattern': {'type': 'string', 'description': 'The CRON pattern for the schedule'},
+            'cron_pattern': {
+                'type': 'string',
+                'description': 'The CRON pattern for the schedule. See <a href=' +
+                               '"http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/ScheduledEvents.html"' +
+                               '>here</a> for correct syntax.'
+            },
         },
         'additionalProperties': False,
         'required': ['cron_pattern'],
