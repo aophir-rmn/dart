@@ -24,6 +24,8 @@ def default_and_validate(model, schema):
 
 
 def base_schema(data_json_schema):
+    data_json_schema['properties']['user_id'] = {'type': 'string', 'pattern': '^[a-zA-Z0-9_-]+$', 'maxLength': 64, 'default': 'unknown', 'readonly': True}
+    data_json_schema['required'].append('user_id')
     return {
         'type': 'object',
         'properties': {
