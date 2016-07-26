@@ -46,14 +46,16 @@ def start_datastore(emr_engine, datastore, action):
 
     cluster = None
     while True:
-        cluster = emr_engine.conn.describe_jobflow(cluster_id)
+        state = emr_engine.conn.describe_cluster(cluster_id).status.state
         # http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/ProcessingCycle.html
-        if cluster.state in ['STARTING', 'BOOTSTRAPPING', 'RUNNING']:
+        # using cluster state since describe_jobflow is deprecated
+        # https://aws.amazon.com/elasticmapreduce/faqs/
+        if state in ['STARTING', 'BOOTSTRAPPING', 'RUNNING']:
             time.sleep(30)
         else:
             break
 
-    if cluster.state not in ['WAITING']:
+    if state not in ['WAITING']:
         raise Exception('cluster_id=%s not in WAITING state, but in state: %s' % (cluster_id, cluster.state))
 
     emr_engine.dart.patch_datastore(
