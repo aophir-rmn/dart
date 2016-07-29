@@ -47,7 +47,6 @@ angular
                                     return response
                                 })
                             },
-                            null,
                             saveFunc
                         )
                     };
