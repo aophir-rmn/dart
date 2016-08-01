@@ -21,7 +21,7 @@ scheduled_trigger = TriggerType(
         'properties': {
             'cron_pattern': {
                 'type': 'string',
-                'description': 'The CRON pattern for the schedule. See <a href=' + \
+                'description': 'The CRON pattern for the schedule. See <a target="_blank" href=' + \
                                '"http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/ScheduledEvents.html"' + \
                                '>here</a> for correct syntax.'
             },
