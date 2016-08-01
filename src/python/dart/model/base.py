@@ -5,6 +5,8 @@ import re
 import datetime
 import dateutil.parser
 
+from dart.util.strings import timedelta_re
+
 
 class BaseModel(object):
     def to_dict(self):
@@ -21,10 +23,10 @@ class BaseModel(object):
 
 
 def to_dict(value):
-    if not value:
-        return value
     if isinstance(value, datetime.datetime):
         return value.isoformat()
+    if isinstance(value, datetime.timedelta):
+        return str(value).split('.')[0] if value.microseconds else str(value)
     if isinstance(value, datetime.date):
         return value.isoformat()
     if isinstance(value, dict):
@@ -51,6 +53,11 @@ def decode_from_dict(field_typestr, value):
 
     if field_typestr == 'datetime.datetime':
         return dateutil.parser.parse(value)
+    if field_typestr == 'datetime.timedelta':
+        match = timedelta_re.match(value).groupdict()
+        for k, v in match.items():
+            match[k] = int(v) if v is not None else 0
+        return datetime.timedelta(**match)
     if field_typestr == 'datetime.date':
         return dateutil.parser.parse(value).date()
     if field_typestr.startswith('dict'):
