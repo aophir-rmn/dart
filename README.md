@@ -98,6 +98,7 @@ dart (with a particular event id) in order to trigger dart workflows.
 *feel free to create and use an isolated python virtualenv*
 ```
 pip install -r src/python/requirements.txt
+pip install -e src/python/.
 ```
 
 ###### docker setup
@@ -285,4 +286,5 @@ elements
 
 ## REST api documentation
 
+See the draft API specification in Swagger 2.0 format at `src/swagger/swagger.yaml`.
 See the source code at `src/python/dart/web/api`.
