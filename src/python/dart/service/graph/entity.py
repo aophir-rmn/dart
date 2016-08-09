@@ -1,7 +1,6 @@
 # coding=utf-8
 from collections import defaultdict
 import json
-import logging
 
 from sqlalchemy import text
 
@@ -14,7 +13,6 @@ from dart.model.event import Event
 from dart.model.graph import GraphEntity, Graph, Node, Edge, Relationship, GraphEntityIdentifier, SubGraph, EntityType, \
     SubGraphDefinition
 from dart.model.orm import SubGraphDefinitionDao
-from dart.model.query import Filter, Operator
 from dart.model.subscription import Subscription
 from dart.model.trigger import Trigger
 from dart.model.workflow import Workflow
@@ -23,9 +21,6 @@ from dart.service.graph.sql_misc import ENTITY_IDENTIFIER_SQL, DATASTORE_ONE_OFF
 from dart.service.graph.sub_graph import get_static_subgraphs_by_engine_name, \
     get_static_subgraphs_by_engine_name_all_engines_related_none
 from dart.util.rand import random_id
-
-
-_logger = logging.getLogger(__name__)
 
 
 @injectable
@@ -220,11 +215,11 @@ class GraphEntityService(object):
                 name = 'workflow_instance'
                 if wfi_state == 'RUNNING' and 'workflow_instance' + wfi_id not in visited_nodes:
                     actions = self._action_service.find_actions(workflow_instance_id=wfi_id)
-                    if None not in [a.data.eta for a in actions]:
+                    if None not in [a.data.avg_runtime for a in actions]:
                         wfi_progress = 0
                         wf_runtime = 0
                         for a in actions:
-                            a_runtime = a.data.eta.total_seconds()
+                            a_runtime = a.data.avg_runtime.total_seconds()
                             wf_runtime += a_runtime
                             if a.data.state == ActionState.COMPLETED or a.data.state == ActionState.FAILED:
                                 wfi_progress += a_runtime

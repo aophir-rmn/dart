@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import logging
 
 from sqlalchemy import Float, func, desc, not_, or_
 from sqlalchemy.sql.expression import nullslast
@@ -10,14 +9,11 @@ from dart.model.action import ActionState, ActionType, Action
 from dart.model.engine import Engine
 from dart.model.exception import DartValidationException
 from dart.model.orm import ActionDao, DatastoreDao
-from dart.model.query import Direction, Filter, Operator, OrderBy
+from dart.model.query import Direction, OrderBy
 from dart.schema.action import action_schema
 from dart.schema.base import default_and_validate
 from dart.service.patcher import patch_difference, retry_stale_data
 from dart.util.rand import random_id
-
-
-_logger = logging.getLogger(__name__)
 
 
 @injectable
@@ -209,18 +205,17 @@ class ActionService(object):
 
         return query
 
-    def update_wf_action_eta(self, action_instance, conditional=None):
+    def update_action_avg_runtime(self, action_instance, conditional=None):
         """ :type action_instance: dart.model.action.Action """
         if action_instance.data.workflow_action_id is None:
             return
         action = self.get_action(action_instance.data.workflow_action_id)
         source_action = action.copy()
-        if action.data.eta is None:
-            action.data.eta = timedelta()
-            action.data.num_completed = 0
+        if action.data.avg_runtime is None:
+            action.data.avg_runtime = timedelta()
         runtime = action_instance.data.end_time - action_instance.data.start_time
-        action.data.eta = ((action.data.eta * action.data.num_completed) + runtime) / (action.data.num_completed + 1)
-        action.data.num_completed += 1
+        action.data.avg_runtime = ((action.data.avg_runtime * action.data.completed_runs) + runtime) / (action.data.completed_runs + 1)
+        action.data.completed_runs += 1
         return patch_difference(ActionDao, source_action, action, True, conditional)
 
     def update_action_state(self, action, state, error_message, conditional=None):
@@ -237,7 +232,7 @@ class ActionService(object):
         elif state == ActionState.COMPLETED:
             action.data.end_time = datetime.now()
             action.data.progress = 1
-            self.update_wf_action_eta(action)
+            self.update_action_avg_runtime(action)
 
         return patch_difference(ActionDao, source_action, action, True, conditional)
 

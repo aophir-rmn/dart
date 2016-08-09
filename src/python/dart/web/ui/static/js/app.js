@@ -25,7 +25,8 @@ var dartApp = angular.module(
     ]
 );
 
-dartApp.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
+
+dartApp.config(['$stateProvider', '$urlRouterProvider', 'schemaFormProvider', function($stateProvider, $urlRouterProvider, schemaFormProvider) {
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
     if (!String.prototype.startsWith) {
@@ -36,6 +37,12 @@ dartApp.config(['$stateProvider', '$urlRouterProvider', function($stateProvider,
     }
 
     $urlRouterProvider.otherwise('/dashboard');
+
+    // hide completed_runs from action form since it isn't relevant to the user
+    schemaFormProvider.postProcess(function(form) {
+        _.remove(form, {title: 'completed_runs'});
+        return form;
+    });
 
     $stateProvider
         .state('app', {
