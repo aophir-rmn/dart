@@ -2,7 +2,7 @@ FROM ubuntu:15.04
 MAINTAINER datawarehouse <aus-eng-data-warehouse@rmn.com>
 
 RUN apt-get update
-RUN apt-get install -y python-dev python-pip libpq-dev
+RUN apt-get install -y python-dev python-pip libpq-dev vim curl mlocate
 
 RUN apt-get install -y wget
 
@@ -32,6 +32,8 @@ ADD src/python /src/python
 RUN mkdir -p /mnt/docker-volumes/dart-web-static
 RUN cp -rp /src/python/dart/web/ui/dist/* /mnt/docker-volumes/dart-web-static/
 VOLUME /mnt/docker-volumes
+
+RUN updatedb # index all file for a quick search with 'locate'
 
 WORKDIR /src/python/dart/web
 

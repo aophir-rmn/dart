@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, session
 from dart.web.api.entity_lookup import check_login
 
 index_bp = Blueprint('index', __name__)

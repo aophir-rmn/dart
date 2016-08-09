@@ -18,7 +18,8 @@ login_manager = LoginManager()
 @login_manager.unauthorized_handler
 def get_login():
     auth = current_app.auth_class(request)
-    return auth.handle_login_request()
+    ret =  auth.handle_login_request()
+    return ret
 
 @auth_bp.route('/login', methods=['POST'])
 def post_login():
@@ -50,7 +51,6 @@ def load_user(user_id):
     user.is_authenticated = (user.is_authenticated and user.session_expiration > datetime.utcnow())
     return user
 
-from dart.model.user import User
 @login_manager.request_loader
 def api_auth(request):
     auth_header = request.headers.get('Authorization')
@@ -77,7 +77,7 @@ def api_auth(request):
     if not api_key:
         raise DartAuthenticationException('DART is unable to authenticate your request, api_key missing or not found. api_key=%s' % auth_data['Credential'])
 
-    user = user_service.get_user(api_key.user_id, False)
+    user = user_service.get_user_by_email(api_key.user_id, False)
     if not user:
         raise DartAuthenticationException('DART is unable to authenticate your request, user not found. user_id=%s' % api_key.user_id)
 
