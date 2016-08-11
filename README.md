@@ -1,3 +1,6 @@
+#dart
+![alt tag](http://i.imgur.com/lJqoDhB.png "dart")
+
 ## table of contents
 * [what is dart](#what-is-dart)
 * [prerequisites](#prerequisites)
