@@ -3,7 +3,8 @@ import logging
 import traceback
 from functools import wraps
 
-from flask import abort, current_app, request
+from flask import abort, session, current_app, request, g
+from flask.ext.login import login_required
 
 from dart.context.locator import injectable
 from dart.service.accounting import AccountingService
@@ -74,4 +75,20 @@ def accounting_track(f):
 
         return rv
 
+    return wrapper
+
+# A wrapper around flask-login's login_Required.
+# We wrap it so we can tell when a authenticated api call is made (as in curl)
+# vs. a browser based call.
+def check_login(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        func = f
+        # if we have a session["user_id"] than we are logged-in (it is removed on logout)
+        # An none-UI call will not have a session object and will always need to be authenticated.
+        # For testing purposes we enable no login key auth.use_auth
+        if (current_app.config.get('auth').get('use_auth')) and (not session.get('user_id')):
+            func = login_required(f)
+
+        return func(*args, **kwargs)
     return wrapper

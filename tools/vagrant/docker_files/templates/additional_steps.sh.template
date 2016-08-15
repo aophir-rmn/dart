@@ -24,6 +24,7 @@ set +e
 echo "Step 3/6: creating all tables in local database"
 STOP=1; 
 while [ $STOP -gt 0 ]; do 
+  sh -c 'docker-compose logs web | tail -10'
   docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; 
   STOP=$?; 
   sleep 1; 

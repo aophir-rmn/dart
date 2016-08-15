@@ -10,11 +10,15 @@ services:
   - docker
 
 env:
-  # docker compose 1.7.1 requires docker 1.10 
+  # docker compose 1.7.1 (which is need to run our images) requires docker > 1.10 (Travis default is fine) 
   # The env variables are in one line, otherwise they will be part of a test matrix (one env var per run).
-  - COMPOSE_VERSION=1.7.1 DOCKER_VERSION=1.10.1-0~trusty
+  - COMPOSE_VERSION=1.7.1
 
 before_install:
+  # libxmlsec1 is needed for installing python-saml (need for Authenticationwith onelogin).
+  - sudo apt-get update
+  - sudo apt-get install libxmlsec1-dev swig
+  
   # get docker-compose COMPOSE_VERSION and override existing docker-compose
   - curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
@@ -37,12 +41,11 @@ before_install:
 
   # These are unit tests that are not running in a docker-container.
   - pip install -r src/python/requirements.txt
-  - nosetests tools/vagrant
-  - cd src && PYTHONPATH=$PYTHONPATH:..:./python/ nosetests python/dart/test/accounting
+  # we do not use nosetests because it does not run the class setup method.
+  - python tools/vagrant/tests/test_generate_deployment_files.py
+  #- cd src && PYTHONPATH=$PYTHONPATH:..:./python/ nosetests python/dart/test/accounting
 
 install:
-  # install docker version DOCKER_VERSION
-  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine=${DOCKER_VERSION}
   # kill travis postgres instance so we can use ours 
   - sudo /etc/init.d/postgresql stop
   # Build docker containers needed to run unit-tests against
@@ -51,7 +54,7 @@ install:
 
 before_script:
   # try to create the DB tables until you succeed.  
-  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; docker-compose logs web; docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 5; done
+  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; sh -c 'docker-compose logs web | tail -10'; docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 15; done
 
   # try to populate the engine table until you succeed.  
   - STOP=1; while [ $STOP -gt 0 ]; do docker-compose exec web python /tmp/src/python/dart/engine/no_op/add_engine.py; STOP=$?; sleep 2; done

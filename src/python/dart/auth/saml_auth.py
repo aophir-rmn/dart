@@ -2,8 +2,7 @@
 from dart.service.user import UserService
 from dart.auth.base_auth import BaseAuth
 from dart.model.user import User
-from flask import current_app, make_response, Blueprint, redirect
-from flask_login import current_user
+from flask import current_app, make_response, Blueprint, redirect, session
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from urlparse import urlparse
@@ -41,15 +40,26 @@ class SamlAuth(BaseAuth):
     def process_login_response(self):
         self.auth.process_response()
         ua = self.auth.get_attributes()
+        USER_EMAIL = ua['User.email'][0]
+        session['user_id'] = USER_EMAIL
+
         user_service = current_app.dart_context.get(UserService)
         session_expiration = datetime.fromtimestamp(self.auth.get_session_expiration())
-        user = User(ua['User.email'][0], ua['User.email'][0], ua['User.email'][0], ua['User.email'][0], True, session_expiration)
+        user = User(USER_EMAIL, USER_EMAIL, USER_EMAIL, USER_EMAIL, True, session_expiration)
         user = user_service.login_user(user, self.auth.is_authenticated(), session_expiration)
         return user
 
     def handle_logout_request(self):
-        user_service = current_app.dart_context.get(UserService)
-        return user_service.logout_user(current_user)
+        # In case we are logging out before we are logged in.
+        if session.get("user_id"):
+          user_service = current_app.dart_context.get(UserService)
+          current_user = user_service.get_user(session['user_id'], raise_when_missing=False) # Do not throw exception if missing
+          session.pop('user_id', None)
+
+          if current_user:
+            user_service.logout_user(current_user)
+
+        return redirect(self.auth.logout())
 
 
 @SamlAuth.additional_endpoints.route('/metadata', methods=['GET'])

@@ -1,6 +1,4 @@
 from dart.model.base import BaseModel, dictable
-from flask import current_app
-from flask.ext.login import UserMixin
 
 @dictable
 class User(BaseModel):

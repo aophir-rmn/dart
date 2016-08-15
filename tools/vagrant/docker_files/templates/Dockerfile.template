@@ -13,6 +13,14 @@ RUN yum install -y \
     libpqxx-devel \
     npm
 
+RUN yum install -y \
+    libxml2-devel \
+    xmlsec1-devel \
+    xmlsec1-openssl-devel \
+    libtool-ltdl-devel \
+    ibxml2 \
+    libxslt
+
 Run pip install --upgrade pip && \
     pip install email
 
