@@ -246,6 +246,16 @@ class ActionService(object):
         db.session.delete(action_dao)
         db.session.commit()
 
+    @staticmethod
+    def delete_actions_in_workflow(workflow_id):
+        ActionDao.query.filter(ActionDao.data['workflow_id'].astext == workflow_id).delete(False)
+        db.session.commit()
+
+    @staticmethod
+    def delete_actions_in_workflow_instance(workflow_instance_id):
+        ActionDao.query.filter(ActionDao.data['workflow_instance_id'].astext == workflow_instance_id).delete(False)
+        db.session.commit()
+
     def clone_workflow_actions(self, source_actions, target_datastore_id, **data_property_overrides):
         max_order_idx = self._get_max_order_idx(target_datastore_id)
         for action in source_actions:

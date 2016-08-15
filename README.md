@@ -65,6 +65,7 @@ through a REST api call.
 ###### trigger
 A trigger initiates a workflow.  There are several types of triggers available:
 * scheduled - triggers a workflow based on a CRON schedule
+* workflow_completion - triggering upon successful workflow completion
 * subscription_batch - creates subscription element batches based on a file size threshold, and triggers workflows as
 they are ready
 * super - takes other triggers as inputs and fires when __ALL__ have fired or __ANY__ have fired
@@ -97,6 +98,7 @@ dart (with a particular event id) in order to trigger dart workflows.
 *feel free to create and use an isolated python virtualenv*
 ```
 pip install -r src/python/requirements.txt
+pip install -e src/python/.
 ```
 
 ###### docker setup
@@ -217,7 +219,7 @@ python trigger.py
 ```
 cd src/python/dart/worker
 export PYTHONPATH=/full-path-to-your-dart-project-root/src/python:${PYTHONPATH}
-export DART_ROLE=web
+export DART_ROLE=worker
 export DART_CONFIG=../my-dart-config-project/dart-config-local.yaml
 python engine.py
 ```
@@ -284,4 +286,5 @@ elements
 
 ## REST api documentation
 
+See the draft API specification in Swagger 2.0 format at `src/swagger/swagger.yaml`.
 See the source code at `src/python/dart/web/api`.

@@ -24,6 +24,7 @@ from dart.web.api.trigger import api_trigger_bp
 from dart.web.api.workflow import api_workflow_bp
 from dart.web.api.subscription import api_subscription_bp
 from dart.web.ui.index import index_bp
+from flasgger import Swagger
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ _logger.info('loaded config from path: %s' % config_path)
 
 
 app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
+Swagger(app) # enables swagger-ui on /apidocs/index.html
 
 app.dart_context = AppContext(
     config=config,

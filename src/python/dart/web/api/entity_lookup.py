@@ -1,7 +1,15 @@
+import json
+import logging
+import traceback
 from functools import wraps
-from flask import abort, current_app
-from dart.context.locator import injectable
 
+from flask import abort, current_app, request
+
+from dart.context.locator import injectable
+from dart.service.accounting import AccountingService
+from dart.web.api.utils import generate_accounting_event
+
+_logger = logging.getLogger(__name__)
 
 @injectable
 class EntityLookupService(object):
@@ -42,4 +50,28 @@ def fetch_model(f):
             entities_by_type[url_param_name] = model
         kwargs.update(entities_by_type)
         return f(*args, **kwargs)
+    return wrapper
+
+
+# This decorator's job is to log to the accounting table the activity that took place.
+# By default we apply this decorator to non-GET methods only.
+# We intentionally run it before the @jsonapi decorator so we can retrieve the return code.
+def accounting_track(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        rv = f(*args, **kwargs)
+
+        try:
+
+            return_code = rv.status_code # this is why we wait for the function execution to complete.
+            accounting_event = generate_accounting_event(return_code, request)
+            AccountingService().save_accounting_event(accounting_event=accounting_event)
+
+        # The choice is not to crash an action (that already completed) in case the logging of the activity event throws
+        # an exception in the accounting table fails. This is why we do not rethrow.
+        except Exception:
+            _logger.error(json.dumps(traceback.format_exc()))
+
+        return rv
+
     return wrapper

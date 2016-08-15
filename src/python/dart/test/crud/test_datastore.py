@@ -11,8 +11,8 @@ class TestDatastoreCrud(unittest.TestCase):
 
     def test_crud(self):
         dst = Datastore(data=DatastoreData(
-            'test-datastore',
-            'no_op_engine',
+            name='test-datastore',
+            engine_name='no_op_engine',
             args={'action_sleep_time_in_seconds': 0},
             tags=['foo']
         ))
@@ -26,11 +26,11 @@ class TestDatastoreCrud(unittest.TestCase):
         datastore = self.dart.get_datastore(posted_datastore.id)
         self.assertEqual(posted_datastore.to_dict(), datastore.to_dict())
 
-        datastore.data.host = 'test-host'
+        datastore.data.engine_name = 'not_existing_engine'
         datastore.data.state = DatastoreState.ACTIVE
         put_datastore = self.dart.save_datastore(datastore)
         # not all properties can be modified
-        self.assertEqual(put_datastore.data.host, None)
+        self.assertEqual(put_datastore.data.engine_name, 'no_op_engine')
         self.assertEqual(put_datastore.data.state, DatastoreState.ACTIVE)
         self.assertNotEqual(posted_datastore.to_dict(), put_datastore.to_dict())
 

@@ -49,6 +49,12 @@ angular
                                     if (mode === 'view') {
                                         response.results.readonly = true;
                                     }
+                                    if (mode === 'edit') {
+                                        // The following fields should be immutable for subscriptions
+                                        response.results.properties.data.properties.s3_path_end_prefix_exclusive.readonly = true;
+                                        response.results.properties.data.properties.s3_path_regex_filter.readonly = true;
+                                        response.results.properties.data.properties.s3_path_start_prefix_inclusive.readonly = true;
+                                    }
                                     return response
                                 })
                             },

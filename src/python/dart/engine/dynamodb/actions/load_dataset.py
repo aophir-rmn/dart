@@ -44,11 +44,13 @@ def load_dataset(dynamodb_engine, datastore, action):
 
     exception = None
     while True:
-        cluster = emr.conn.describe_jobflow(cluster_id)
+        state = emr.conn.describe_cluster(cluster_id).status.state
         # http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/ProcessingCycle.html
-        if cluster.state == 'COMPLETED':
+        # using cluster state since describe_jobflow is deprecated
+        # https://aws.amazon.com/elasticmapreduce/faqs/
+        if state == 'TERMINATED':
             break
-        if cluster.state in ['TERMINATED', 'FAILED']:
+        if state in ['TERMINATED_WITH_ERRORS']:
             exception = Exception('the underlying EMR job failed (cluster_id=%s)' % cluster_id)
             break
         time.sleep(30)

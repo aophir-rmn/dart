@@ -2,7 +2,7 @@ import unittest
 from dart.client.python.dart_client import Dart
 from dart.engine.no_op.metadata import NoOpActionTypes
 from dart.model.exception import DartRequestException
-from dart.model.dataset import Dataset, DatasetData, Column, DataFormat, DataType, RowFormat, FileFormat, Compression
+from dart.model.dataset import Dataset, DatasetData, Column, DataFormat, DataType, RowFormat, FileFormat, Compression, LoadType
 
 
 class TestDatasetCrud(unittest.TestCase):
@@ -13,7 +13,13 @@ class TestDatasetCrud(unittest.TestCase):
         columns = [Column('c1', DataType.VARCHAR, 50), Column('c2', DataType.BIGINT)]
         df = DataFormat(FileFormat.PARQUET, RowFormat.NONE)
         ds = Dataset(
-            data=DatasetData(NoOpActionTypes.action_that_succeeds.name, NoOpActionTypes.action_that_succeeds.name, 's3://bucket/prefix', df, columns, tags=['foo']))
+            data=DatasetData(name=NoOpActionTypes.action_that_succeeds.name,
+                             table_name=NoOpActionTypes.action_that_succeeds.name,
+                             load_type=LoadType.INSERT,
+                             location='s3://bucket/prefix',
+                             data_format=df,
+                             columns=columns,
+                             tags=['foo']))
         posted_dataset = self.dart.save_dataset(ds)
         self.assertEqual(posted_dataset.data.to_dict(), ds.data.to_dict())
 

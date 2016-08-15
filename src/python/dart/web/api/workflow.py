@@ -9,10 +9,11 @@ from jsonpatch import JsonPatch
 from dart.model.datastore import DatastoreState
 from dart.model.query import Filter, Operator
 from dart.model.workflow import Workflow, WorkflowState, WorkflowInstanceState
+from dart.service.action import ActionService
 from dart.service.filter import FilterService
 from dart.service.workflow import WorkflowService
 from dart.service.trigger import TriggerService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 
 api_workflow_bp = Blueprint('api_workflow', __name__)
@@ -20,6 +21,7 @@ api_workflow_bp = Blueprint('api_workflow', __name__)
 
 @api_workflow_bp.route('/datastore/<datastore>/workflow', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def post_workflow(datastore):
@@ -100,6 +102,7 @@ def _find_workflow_instances(workflow=None):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def put_workflow(workflow):
@@ -109,6 +112,7 @@ def put_workflow(workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def patch_workflow(workflow):
@@ -140,6 +144,7 @@ def update_workflow(workflow, updated_workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>/do-manual-trigger', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def trigger_workflow(workflow):
@@ -158,20 +163,28 @@ def trigger_workflow(workflow):
 
 @api_workflow_bp.route('/workflow/<workflow>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def delete_workflow(workflow):
+    action_service().delete_actions_in_workflow(workflow.id)
     workflow_service().delete_workflow(workflow.id)
     return {'results': 'OK'}
 
 
 @api_workflow_bp.route('/workflow/<workflow>/instance', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def delete_workflow_instances(workflow):
     workflow_service().delete_workflow_instances(workflow.id)
     return {'results': 'OK'}
+
+
+def action_service():
+    """ :rtype: dart.service.filter.ActionService """
+    return current_app.dart_context.get(ActionService)
 
 
 def filter_service():

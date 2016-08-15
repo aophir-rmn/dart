@@ -1,0 +1,74 @@
+language: python
+python:
+  - "2.7"
+
+# by default we run as user travis.  Sudo is needed to copy to root protected directories.
+# We need sudo when working with docker.
+sudo: required
+
+services:
+  - docker
+
+env:
+  # docker compose 1.7.1 requires docker 1.10 
+  # The env variables are in one line, otherwise they will be part of a test matrix (one env var per run).
+  - COMPOSE_VERSION=1.7.1 DOCKER_VERSION=1.10.1-0~trusty
+
+before_install:
+  # get docker-compose COMPOSE_VERSION and override existing docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+  # Make the directory that docker-compose expects to find. make it accessible to user travis. 
+  - sudo mkdir -p /vagrant_data/dart
+  - sudo chown -R ${USER}:${USER} /vagrant_data
+
+  # copying from current directory of source code to /vagrant_data/dart.
+  - cp -r . /vagrant_data/dart
+
+  # generate the config files docker-compose expects and copy:
+  # 1. docker-compose.yml to current directory so we can run docker-xompse command in CWD
+  # 2. copy config files to expected folder /vagrant_data 
+  - pip install -r tools/vagrant/tools_requirements.txt
+  - python tools/vagrant/generate_deployment_files.py
+  - cp tools/vagrant/docker_files/docker-compose.yml .
+  - cp -r tools/vagrant/docker_files /vagrant_data
+
+  # These are unit tests that are not running in a docker-container.
+  - pip install -r src/python/requirements.txt
+  - nosetests tools/vagrant
+  - cd src && PYTHONPATH=$PYTHONPATH:..:./python/ nosetests python/dart/test/accounting
+
+install:
+  # install docker version DOCKER_VERSION
+  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine=${DOCKER_VERSION}
+  # kill travis postgres instance so we can use ours 
+  - sudo /etc/init.d/postgresql stop
+  # Build docker containers needed to run unit-tests against
+  - docker-compose up -d --build
+  - docker-compose logs web
+
+before_script:
+  # try to create the DB tables until you succeed.  
+  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; docker-compose logs web; docker-compose exec web curl -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 5; done
+
+  # try to populate the engine table until you succeed.  
+  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose exec web python /tmp/src/python/dart/engine/no_op/add_engine.py; STOP=$?; sleep 2; done
+
+# commands to run tests
+script:
+  # Running unit-tests against the containers
+  - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/schema/ "test_*.py"
+  - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/graph "test_*.py"
+  - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/crud "test_*.py"  
+
+# send notifications to DWH_alerts room
+notifications:
+  hipchat:
+    rooms:
+      - secure: "ctwA9HNOFoyANK8Zx1g6IudJCfogemb41MY/8o1cusRl9Yv21ypT5vJq1H5m6rJ+mmj3OXvbuw6YtneWksnFOgDW/3M1X3DHF2xsMWOzUwTDgx0pbSI9Bo7YKyUQtXkx0pXFvlUy7WbJmauMUV2whO9kFv/n9XZyWkOWenxlgSw+cc2z0+mk1HOXApcAqgwAOg5drlIbq5aRT+FYh3Gwtv0Pyqqm1MpiPi2QodY4j320g0+Sry96P+Hzjfj2HoO7gc7s8YH+6THLXY4gatkwDyvKXqqM4tMDIoz1RM/aPvz6axLKDu7SvUnhrplIH5NGQaogMmEsI5ASBPCMTBiLxs5/ON1zXn9hdIVXstJEsmohDu7wfhWJBmh/omcyMd+JESwYOjsuqSjT7XyRPbofWY5H7DI/oeWFYsNil2J/yCbfVd7YLoYdJjZWoEoocJnaH0HQ9m+fzozPVZeZvJ1hyDfFpP62JYFTn9RWwPUio8q8eCz89xllAJOqTry65t0HgQGz/iVAq6MOP5OH/3j43ThGEacMm911SLqN+0HHBsWaemlREKrchgk0fNm1sEcRt4z/4Prnk2lKHhzXYrbFp69jJrbHreu1ES6i6LTMQp50DwcCyySY1oOsX961k2ll83VnncPCDyJVzOgXxKRnHN5x/HC+B3OnpN5nx+Jq3XU="
+    template:
+      - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}'
+    on_success: change
+    on_failure: always

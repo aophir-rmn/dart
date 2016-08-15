@@ -14,7 +14,7 @@ from dart.service.engine import EngineService
 from dart.service.filter import FilterService
 from dart.service.trigger import TriggerService
 from dart.service.workflow import WorkflowService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 api_engine_bp = Blueprint('api_engine', __name__)
 
@@ -29,16 +29,49 @@ def post_engine():
 
 @api_engine_bp.route('/engine/<engine>', methods=['GET'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def get_engine(engine):
+    """
+    This is the engine API
+    Call this api passing a engine id (id column in engine table) and get back its data column.
+    E.g. {"name": "no_op_engine", "tags": [], "description": "Helps engineering test dart", "ecs_task_definition": ...}
+    ---
+    tags:
+      - engine API
+    parameters:
+      - name: engine
+        in: path
+        type: string
+        required: true
+        description: The id column in engine table.
+    responses:
+      404:
+        description: Error, engine with provided id not found.
+      200:
+        description: Found engine with provided id.
+    """
     return {'results': engine.to_dict()}
 
 
 @api_engine_bp.route('/engine', methods=['GET'])
+@accounting_track
 @jsonapi
 @login_required
 def find_engines():
+    """
+    This is the engine API
+    Get back all existing engines.
+    ---
+    tags:
+      - engine API
+    responses:
+      404:
+        description: Error, engine with provided id not found.
+      200:
+        description: Found engine with provided id.
+    """
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
     filters = [filter_service().from_string(f) for f in json.loads(request.args.get('filters', '[]'))]
@@ -53,15 +86,19 @@ def find_engines():
 
 @api_engine_bp.route('/engine/<engine>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def put_engine(engine):
-    engine = engine_service().update_engine(engine, Engine.from_dict(request.get_json()))
+    js = request.get_json()
+    engineFromJS = Engine.from_dict(js)
+    engine = engine_service().update_engine(engine, engineFromJS)
     return {'results': engine.to_dict()}
 
 
 @api_engine_bp.route('/engine/action/<action>/checkout', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def action_checkout(action):
@@ -78,6 +115,7 @@ def action_checkout(action):
 
 @api_engine_bp.route('/engine/action/<action>/checkin', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def action_checkin(action):
@@ -117,6 +155,7 @@ def validate_engine_action(action, state):
 
 @api_engine_bp.route('/engine/<engine>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def delete_engine(engine):
@@ -126,6 +165,7 @@ def delete_engine(engine):
 
 @api_engine_bp.route('/engine/<engine>/subgraph_definition', methods=['POST'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def post_subgraph_definition(engine):
@@ -153,6 +193,7 @@ def get_subgraph_definitions(engine):
 
 @api_engine_bp.route('/subgraph_definition/<subgraph_definition>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def delete_subgraph_definition(subgraph_definition):

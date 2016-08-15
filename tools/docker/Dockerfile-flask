@@ -12,6 +12,8 @@ RUN wget https://bootstrap.pypa.io/get-pip.py
 RUN python get-pip.py
 RUN /usr/local/bin/pip install awscli
 
+RUN apt-get install libmagic-dev
+
 ADD /src/python/requirements.txt /src/python/requirements.txt
 
 RUN pip install -r /src/python/requirements.txt

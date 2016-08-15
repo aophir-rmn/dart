@@ -4,6 +4,7 @@ from flask.ext.jsontools import JsonSerializableBase
 from sqlalchemy import BigInteger, Column, Integer, TIMESTAMP, String, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from dart.model.action import Action
+from dart.model.accounting import Accounting
 
 from dart.model.dataset import Dataset
 from dart.model.datastore import Datastore
@@ -112,6 +113,17 @@ class MessageDao(db.Model, VersionedAuditableSerializable):
     ecs_task_arn = Column(String(length=256), nullable=False)
     state = Column(String(length=50), nullable=False)
 
+
+class AccountingDao(db.Model, VersionedAuditableSerializable):
+    __tablename__ = 'accounting'
+    __modelclass__ = Accounting
+    user_id = Column(String(length=128), nullable=False)
+    state = Column(String(length=32), nullable=False)
+    entity = Column(String(length=32), nullable=False)
+    params = Column(String(length=128), nullable=False)
+    return_code = Column(String(length=4), nullable=False)
+    api_version = Column(String(length=4), nullable=False)
+    extra = Column(String(length=128), nullable=True)
 
 class MutexDao(db.Model, VersionedAuditableSerializable):
     __tablename__ = 'mutex'

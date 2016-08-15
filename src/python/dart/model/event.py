@@ -29,7 +29,7 @@ class Event(BaseModel):
 
 @dictable
 class EventData(BaseModel):
-    def __init__(self, name, description=None, state=EventState.INACTIVE, tags=None):
+    def __init__(self, name, description=None, state=EventState.INACTIVE, tags=None, user_id='anonymous'):
         """
         :type name: str
         :type description: str
@@ -40,3 +40,4 @@ class EventData(BaseModel):
         self.description = description
         self.state = state
         self.tags = tags or []
+        self.user_id = user_id

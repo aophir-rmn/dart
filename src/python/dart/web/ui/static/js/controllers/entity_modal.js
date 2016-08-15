@@ -5,8 +5,9 @@ angular
             $scope.form = ["*"];
             $scope.entity = entity;
             $scope.showSave = saveEntity;
-
-            getSchema().then(function(response) { $scope.schema = response.results });
+            getSchema().then(function (response) {
+                    $scope.schema = response.results;
+                });
             $scope.onCancel = function() { $mdDialog.hide(); };
             $scope.onSubmit = function(entity, form) {
                 $scope.working = true;

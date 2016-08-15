@@ -7,7 +7,7 @@ from jsonpatch import JsonPatch
 from dart.model.event import Event
 from dart.service.event import EventService
 from dart.service.filter import FilterService
-from dart.web.api.entity_lookup import fetch_model
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 api_event_bp = Blueprint('api_event', __name__)
 
@@ -46,6 +46,7 @@ def find_events():
 
 @api_event_bp.route('/event/<event>', methods=['PUT'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def put_event(event):
@@ -55,6 +56,7 @@ def put_event(event):
 
 @api_event_bp.route('/event/<event>', methods=['PATCH'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def patch_event(event):
@@ -79,6 +81,7 @@ def update_event(event, updated_event):
 
 @api_event_bp.route('/event/<event>', methods=['DELETE'])
 @fetch_model
+@accounting_track
 @jsonapi
 @login_required
 def delete_event(event):

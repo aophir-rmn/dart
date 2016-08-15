@@ -45,4 +45,5 @@ def workflow_instance_schema():
             'tags': tag_list_schema(),
         },
         'additionalProperties': False,
+        'required': [],
     })
