@@ -12,7 +12,7 @@ services:
 env:
   # docker compose 1.7.1 requires docker 1.10 
   # The env variables are in one line, otherwise they will be part of a test matrix (one env var per run).
-  - COMPOSE_VERSION=1.8.0 DOCKER_VERSION=1.11.1-0~trusty
+  - COMPOSE_VERSION=1.8.0 DOCKER_VERSION=1.11.1-0
 
 before_install:
   # get docker-compose COMPOSE_VERSION and override existing docker-compose
@@ -42,7 +42,7 @@ before_install:
 
 install:
   # install docker version DOCKER_VERSION
-  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y --force-new docker-engine=${DOCKER_VERSION}
+  - sudo apt-get -o Dpkg::Options::="--force-new" install -y docker-engine=${DOCKER_VERSION}
   # kill travis postgres instance so we can use ours 
   - sudo /etc/init.d/postgresql stop
   # Build docker containers needed to run unit-tests against
