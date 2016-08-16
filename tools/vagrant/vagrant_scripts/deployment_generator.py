@@ -44,8 +44,9 @@ def generate_dart_local_config(env, params, dirs):
 
   # Write dart-local.yaml to every folder of a docker container 
   for dir in dirs:
-    if not os.path.exists("./docker_files/"+dir):
+    if not os.path.exists(params['docker_files_dir'] + "/" + dir):
       os.makedirs(params['docker_files_dir'] + "/" + dir)
+
     with open(params['docker_files_dir'] + "/" + dir + "/dart-local.yaml", "wb") as fh:
       fh.write(dart_local_config_result)
 
