@@ -42,7 +42,7 @@ before_install:
 
 install:
   # install docker version DOCKER_VERSION
-  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine=${DOCKER_VERSION}
+  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y --force-new docker-engine=${DOCKER_VERSION}
   # kill travis postgres instance so we can use ours 
   - sudo /etc/init.d/postgresql stop
   # Build docker containers needed to run unit-tests against
