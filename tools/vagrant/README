@@ -15,12 +15,12 @@ Vagrant > 1.8:
 * Work-dir:  tools/vagrant/docker/
 ----------
 This is the folder in the git repo you just downloaded (git clone https://github.com/RetailMeNotSandbox/dart.git)
-You can copy it to a seperat folder, it has no dependency on the rest of the repo files.
+You can copy it to a separate folder, it has no dependency on the rest of the repo files.
 
 Explanation of script's commands:
 --------------------------------
 0. (In tools/vagrant/docker/) python generate_deployment_files.py
-  -- Generates Dokcer-compose, dockerfiles and config files from jinja templates.
+  -- Generates Docker-compose, dockerfiles and config files from jinja templates.
   -- Any alterations you want to do to names/port will be done in generate_deployment_files.py
 
 1. vagrant up (In tools/vagrant)
@@ -28,13 +28,30 @@ Explanation of script's commands:
   -- Make sure vagrant-triggers is installed.
 
 2. vagrant ssh
-  -- We will install additional docker related pre-reqs (we do not do it in the vagrant script since after creating then docker group we need to logout/login), after 
+  -- We will install additional docker related pre-reqs (we do not do it in the vagrant script since after creating then docker group we need to logout/login), after
      logging in to newly created VM.
 
-3. ~/additional_steps.sh   
+3. ~/additional_steps.sh
   -- The script launches docker-compose that launches dart-web, dart-postgresql and dart-elastic (elasticmq) as well as the trigger/subscription and engine workers.
   -- we also populate the local database and run the unit-tests.
      -- This step might fail and might need to be run manually (just copy paste from ~/additional_steps.sh)
+
+     ===========================================================================================================================
+     ================================== Troubleshooting setup.sh ===============================================================
+     ===========================================================================================================================
+     ===  IF you get the following error while running setup.sh:                                                             ===
+     ===    ==> dart_local: Waiting for machine to boot. This may take a few minutes...                                      ===
+     ===        dart_local: SSH address: 127.0.0.1:2222                                                                      ===
+     ===        dart_local: SSH username: vagrant                                                                            ===
+     ===        dart_local: SSH auth method: private key                                                                     ===
+     ===        dart_local: Warning: Remote connection disconnect. Retrying...                                               ===
+     ===        dart_local: Warning: Authentication failure. Retrying...                                                     ===
+     ===        dart_local: Warning: Authentication failure. Retrying...                                                     ===
+     ===        dart_local: Warning: Authentication failure. Retrying...                                                     ===
+     ===========================================================================================================================
+
+     1. Log in to the virtual box with the default vagrant/vagrant login.
+     2. run chmod 600 ~/.ssh/authorized_keys
 
 
 ===========================================================================================================================
@@ -45,19 +62,19 @@ Explanation of script's commands:
   -- You can edit the code in this repo and expect to see changes in UI.
 
 2. If you need to relaunch a container.
-   -- make sure you relaunch it with --build (e.g. in vagrant machine: cd /vagrant_data/docker_files; docker-compose up -d --build web)  
+   -- make sure you relaunch it with --build (e.g. in vagrant machine: cd /vagrant_data/docker_files; docker-compose up -d --build web)
       - Sometime you need to rerun the server.py for the web worker.
    -- In cases where you changed the docker-compose files (e.g. volumes, ports ...)
-      - Make sure to delete all docker images before rebuilding (docker images; docker rmi <image-id>) 
+      - Make sure to delete all docker images before rebuilding (docker images; docker rmi <image-id>)
 
 ===========================================================================================================================
 =================================== Troubleshooting =======================================================================
 ===========================================================================================================================
 1. Make sure no other VM runs with the same name.
 
-2. Make sure no other VM/pychram process holds a port - 5000 (5432, 9324)  
+2. Make sure no other VM/pychram process holds a port - 5000 (5432, 9324)
 
-3. dart-postgres: AttributeError: 'ProjectError' object has no attribute 'msg' ==> A docker contianer already holds port 5432 (docker-compose ps)
+3. dart-postgres: AttributeError: 'ProjectError' object has no attribute 'msg' ==> A docker container already holds port 5432 (docker-compose ps)
 
-4. When you want to rebuild a docker image with new files - make sure you 1. docker-compose kill, 2.docker-compose rm and docker rmi <image>. 
+4. When you want to rebuild a docker image with new files - make sure you 1. docker-compose kill, 2.docker-compose rm and docker rmi <image>.
    - The do docker-compose up <name from docker-compose.yaml>
