@@ -25,7 +25,6 @@ var dartApp = angular.module(
     ]
 );
 
-
 dartApp.config(['$stateProvider', '$urlRouterProvider', 'schemaFormProvider', function($stateProvider, $urlRouterProvider, schemaFormProvider) {
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith

@@ -213,7 +213,7 @@ class GraphEntityService(object):
                 entity_type, wf_id, wfi_id, wfi_state, a_id, a_name, a_state, a_sub_type = r
 
                 name = 'workflow_instance'
-                if wfi_state == 'RUNNING' and 'workflow_instance' + wfi_id not in visited_nodes:
+                if wfi_state == 'RUNNING' and ('workflow_instance' + wfi_id) not in visited_nodes:
                     actions = self._action_service.find_actions(workflow_instance_id=wfi_id)
                     if None not in [a.data.avg_runtime for a in actions]:
                         wfi_progress = 0
