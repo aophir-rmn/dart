@@ -38,12 +38,6 @@ dartApp.config(['$stateProvider', '$urlRouterProvider', 'schemaFormProvider', fu
 
     $urlRouterProvider.otherwise('/dashboard');
 
-    // hide completed_runs from action form since it isn't relevant to the user
-    schemaFormProvider.postProcess(function(form) {
-        _.remove(form, {title: 'completed_runs'});
-        return form;
-    });
-
     $stateProvider
         .state('app', {
             url: '/',
