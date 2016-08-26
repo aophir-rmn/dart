@@ -82,8 +82,8 @@ class ActionService(object):
     def find_action_count(self, datastore_id=None, states=None, action_type_names=None, gt_order_idx=None, offset=None):
         return self._find_action_query(datastore_id, None, gt_order_idx, None, action_type_names, states, None, None, offset).count()
 
-    def find_actions(self, datastore_id=None, datastore_state=None, states=None, action_type_names=None, gt_order_idx=None, limit=None, workflow_id=None, order_by=None, offset=None):
-        rs = self._find_action_query(datastore_id, datastore_state, gt_order_idx, limit, action_type_names, states, workflow_id, order_by, offset).all()
+    def find_actions(self, datastore_id=None, datastore_state=None, states=None, action_type_names=None, gt_order_idx=None, limit=None, workflow_id=None, workflow_instance_id=None, order_by=None, offset=None):
+        rs = self._find_action_query(datastore_id, datastore_state, gt_order_idx, limit, action_type_names, states, workflow_id, workflow_instance_id, order_by, offset).all()
         return [a.to_model() for a in rs]
 
     @staticmethod
@@ -134,7 +134,7 @@ class ActionService(object):
         return result[0].to_model() if result else None
 
     @staticmethod
-    def _find_action_query(datastore_id=None, datastore_state=None, gt_order_idx=None, limit=None, action_type_names=None, states=None, workflow_id=None, order_by=None, offset=None):
+    def _find_action_query(datastore_id=None, datastore_state=None, gt_order_idx=None, limit=None, action_type_names=None, states=None, workflow_id=None, workflow_instance_id=None, order_by=None, offset=None):
         query = ActionDao.query
         if datastore_id:
             query = query.join(DatastoreDao, DatastoreDao.id == ActionDao.data['datastore_id'].astext)
@@ -144,6 +144,8 @@ class ActionService(object):
         query = query.filter(ActionDao.data['action_type_name'].astext.in_(action_type_names)) if action_type_names else query
         query = query.filter(ActionDao.data['order_idx'].cast(Float) > gt_order_idx) if gt_order_idx else query
         query = query.filter(ActionDao.data['workflow_id'].astext == workflow_id) if workflow_id else query
+        query = query.filter(ActionDao.data['workflow_instance_id'].astext == workflow_instance_id) if workflow_instance_id else query
+
         if order_by:
             for field, direction in order_by:
                 if direction == 'desc':
@@ -203,8 +205,20 @@ class ActionService(object):
 
         return query
 
-    @staticmethod
-    def update_action_state(action, state, error_message, conditional=None):
+    def update_action_avg_runtime(self, action_instance, conditional=None):
+        """ :type action_instance: dart.model.action.Action """
+        if action_instance.data.workflow_action_id is None:
+            return
+        action = self.get_action(action_instance.data.workflow_action_id)
+        source_action = action.copy()
+        if action.data.avg_runtime is None:
+            action.data.avg_runtime = timedelta()
+        runtime = action_instance.data.end_time - action_instance.data.start_time
+        action.data.avg_runtime = ((action.data.avg_runtime * action.data.completed_runs) + runtime) / (action.data.completed_runs + 1)
+        action.data.completed_runs += 1
+        return patch_difference(ActionDao, source_action, action, True, conditional)
+
+    def update_action_state(self, action, state, error_message, conditional=None):
         """ :type action: dart.model.action.Action """
         source_action = action.copy()
         action.data.error_message = error_message
@@ -218,6 +232,8 @@ class ActionService(object):
         elif state == ActionState.COMPLETED:
             action.data.end_time = datetime.now()
             action.data.progress = 1
+            self.update_action_avg_runtime(action)
+
         return patch_difference(ActionDao, source_action, action, True, conditional)
 
     @staticmethod

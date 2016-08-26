@@ -21,9 +21,10 @@ def workflow_schema():
             'on_success_email': email_list_schema(),
             'on_started_email': email_list_schema(),
             'tags': tag_list_schema(),
+            'avg_runtime': {'type': ['string', 'null'], 'readonly': True},
         },
         'additionalProperties': False,
-        'required': ['name', 'datastore_id']
+        'required': ['name', 'datastore_id'],
     })
 
 

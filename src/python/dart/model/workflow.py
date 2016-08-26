@@ -40,7 +40,7 @@ class OnFailure(object):
 class WorkflowData(BaseModel):
     def __init__(self, name, datastore_id=None, engine_name=None, state=WorkflowState.INACTIVE, concurrency=1,
                  on_failure=OnFailure.CONTINUE, on_failure_email=None, on_success_email=None, on_started_email=None,
-                 tags=None, user_id='anonymous'):
+                 tags=None, user_id='anonymous', avg_runtime=None):
         """
         :type name: str
         :type datastore_id: str
@@ -52,6 +52,7 @@ class WorkflowData(BaseModel):
         :type on_success_email: list[str]
         :type on_started_email: list[str]
         :type tags: list[str]
+        :type avg_runtime: datetime.timedelta
         """
         self.name = name
         self.datastore_id = datastore_id
@@ -64,6 +65,7 @@ class WorkflowData(BaseModel):
         self.on_started_email = on_started_email or []
         self.tags = tags or []
         self.user_id = user_id
+        self.avg_runtime = avg_runtime
 
 
 class WorkflowInstanceState(object):

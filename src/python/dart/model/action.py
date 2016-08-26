@@ -63,7 +63,7 @@ class ActionData(BaseModel):
                  end_time=None, progress=None, order_idx=None, error_message=None, on_failure=OnFailure.DEACTIVATE,
                  on_failure_email=None, on_success_email=None, engine_name=None, datastore_id=None, workflow_id=None,
                  workflow_instance_id=None, workflow_action_id=None, first_in_workflow=False, last_in_workflow=False,
-                 ecs_task_arn=None, extra_data=None, tags=None, user_id='anonymous'):
+                 ecs_task_arn=None, extra_data=None, tags=None, user_id='anonymous', avg_runtime=None, completed_runs=0):
         """
         :type name: str
         :type action_type_name: str
@@ -88,6 +88,8 @@ class ActionData(BaseModel):
         :type last_in_workflow: bool
         :type ecs_task_arn: str
         :type extra_data: dict
+        :type avg_runtime: datetime.timedelta
+        :type completed_runs: int
         """
         self.name = name
         self.action_type_name = action_type_name
@@ -113,3 +115,5 @@ class ActionData(BaseModel):
         self.extra_data = extra_data
         self.tags = tags or []
         self.user_id = user_id
+        self.avg_runtime = avg_runtime
+        self.completed_runs = completed_runs
