@@ -100,7 +100,7 @@ def generate_trigger_worker_dockerfile(env, params):
   generate_worker(env=env,
                   params=params,
                   cmd="python ./trigger.py", 
-                  role="web",
+                  role="worker",
                   work_directory=params['docker_code_dir'] + "/src/python/dart/worker",
                   worker_name='trigger_worker')
 
@@ -109,7 +109,7 @@ def generate_subscription_worker_dockerfile(env, params):
   generate_worker(env=env,
                   params=params,
                   cmd="python ./subscription.py", 
-                  role="web",
+                  role="worker",
                   work_directory=params['docker_code_dir'] + "/src/python/dart/worker",
                   worker_name='subscription_worker')
 
