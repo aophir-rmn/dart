@@ -22,7 +22,7 @@ ADD ./dart-local.yaml /root
 # preparing to run the webserver using the same env variables as above
 ENV AWS_SECRET_ACCESS_KEY=not_needed_locally  \
     AWS_SECRET_ACCESS_KEY=not_needed_locally  \
-    DART_ROLE=web  \
+    DART_ROLE=worker  \
     DART_CONFIG=/root/dart-local.yaml  \ 
     PYTHONPATH=/tmp/src/python
 
