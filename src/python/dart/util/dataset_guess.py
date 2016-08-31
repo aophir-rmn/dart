@@ -22,12 +22,18 @@ def infer_dataset_data(s3_path, max_lines):
     :type max_lines: int
     :param max_lines: The maximum number of lines to peek.
     """
-    guesses, has_header, compression = get_guesses(s3_path, max_lines)
+    guesses, has_header, compression, dialect = get_guesses(s3_path, max_lines)
     columns = columns_with_best_guess(guesses, has_header)
     location = guess_location(s3_path)
     return Dataset(data=DatasetData(name='guessed_dataset',
                                     table_name='public',
-                                    data_format=DataFormat(file_format=FileFormat.TEXTFILE, row_format=RowFormat.DELIMITED),
+                                    data_format=DataFormat(
+                                        file_format=FileFormat.TEXTFILE,
+                                        row_format=RowFormat.DELIMITED,
+                                        delimited_by=dialect.delimiter,
+                                        escaped_by=dialect.escapechar,
+                                        quoted_by=dialect.quotechar,
+                                    ),
                                     location=location,
                                     columns=columns,
                                     compression=compression,
@@ -105,8 +111,8 @@ def get_ascii_guesses(preview, stream, chunk_size, max_lines):
             guesses, data, lines_read, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
             first_row = False
             if lines_read >= max_lines:
-                return guesses, has_header, COMPRESSION_TYPE
-    return guesses, has_header, COMPRESSION_TYPE
+                return guesses, has_header, COMPRESSION_TYPE, dialect
+    return guesses, has_header, COMPRESSION_TYPE, dialect
 
 
 def get_gzip_guesses(preview, stream, chunk_size, max_lines):
@@ -145,8 +151,8 @@ def get_gzip_guesses(preview, stream, chunk_size, max_lines):
             guesses, data, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses,dialect, has_header)
             first_row = False
             if lines_read >= max_lines:
-                return guesses, has_header, COMPRESSION_TYPE
-    return guesses, has_header, COMPRESSION_TYPE
+                return guesses, has_header, COMPRESSION_TYPE, dialect
+    return guesses, has_header, COMPRESSION_TYPE, dialect
 
 
 def get_bzip_guesses(preview, stream, chunk_size, max_lines):
@@ -184,8 +190,8 @@ def get_bzip_guesses(preview, stream, chunk_size, max_lines):
             guesses, data, lines_read = analyze_data(data, lines_read, max_lines, first_row, guesses, dialect, has_header)
             first_row = False
             if lines_read >= max_lines:
-                return guesses, has_header, COMPRESSION_TYPE
-    return guesses, has_header, COMPRESSION_TYPE
+                return guesses, has_header, COMPRESSION_TYPE, dialect
+    return guesses, has_header, COMPRESSION_TYPE, dialect
 
 
 def analyze_data(data, lines_read, max_lines, first_row, guesses, dialect, has_header):
