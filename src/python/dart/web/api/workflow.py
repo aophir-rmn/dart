@@ -166,6 +166,7 @@ def trigger_workflow(workflow):
 @jsonapi
 @check_login
 def delete_workflow(workflow):
+    workflow_service().delete_workflow_instances(workflow.id)
     action_service().delete_actions_in_workflow(workflow.id)
     workflow_service().delete_workflow(workflow.id)
     return {'results': 'OK'}

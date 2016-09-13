@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from dart.context.database import db
 from dart.context.locator import injectable
-from dart.model.action import Action
+from dart.model.action import Action, ActionState
 from dart.model.dataset import Dataset
 from dart.model.datastore import Datastore
 from dart.model.event import Event
@@ -210,15 +210,32 @@ class GraphEntityService(object):
 
         for r in db.session.execute(statement):
             if r[0] == 'workflow':
-                entity_type, wf_id, wfi_id, wfi_progress, wfi_state, a_id, a_name, a_state, a_sub_type = r
-                name = 'workflow_instance - %s%%' % wfi_progress if wfi_state == 'RUNNING' else 'workflow_instance'
+                entity_type, wf_id, wfi_id, wfi_state, a_id, a_name, a_state, a_sub_type = r
+
+                name = 'workflow_instance'
+                if wfi_state == 'RUNNING' and ('workflow_instance' + wfi_id) not in visited_nodes:
+                    actions = self._action_service.find_actions(workflow_instance_id=wfi_id)
+                    if None not in [a.data.avg_runtime for a in actions]:
+                        wfi_progress = 0
+                        wf_runtime = 0
+                        for a in actions:
+                            a_runtime = a.data.avg_runtime.total_seconds()
+                            wf_runtime += a_runtime
+                            if a.data.state == ActionState.COMPLETED or a.data.state == ActionState.FAILED:
+                                wfi_progress += a_runtime
+                            elif (a.data.state == ActionState.RUNNING or a.data.state == ActionState.FINISHING) and a.data.progress:
+                                wfi_progress += a_runtime * a.data.progress
+                        if wf_runtime:
+                            wfi_progress /= wf_runtime
+                            name += ' - {:.0%}'.format(wfi_progress)
+
                 self._add_node(nodes, visited_nodes, 'workflow_instance', wfi_id, name, wfi_state, None)
                 self._add_edge(edges, visited_edges, 'workflow', wf_id, 'workflow_instance', wfi_id)
                 if a_id:
                     self._add_node(nodes, visited_nodes, 'action', a_id, a_name, a_state, a_sub_type)
                     self._add_edge(edges, visited_edges, 'workflow_instance', wfi_id, 'action', a_id)
             else:
-                entity_type, d_id, skip1, skip2, skip3, a_id, a_name, a_state, a_sub_type = r
+                entity_type, d_id, skip1, skip2, a_id, a_name, a_state, a_sub_type = r
                 self._add_node(nodes, visited_nodes, 'action', a_id, a_name, a_state, a_sub_type)
                 self._add_edge(edges, visited_edges, 'datastore', d_id, 'action', a_id)
 

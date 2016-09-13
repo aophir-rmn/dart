@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from sqlalchemy import DateTime, desc
 from dart.context.locator import injectable
@@ -209,8 +209,19 @@ class WorkflowService(object):
         WorkflowInstanceDao.query.filter(WorkflowInstanceDao.data['workflow_id'].astext == workflow_id).delete(False)
         db.session.commit()
 
-    @staticmethod
-    def update_workflow_instance_state(workflow_instance, state, commit_changes=True, error_message=None):
+    def update_workflow_avg_runtime(self, workflow_instance):
+        """ :type workflow_instance: dart.model.workflow.WorkflowInstance """
+        workflow = self.get_workflow(workflow_instance.data.workflow_id)
+        source_workflow = workflow.copy()
+        actions = self._action_service.find_actions(workflow_id=workflow.id, states=[ActionState.TEMPLATE])
+        runtimes = [a.data.avg_runtime for a in actions]
+        if None in runtimes:
+            return
+
+        workflow.data.avg_runtime = sum(runtimes, timedelta())
+        return patch_difference(WorkflowDao, source_workflow, workflow, True)
+
+    def update_workflow_instance_state(self, workflow_instance, state, commit_changes=True, error_message=None):
         """ :type workflow_instance: dart.model.workflow.WorkflowInstance """
         source_workflow_instance = workflow_instance.copy()
         workflow_instance.data.state = state
@@ -220,6 +231,7 @@ class WorkflowService(object):
             workflow_instance.data.start_time = datetime.now()
         elif state == WorkflowInstanceState.COMPLETED:
             workflow_instance.data.end_time = datetime.now()
+            self.update_workflow_avg_runtime(workflow_instance)
         elif state == WorkflowInstanceState.FAILED:
             workflow_instance.data.end_time = datetime.now()
             workflow_instance.data.error_message = error_message

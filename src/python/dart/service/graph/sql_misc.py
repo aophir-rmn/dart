@@ -34,7 +34,7 @@ ENTITY_IDENTIFIER_SQL = """
 """
 
 DATASTORE_ONE_OFFS_SQL = """
-  SELECT 'datastore', d.id, NULL, NULL, NULL, a.id, a.name, a.state, a.sub_type
+  SELECT 'datastore', d.id, NULL, NULL, a.id, a.name, a.state, a.sub_type
     FROM datastore d
     JOIN LATERAL (
             SELECT e.id,
@@ -58,7 +58,7 @@ ORDER BY d.created, a.order_idx, a.created
 """
 
 WORKFLOW_INSTANCE_SQL = """
-     SELECT 'workflow', w.id, wfis.id, CAST(wfiac.progress AS INT), wfis.state, a.id,
+     SELECT 'workflow', w.id, wfis.id, wfis.state, a.id,
             CASE WHEN a.data ->> 'state' = 'RUNNING' THEN CONCAT(a.data ->> 'name', CONCAT(' - ', CONCAT(CAST(100 * COALESCE(CAST(a.data ->> 'progress' AS FLOAT), 0.0) AS INT), '%')))
                 ELSE a.data ->> 'name'
             END,
@@ -71,13 +71,6 @@ WORKFLOW_INSTANCE_SQL = """
            ORDER BY wfi.created DESC
               LIMIT CAST(w.data ->> 'concurrency' AS INT)
           ) wfis
-         ON TRUE
-  LEFT JOIN LATERAL (
-             SELECT 100 * SUM(CASE WHEN e.data ->> 'state' IN ('COMPLETED', 'FAILED') THEN 1 ELSE 0 END) / COUNT(*) AS progress
-               FROM action e
-              WHERE e.data ->> 'workflow_instance_id' = wfis.id
-                AND wfis.state = 'RUNNING'
-          ) wfiac
          ON TRUE
   LEFT JOIN action a
          ON a.data ->> 'workflow_instance_id' = wfis.id

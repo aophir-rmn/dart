@@ -35,6 +35,8 @@ def action_schema(supported_action_type_params_schema):
             'last_in_workflow': {'type': ['boolean', 'null'], 'default': False, 'readonly': True},
             'ecs_task_arn': {'type': ['string', 'null'], 'default': None, 'readonly': True},
             'extra_data': {'type': ['object', 'null'], 'default': None, 'readonly': True},
+            'avg_runtime': {'type': ['string', 'null'], 'readonly': True},
+            'completed_runs': {'type': 'integer', 'default': 0, 'readonly': True}
         },
         'additionalProperties': False,
         'required': default_required + ['args'] if supported_action_type_params_schema else default_required
