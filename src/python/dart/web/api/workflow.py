@@ -1,16 +1,18 @@
 import json
+
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+
 from jsonpatch import JsonPatch
+
 from dart.model.datastore import DatastoreState
 from dart.model.query import Filter, Operator
-
 from dart.model.workflow import Workflow, WorkflowState, WorkflowInstanceState
 from dart.service.action import ActionService
 from dart.service.filter import FilterService
 from dart.service.workflow import WorkflowService
 from dart.service.trigger import TriggerService
-from dart.web.api.entity_lookup import fetch_model, accounting_track
+from dart.web.api.entity_lookup import fetch_model, accounting_track, check_login
 
 
 api_workflow_bp = Blueprint('api_workflow', __name__)
@@ -20,6 +22,7 @@ api_workflow_bp = Blueprint('api_workflow', __name__)
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def post_workflow(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     workflow = Workflow.from_dict(request.get_json())
@@ -35,6 +38,7 @@ def post_workflow(datastore):
 @api_workflow_bp.route('/workflow', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def find_workflows():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -51,6 +55,7 @@ def find_workflows():
 @api_workflow_bp.route('/workflow/<workflow>', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def get_workflow(workflow):
     return {'results': workflow.to_dict()}
 
@@ -58,6 +63,7 @@ def get_workflow(workflow):
 @api_workflow_bp.route('/workflow/<workflow>/instance', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def find_workflow_instances(workflow):
     return _find_workflow_instances(workflow)
 
@@ -65,6 +71,7 @@ def find_workflow_instances(workflow):
 @api_workflow_bp.route('/workflow/instance/<workflow_instance>', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def get_workflow_instance(workflow_instance):
     return {'results': workflow_instance.to_dict()}
 
@@ -72,6 +79,7 @@ def get_workflow_instance(workflow_instance):
 @api_workflow_bp.route('/workflow/instance', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def find_instances():
     return _find_workflow_instances()
 
@@ -95,6 +103,7 @@ def _find_workflow_instances(workflow=None):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def put_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
     return update_workflow(workflow, Workflow.from_dict(request.get_json()))
@@ -104,6 +113,7 @@ def put_workflow(workflow):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def patch_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
     p = JsonPatch(request.get_json())
@@ -135,6 +145,7 @@ def update_workflow(workflow, updated_workflow):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def trigger_workflow(workflow):
     """ :type workflow: dart.model.workflow.Workflow """
     wf = workflow
@@ -153,6 +164,7 @@ def trigger_workflow(workflow):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def delete_workflow(workflow):
     workflow_service().delete_workflow_instances(workflow.id)
     action_service().delete_actions_in_workflow(workflow.id)
@@ -164,6 +176,7 @@ def delete_workflow(workflow):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def delete_workflow_instances(workflow):
     workflow_service().delete_workflow_instances(workflow.id)
     return {'results': 'OK'}

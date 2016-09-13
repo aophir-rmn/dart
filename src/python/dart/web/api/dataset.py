@@ -3,10 +3,11 @@ import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 
+
 from dart.model.dataset import Dataset
 from dart.service.dataset import DatasetService
 from dart.service.filter import FilterService
-from dart.web.api.entity_lookup import fetch_model, accounting_track
+from dart.web.api.entity_lookup import fetch_model, accounting_track, check_login
 from dart.util.dataset_guess import infer_dataset_data
 
 api_dataset_bp = Blueprint('api_dataset', __name__)
@@ -15,20 +16,20 @@ api_dataset_bp = Blueprint('api_dataset', __name__)
 @api_dataset_bp.route('/dataset', methods=['POST'])
 @accounting_track
 @jsonapi
+@check_login
 def post_dataset():
     return {'results': dataset_service().save_dataset(Dataset.from_dict(request.get_json())).to_dict()}
 
 
 @api_dataset_bp.route('/dataset/<dataset>', methods=['GET'])
 @fetch_model
-@accounting_track
 @jsonapi
+@check_login
 def get_dataset(dataset):
     return {'results': dataset.to_dict()}
 
 
 @api_dataset_bp.route('/dataset/guess', methods=['GET'])
-@accounting_track
 @jsonapi
 def get_dataset_guess():
     s3_path = request.args.get('s3_path')
@@ -38,8 +39,8 @@ def get_dataset_guess():
 
 
 @api_dataset_bp.route('/dataset', methods=['GET'])
-@accounting_track
 @jsonapi
+@check_login
 def find_datasets():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -57,6 +58,7 @@ def find_datasets():
 @accounting_track
 @fetch_model
 @jsonapi
+@check_login
 def put_dataset(dataset):
     return {'results': dataset_service().update_dataset(dataset.id, Dataset.from_dict(request.get_json())).to_dict()}
 
@@ -65,6 +67,7 @@ def put_dataset(dataset):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def delete_dataset(dataset):
     dataset_service().delete_dataset(dataset.id)
     return {'results': 'OK'}

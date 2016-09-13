@@ -1,15 +1,18 @@
 import logging
 import logging.config
+import imp
 import os
+import uuid
 
 from flask import Flask, jsonify
 
 from dart.config.config import configuration
 from dart.context.context import AppContext
 from dart.context.database import db
-from dart.model.exception import DartValidationException
+from dart.model.exception import DartValidationException, DartAuthenticationException
 from dart.web.api.graph import api_graph_bp
 from dart.web.ui.admin.admin import admin_bp
+from dart.web.api.auth import login_manager, auth_bp
 from dart.web.api.action import api_action_bp
 from dart.web.api.dataset import api_dataset_bp
 from dart.web.api.datastore import api_datastore_bp
@@ -22,7 +25,33 @@ from dart.web.api.subscription import api_subscription_bp
 from dart.web.ui.index import index_bp
 from flasgger import Swagger
 
+from jinja2 import Environment, FileSystemLoader
+import os
+
 _logger = logging.getLogger(__name__)
+
+# Onelogin is expecting some of its config via files.
+# we populate these files in this function.
+def write_onelogin_settings():
+    # Capture our current directory, the onelogin settings.json is in relative path ./ui/onelogin
+    # we write the config file to /tmp so we can use an absolute path
+    THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    j2_env = Environment(loader=FileSystemLoader(THIS_DIR + "/ui/onelogin/"),
+                         trim_blocks=True)
+    file_str = j2_env.get_template('settings.json.tmpl').render(
+        appid=app.config.get('auth').get('appid'),
+        onelogin_server=config.get('auth').get('onelogin_server'),
+        private_key=config.get('auth').get('private_key'),
+        x509cert=config.get('auth').get('x509cert'),
+        dart_server=config.get('auth').get('dart_server')
+    )
+
+    f = open('./ui/onelogin' + '/settings.json', 'w')
+    f.write(file_str)
+    f.close()
+
+
 
 
 api_version_prefix = '/api/1'
@@ -45,9 +74,19 @@ app.dart_context = AppContext(
 )
 
 app.config.update(config['flask'])
+app.config['SECRET_KEY'] = str(uuid.uuid4()) # not related to onelogin's secret key, its a flask secret key.
 db.init_app(app)
 
+app.config['auth'] = config['auth']
+write_onelogin_settings()
+
+
+app.auth_module = imp.load_source(config['auth']['module'], config['auth'].get('module_source'))
+app.auth_class = getattr(app.auth_module, config['auth']['class'])
+login_manager.init_app(app)
+
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(api_dataset_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_datastore_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_engine_bp, url_prefix=api_version_prefix)
@@ -65,6 +104,13 @@ app.register_blueprint(index_bp)
 def handle_dart_validation_exception(e):
     response = jsonify({'results': 'ERROR', 'error_message': e.message})
     response.status_code = 400
+    return response
+
+
+@app.errorhandler(DartAuthenticationException)
+def handle_dart_authentication_errors(e):
+    response = jsonify({'restults': 'Error', 'error_message': 'DART was unable to authenticate your request'})
+    response.status_code = 401
     return response
 
 

@@ -8,7 +8,7 @@ from dart.model.datastore import Datastore, DatastoreState
 from dart.service.action import ActionService
 from dart.service.datastore import DatastoreService
 from dart.service.filter import FilterService
-from dart.web.api.entity_lookup import fetch_model, accounting_track
+from dart.web.api.entity_lookup import fetch_model, accounting_track, check_login
 
 api_datastore_bp = Blueprint('api_datastore', __name__)
 
@@ -16,6 +16,7 @@ api_datastore_bp = Blueprint('api_datastore', __name__)
 @api_datastore_bp.route('/datastore', methods=['POST'])
 @accounting_track
 @jsonapi
+@check_login
 def post_datastore():
     return {'results': datastore_service().save_datastore(Datastore.from_dict(request.get_json())).to_dict()}
 
@@ -23,12 +24,14 @@ def post_datastore():
 @api_datastore_bp.route('/datastore/<datastore>', methods=['GET'])
 @fetch_model
 @jsonapi
+@check_login
 def get_datastore(datastore):
     return {'results': datastore.to_dict()}
 
 
 @api_datastore_bp.route('/datastore', methods=['GET'])
 @jsonapi
+@check_login
 def find_datastores():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -46,6 +49,7 @@ def find_datastores():
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def put_datastore(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     return update_datastore(datastore, Datastore.from_dict(request.get_json()))
@@ -55,6 +59,7 @@ def put_datastore(datastore):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def patch_datastore(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     p = JsonPatch(request.get_json())
@@ -89,6 +94,7 @@ def update_datastore(datastore, updated_datastore):
 @fetch_model
 @accounting_track
 @jsonapi
+@check_login
 def delete_datastore(datastore):
     datastore_service().delete_datastore(datastore.id)
     return {'results': 'OK'}
