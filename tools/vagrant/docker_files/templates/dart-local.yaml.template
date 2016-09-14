@@ -61,6 +61,13 @@ dart:
             incoming_message_class: boto.sqs.message.RawMessage
 
 
+cloudformation_stacks:
+    elb:
+        boto_args:
+            Parameters:
+                - {ParameterKey: RecordSetName, ParameterValue: localhost, UsePreviousValue: false}
+
+
 triggers:
     scheduled:
         cloudwatch_scheduled_events_sns_arn:
