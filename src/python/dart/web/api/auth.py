@@ -17,8 +17,12 @@ login_manager = LoginManager()
 @auth_bp.route('/login', methods=['GET'])
 @login_manager.unauthorized_handler
 def get_login():
+    print("2.1 @@@ check_login: get_login")
     auth = current_app.auth_class(request)
-    return auth.handle_login_request()
+    print("2.2 @@@ get_login, auth=")
+    ret =  auth.handle_login_request()
+    print("2.3 @@@ check_login: get_login, auth.handle_login_request()")
+    return ret
 
 @auth_bp.route('/login', methods=['POST'])
 def post_login():
