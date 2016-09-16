@@ -13,12 +13,9 @@ class SamlAuth(BaseAuth):
     additional_endpoints = Blueprint('saml_auth', __name__)
 
     def __init__(self, request):
-        print("3.1 @@@ SAmlAuth.__init__ START")
         self.request = request
         self.prepared_request = self._prepare_request()
-        print("3.2 @@@ SAmlAuth.__init__: prepared_request")
         self.auth = self._init_saml_auth()
-        print("3.3 @@@ SAmlAuth.__init__ END")
 
     def _prepare_request(self):
         # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
@@ -34,20 +31,15 @@ class SamlAuth(BaseAuth):
         }
 
     def _init_saml_auth(self):
-        print("4.1 @@@ SAmlAuth._init_saml_auth START")
         auth = OneLogin_Saml2_Auth(self.prepared_request, custom_base_path=current_app.config['auth']['config_path'])
-        print("4.2 @@@ SAmlAuth._init_saml_auth END")
         return auth
 
     def handle_login_request(self):
-        print("5 @@@ SAmlAuth.handle_login_request")
         return redirect(self.auth.login())
 
     def process_login_response(self):
-        print("7.1 @@@ SamlAuth.process_login_response - start")
         self.auth.process_response()
         ua = self.auth.get_attributes()
-        print("7.2 @@@ SamlAuth.process_login_response - USER email = %s" % ua['User.email'])
         USER_EMAIL = ua['User.email'][0]
         session['user_id'] = USER_EMAIL
 
@@ -55,7 +47,6 @@ class SamlAuth(BaseAuth):
         session_expiration = datetime.fromtimestamp(self.auth.get_session_expiration())
         user = User(USER_EMAIL, USER_EMAIL, USER_EMAIL, USER_EMAIL, True, session_expiration)
         user = user_service.login_user(user, self.auth.is_authenticated(), session_expiration)
-        print("7.3 @@@ SamlAuth.process_login_response - end")
         return user
 
     def handle_logout_request(self):

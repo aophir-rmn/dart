@@ -88,7 +88,6 @@ def check_login(f):
         # An none-UI call will not have a session object and will always need to be authenticated.
         # For testing purposes we enable no login key auth.use_auth
         if (not session.get('user_id')):
-            print("1. @@@ check_login: login_required")
             func = login_required(f)
 
         return func(*args, **kwargs)

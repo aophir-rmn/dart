@@ -17,26 +17,18 @@ login_manager = LoginManager()
 @auth_bp.route('/login', methods=['GET'])
 @login_manager.unauthorized_handler
 def get_login():
-    print("2.1 @@@ check_login: get_login")
     auth = current_app.auth_class(request)
-    print("2.2 @@@ get_login, auth=")
     ret =  auth.handle_login_request()
-    print("2.3 @@@ check_login: get_login, auth.handle_login_request()")
     return ret
 
 @auth_bp.route('/login', methods=['POST'])
 def post_login():
-    print("A.1 @@@ post_login: Start")
     auth = current_app.auth_class(request)
-    print("A.2 @@@ post_login: auth.process_login_response()")
     user = auth.process_login_response()
     if user.is_authenticated:
-        print("A.3.1 @@@ post_login: login_user()")
         login_user(user)
-        print("A.3. @@@ post_login: redirect()")
         return redirect(request.args.get('next') or '/')
     flash('Login incorrect')
-    print("@@@ post_login: End")
     return redirect(url_for('auth.get_login'))
 
 @auth_bp.route('/logout', methods=['GET'])
@@ -86,7 +78,7 @@ def api_auth(request):
     if not api_key:
         raise DartAuthenticationException('DART is unable to authenticate your request, api_key missing or not found. api_key=%s' % auth_data['Credential'])
 
-    user = user_service.get_user(api_key.user_id, False)
+    user = user_service.get_user_by_email(api_key.user_id, False)
     if not user:
         raise DartAuthenticationException('DART is unable to authenticate your request, user not found. user_id=%s' % api_key.user_id)
 

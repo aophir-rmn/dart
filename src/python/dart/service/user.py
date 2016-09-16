@@ -18,7 +18,6 @@ class UserService(object):
 
     @staticmethod
     def save_user(user, commit=True, flush=False):
-        print("6.1 @@@ UserService.save_user - start")
         """ :type user: dart.model.user.User """
         user_dao = UserDao()
         for key, value in user.to_dict().iteritems():
@@ -30,7 +29,6 @@ class UserService(object):
             db.session.flush()
         if commit:
             db.session.commit()
-        print("6.2 @@@ UserService.save_user - end")
         return user_dao.to_model()
 
     @staticmethod
