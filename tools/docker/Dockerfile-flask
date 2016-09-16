@@ -1,19 +1,10 @@
-FROM centos
+FROM ubuntu:15.04
 MAINTAINER datawarehouse <aus-eng-data-warehouse@rmn.com>
 
-RUN yum update -y
-RUN yum install epel-release -y
-RUN yum install -y \
-    vim-enhanced \
-    mlocate \
-    git \
-    python-pip \
-    python-devel \
-    postgres-devel \
-    postgres-contrib \
-    libpqxx-devel \
-    wget
+RUN apt-get update
+RUN apt-get install -y python-dev python-pip libpq-dev
 
+RUN apt-get install -y wget
 
 RUN mkdir -p /home/root
 RUN cd /home/root
@@ -21,14 +12,11 @@ RUN wget https://bootstrap.pypa.io/get-pip.py
 RUN python get-pip.py
 RUN /usr/local/bin/pip install awscli
 
-RUN yum install -y \
-    libxml2-devel \
-    xmlsec1-devel \
-    xmlsec1-openssl-devel \
-    libtool-ltdl-devel \
-    ibxml2 \
-    libxslt
-
+RUN apt-get install -y libmagic-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    swig \
+    libxslt1-dev
 
 ADD /src/python/requirements.txt /src/python/requirements.txt
 
