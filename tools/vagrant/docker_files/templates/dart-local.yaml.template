@@ -255,7 +255,7 @@ auth:
     module: saml_auth
     class: SamlAuth
     appid: 555555
-    onelogin_server: https://xxx.onelogin.com
+    onelogin_server: https://rmn.onelogin.com
     private_key: ''
     x509cert: MIIE
     dart_server: http://localhost:5000
