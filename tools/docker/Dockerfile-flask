@@ -23,7 +23,7 @@ ADD /src/python/requirements.txt /src/python/requirements.txt
 RUN pip install -r /src/python/requirements.txt
 
 # see https://github.com/onelogin/python-saml/issues/30 \
-RUN if [ -f /usr/bin/xmlsec1-config ]; then  sed -i 's/the_flags="$the_flags  -D__XMLSEC_FUNCTION__=__FUNCTION__ -DXMLSEC_NO_GOST=1 -DXMLSEC_NO_XKMS=1 -DXMLSEC_DL_LIBLTDL=1 -I\/usr\/include\/xmlsec1   $the_xml_flags $the_xslt_flags $the_crypto_flags"/the_flags="$the_flags  -D__XMLSEC_FUNCTION__=__FUNCTION__ -DXMLSEC_NO_GOST=1 -DXMLSEC_NO_XKMS=1 -DXMLSEC_DL_LIBLTDL=1 -DXMLSEC_NO_SIZE_T -I\/usr\/include\/xmlsec1   $the_xml_flags $the_xslt_flags $the_crypto_flags"/g' /usr/bin/xmlsec1-config ; fi
+RUN if [ -f /usr/bin/xmlsec1-config ]; then sed -i 's/LIBLTDL=1 -I/LIBLTDL=1 -DXMLSEC_NO_SIZE_T -I/' /usr/bin/xmlsec1-config  ; fi
 RUN pip uninstall -y dm.xmlsec.binding
 RUN pip install dm.xmlsec.binding
 
