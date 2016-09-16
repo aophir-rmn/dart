@@ -26,12 +26,17 @@ def get_login():
 
 @auth_bp.route('/login', methods=['POST'])
 def post_login():
+    print("A.1 @@@ post_login: Start")
     auth = current_app.auth_class(request)
+    print("A.2 @@@ post_login: auth.process_login_response()")
     user = auth.process_login_response()
     if user.is_authenticated:
+        print("A.3.1 @@@ post_login: login_user()")
         login_user(user)
+        print("A.3. @@@ post_login: redirect()")
         return redirect(request.args.get('next') or '/')
     flash('Login incorrect')
+    print("@@@ post_login: End")
     return redirect(url_for('auth.get_login'))
 
 @auth_bp.route('/logout', methods=['GET'])
