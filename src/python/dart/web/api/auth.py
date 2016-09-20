@@ -51,7 +51,6 @@ def load_user(user_id):
     user.is_authenticated = (user.is_authenticated and user.session_expiration > datetime.utcnow())
     return user
 
-from dart.model.user import User
 @login_manager.request_loader
 def api_auth(request):
     auth_header = request.headers.get('Authorization')

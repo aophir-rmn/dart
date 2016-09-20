@@ -3,7 +3,7 @@ import logging
 import traceback
 from functools import wraps
 
-from flask import abort, session, current_app, request, g
+from flask import abort, session, current_app, request, render_template
 from flask.ext.login import login_required
 
 from dart.context.locator import injectable
@@ -87,9 +87,11 @@ def check_login(f):
         # if we have a session["user_id"] than we are logged-in (it is removed on logout)
         # An none-UI call will not have a session object and will always need to be authenticated.
         # For testing purposes we enable no login key auth.use_auth
-        if (not session.get('user_id')):
-            return render_template("info.html")
-            #func = login_required(f)
+        if session:
+            if (not session.get('user_id')):
+                return render_template("info.html")
+        else: # no session in api mode, so always need to authenticate
+            func = login_required(f)
 
         return func(*args, **kwargs)
     return wrapper
