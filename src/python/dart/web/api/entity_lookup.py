@@ -88,6 +88,7 @@ def check_login(f):
         if current_app.config.get('auth').get('use_auth') and (not session or not session.get('user_id')):
             print "### check_login: login_required"
             func = login_required(f)
+
         return func(*args, **kwargs)
 
     return wrapper
