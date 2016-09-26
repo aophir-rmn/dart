@@ -1,14 +1,10 @@
-import hashlib
-import hmac
-
 from flask import Blueprint, request, current_app, redirect, flash, url_for, render_template, g
 from flask.ext.login import LoginManager, login_user, logout_user
-from datetime import datetime, timedelta
-from dateutil.parser import parse
 
 from dart.service.user import UserService
 from dart.service.api_key import ApiKeyService
 from dart.model.exception import DartAuthenticationException
+from dart.auth.AuthenticationAlgoFactory import basic_auth
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -54,40 +50,23 @@ def load_user(user_id):
 @login_manager.request_loader
 def api_auth(request):
     auth_header = request.headers.get('Authorization')
-    request_timestamp = request.headers.get('x-dart-date')
-    if not (auth_header and request_timestamp):
-        # if these headers are missing then the API call is coming from the UI
-        # and the request should load the user from the session cookie
+    if not (auth_header):
+        # if the auth header is missing then it is assumed the API call is coming from the UI
+        # and the request should load the user from the session cookie.
         return None
 
-    # we expect Authorization header: Credential=<cred>  Signature=<sign>
-    # The credential is the api_key we share with the user. E.g. '8c3fb507-655d-11e6-b8d9-a0999b10d387'
-    # The signature is a private key (also shared with the user). E.g. 'a48ea599-655d-11e6-9c07-00000000000c'
-    # The user signs the Credential with the time string and creates the hmac:
-    # hmac.new(key=api_key,msg='{}{}'.format(request_timestamp, secret_key), digestmod=hashlib.sha256).hexdigest()
-    auth_data = {item.split('=')[0]: item.split('=')[1] for item in auth_header.split()}
-
-    assert 'Credential' in auth_data
-    assert 'Signature' in auth_data
-
+    auth_algo_name = auth_header.split(' ')[0]
     api_key_service = current_app.dart_context.get(ApiKeyService)
     user_service = current_app.dart_context.get(UserService)
 
-    api_key = api_key_service.get_api_key(auth_data['Credential'], False)
-    if not api_key:
-        raise DartAuthenticationException('DART is unable to authenticate your request, api_key missing or not found. api_key=%s' % auth_data['Credential'])
+    assert api_key_service
+    assert user_service
 
-    user = user_service.get_user_by_email(api_key.user_id, False)
-    if not user:
-        raise DartAuthenticationException('DART is unable to authenticate your request, user not found. user_id=%s' % api_key.user_id)
+    if (auth_algo_name == 'Basic'):
+        return basic_auth(auth_header, api_key_service, user_service)
+    elif (auth_algo_name == 'DART1_HMAC_SHA256'):
+        pass
 
-    # Authenticated means: 1. The call was sent in the last 5 minutes. 2. It's HMAC was singed correctly.
-    user.is_authenticated = \
-        parse(request_timestamp) > (datetime.utcnow() - timedelta(minutes=5)) and \
-        auth_data['Signature'] == hmac.new(key=api_key.api_key,
-                                           msg='{}{}'.format(request_timestamp, api_key.api_secret),
-                                           digestmod=hashlib.sha256).hexdigest()
 
-    if not user.is_authenticated:
-        raise DartAuthenticationException('DART is unable to authenticate your request')
-    return user
+    # We did not match any auth algorithm if we reached here.
+    raise DartAuthenticationException('DART is unable to authenticate your request')

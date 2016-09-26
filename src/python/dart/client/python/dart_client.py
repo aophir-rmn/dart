@@ -4,10 +4,7 @@ import time
 
 import jsonpatch
 import requests
-import hmac
-import hashlib
-
-from datetime import datetime
+from basicauth import encode
 
 from dart.model.action import Action, ActionState
 from dart.model.dataset import Dataset
@@ -392,13 +389,9 @@ class Dart(object):
         return self._request('get', '/graph/%s/%s' % (entity_type, entity_id), model_class=Graph)
 
     def _get_response_data(self, method, url_prefix, data=None, params=None):
-        timestamp = datetime.utcnow()
-        signature = hmac.new(key=self._credential,
-                             msg='{}{}'.format(timestamp.isoformat(), self._secret),
-                             digestmod=hashlib.sha256).hexdigest()
+        basic_auth_signature = encode(self._credential, self._secret)
         headers = {
-            'x-dart-date': timestamp.isoformat(),
-            'Authorization': 'Credential={} Signature={}'.format(self._credential, signature)
+            'Authorization': basic_auth_signature
         }
         response = requests.request(method, self._base_url + '/' + url_prefix.lstrip('/'), headers=headers, json=data, params=params, verify=False)
         try:
