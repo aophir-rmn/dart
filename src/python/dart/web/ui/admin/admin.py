@@ -7,39 +7,31 @@ from dart.model.mutex import Mutexes, MutexState
 from dart.util.rand import random_id
 from dart.config.config import configuration
 
+from dart.web.ui.admin.users_keys_populator import populate_dart_client_user, populate_dart_client_apikeys
+
 admin_bp = Blueprint('admin', __name__)
 
 CONFIG_PATH = os.environ['DART_CONFIG']
 CONFIG = configuration(CONFIG_PATH)
 AUTH_CONFIG = CONFIG['auth']
 
-def exec_sql(statement):
-    db.session.execute(statement)
-    db.session.commit()
+
+def populate_user_api_secret_keys():
+    ''' Under auth.predefined_auth_services we keep a triplet <user,api_key, secretKey>
+        that an external service (e.g. portico, decode, savor) uses.  By being placed in a
+        config file we can have different keys for different envs thaqt are always loaded when DART starts.
+    '''
+    if AUTH_CONFIG.get('predefined_auth_services'):
+        for usr_api_secret in AUTH_CONFIG.get('predefined_auth_services'):
+            items = usr_api_secret.split(" ")
+            if len(items) == 3:
+                print items
+                populate_dart_client_user(items[0])
+                populate_dart_client_apikeys(items[1], items[2], items[0])
+            else:
+                raise Exception("Predefined service user and api/secret keys must all exist. %s " % items)
 
 
-def populate_dart_client_apikeys(credential, secret, dart_client_user):
-    del_sql = """ DELETE FROM public.api_key  WHERE (user_id = :user_id) """
-    exec_sql(text(del_sql).bindparams(user_id=dart_client_user))
-
-
-    add_sql = """INSERT INTO public.api_key(id, version_id, created, updated, user_id, api_key, api_secret)
-      SELECT :id, 0, NOW(), NOW(),:user_id, :dart_client_key, :dart_client_secret
-    """
-    statement = text(add_sql).bindparams(id=random_id(),
-                                     user_id=dart_client_user,
-                                     dart_client_key=credential,
-                                     dart_client_secret=secret)
-    exec_sql(statement)
-
-
-def populate_dart_client_user(dart_client_user):
-    sql = """DELETE FROM public.user  WHERE (email = :email) """
-    exec_sql(text(sql).bindparams(email=dart_client_user))
-
-    sql = """ INSERT INTO public.user (id, version_id, created, updated, email, first_name, last_name, is_authenticated, session_expiration)
-              SELECT :id, 0, NOW(), NOW(), :email, :email, :email, FALSE , NOW()"""
-    exec_sql(text(sql).bindparams(id=random_id(), email=dart_client_user))
 
 @admin_bp.route('/create_all', methods=['POST'])
 def create_all():
@@ -73,5 +65,9 @@ def create_all():
     DART_CLIENT_USER = 'dart@client.rmn'
     populate_dart_client_user(DART_CLIENT_USER)
     populate_dart_client_apikeys(_credential, _secret, DART_CLIENT_USER)
+
+
+    # populate user and keys for external service (not dart client)
+    populate_user_api_secret_keys()
 
     return 'OK'
