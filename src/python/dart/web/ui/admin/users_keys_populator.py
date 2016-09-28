@@ -1,7 +1,7 @@
-''' Handles default values that shoudl be added to the user/apiKey tables to allow apicalls authentication '''
+''' Handles default values that should be added to the user/apiKey tables to allow apicalls authentication '''
 from sqlalchemy import text
 from dart.context.database import db
-
+from dart.util.rand import random_id
 
 def exec_sql(statement):
     db.session.execute(statement)
