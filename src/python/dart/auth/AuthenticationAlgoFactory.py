@@ -12,8 +12,7 @@ def basic_auth(auth_header, api_key_service, user_service):
     api_key_record = api_key_service.get_api_key(api_key_value, False)
     if not api_key_record:
         raise DartAuthenticationException(
-            'DART is unable to authenticate your request, api_key missing or not found. api_key=%s' % auth_data[
-                'Credential'])
+            'DART is unable to authenticate your request, api_key missing or not found. api_key=%s' % api_key_value)
 
     user_record = user_service.get_user_by_email(api_key_record.user_id, False)
     if not user_record:
