@@ -1,11 +1,11 @@
-from flask import session, g
+from flask_login import current_user
 from dart.model.accounting import ActivityEntity, Accounting
 
 
 def generate_accounting_event(return_code, req):
-    user_id = session.get('user_id')
+    user_id = current_user.email
     if not user_id:
-        user_id = g.user_id or 'anonymous' # in Non-UI case g.user_id is used (session do not exist outside of UI)
+        user_id = 'anonymous'
 
     state = req.method  # GET/POST/PUT/PATCH/DELETE
 

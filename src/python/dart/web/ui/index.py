@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, session
-from dart.web.api.entity_lookup import check_login
+from flask.ext.login import login_required
 
 index_bp = Blueprint('index', __name__)
 
 
 @index_bp.route('/')
-@check_login
+@login_required
 def index():
     return render_template('index.html')
 
