@@ -4,6 +4,7 @@ import time
 
 import jsonpatch
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from basicauth import encode
 
 from dart.model.action import Action, ActionState
@@ -24,6 +25,9 @@ config_path = os.environ['DART_CONFIG']
 config = configuration(config_path)
 auth_config = config['auth']
 
+# Disable 'InsecureRequestWarning: Unverified HTTPS request is being made...' warnings in local dev mode.
+if auth_config.get('use_auth') and (auth_config.get('dart_server') == 'https://localhost:5000'):
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class Dart(object):
 
