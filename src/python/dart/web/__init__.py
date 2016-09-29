@@ -2,9 +2,12 @@ import logging
 import logging.config
 import imp
 import os
+import urllib
+import urlparse
 import uuid
+import yaml
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, request
 
 from dart.config.config import configuration
 from dart.context.context import AppContext
@@ -23,7 +26,6 @@ from dart.web.api.trigger import api_trigger_bp
 from dart.web.api.workflow import api_workflow_bp
 from dart.web.api.subscription import api_subscription_bp
 from dart.web.ui.index import index_bp
-from flasgger import Swagger
 
 from jinja2 import Environment, FileSystemLoader
 import os
@@ -62,7 +64,6 @@ _logger.info('loaded config from path: %s' % config_path)
 
 
 app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
-Swagger(app) # enables swagger-ui on /apidocs/index.html
 
 app.dart_context = AppContext(
     config=config,
@@ -98,6 +99,29 @@ app.register_blueprint(api_event_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_schema_bp, url_prefix=api_version_prefix)
 app.register_blueprint(api_graph_bp, url_prefix=api_version_prefix)
 app.register_blueprint(index_bp)
+
+
+@app.route('/apidocs')
+@app.route('/apidocs/')
+@app.route('/apidocs/index.html')
+def get_apidocs():
+    swagger_ui_url = urlparse.urljoin(request.base_url, '/static/apidocs/index.html?' + urllib.urlencode({
+        'url': urlparse.urljoin(request.base_url, '/api/1/swagger.json')
+    }))
+    return redirect(swagger_ui_url)
+
+
+@app.route('/api/1/swagger.json', methods=['GET'])
+def get_swagger():
+    swagger_spec = yaml.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                               'api',
+                                               'swagger.yaml'), 'rt'))
+    # Update the swagger specification to include specific information
+    # about where the API is being served on this server
+    swagger_spec['host'] = request.host
+    swagger_spec['basePath'] = '/api/1'
+    swagger_spec['schemes'] = [request.scheme]
+    return jsonify(swagger_spec)
 
 
 @app.errorhandler(DartValidationException)
