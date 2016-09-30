@@ -1,7 +1,6 @@
 ''' Handles default values that should be added to the user/apiKey tables to allow apicalls authentication '''
 from sqlalchemy import text
 from dart.context.database import db
-from dart.util.rand import random_id
 
 def exec_sql(statement):
     db.session.execute(statement)
@@ -31,4 +30,4 @@ def populate_dart_client_user(dart_client_user):
 
     sql = """ INSERT INTO public.user (id, version_id, created, updated, email, first_name, last_name, is_authenticated, session_expiration)
               SELECT :id, 0, NOW(), NOW(), :email, :email, :email, FALSE , NOW()"""
-    exec_sql(text(sql).bindparams(id=random_id(), email=dart_client_user))
+    exec_sql(text(sql).bindparams(id=dart_client_user, email=dart_client_user))

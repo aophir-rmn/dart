@@ -35,14 +35,13 @@ class SamlAuth(BaseAuth):
         return auth
 
     def handle_login_request(self):
-        session['user_id'] = 'dart@client.rmn'
-        return redirect('/')
+        return redirect(self.auth.login())
 
     def process_login_response(self):
         self.auth.process_response()
         ua = self.auth.get_attributes()
         USER_EMAIL = ua['User.email'][0]
-        session['user_id'] = USER_EMAIL
+        #session['user_id'] = USER_EMAIL
 
         user_service = current_app.dart_context.get(UserService)
         session_expiration = datetime.fromtimestamp(self.auth.get_session_expiration())
@@ -51,7 +50,7 @@ class SamlAuth(BaseAuth):
         return user
 
     def handle_logout_request(self):
-        return redirect('/')
+        return redirect(self.auth.logout())
 
 
 @SamlAuth.additional_endpoints.route('/metadata', methods=['GET'])

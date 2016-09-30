@@ -1,4 +1,4 @@
-from flask import session
+from flask_login import current_user
 from jsonschema import Draft4Validator
 from jsonschema.exceptions import best_match
 import logging
@@ -25,10 +25,10 @@ def default_and_validate(model, schema):
         raise DartValidationException(str(best_match(errors)))
 
     user_id = "anonymous"
-    if session and session.get("user_id"):
-        user_id = session.get("user_id")
+    if current_user and current_user.email:
+        user_id = current_user.email
     else:
-        _logger.debug("No session['user_id'] found. using anonymous user id instead.")
+        _logger.debug("No current_user found. using anonymous user id instead.")
 
     if instance and ('data' in instance) and ("user_id" in instance["data"]):
         instance['data']['user_id'] = user_id

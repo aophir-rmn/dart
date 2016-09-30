@@ -2,12 +2,13 @@ import json
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
 
 
 from dart.model.dataset import Dataset
 from dart.service.dataset import DatasetService
 from dart.service.filter import FilterService
-from dart.web.api.entity_lookup import fetch_model, accounting_track, check_login
+from dart.web.api.entity_lookup import fetch_model, accounting_track
 from dart.util.dataset_guess import infer_dataset_data
 
 api_dataset_bp = Blueprint('api_dataset', __name__)
@@ -16,7 +17,7 @@ api_dataset_bp = Blueprint('api_dataset', __name__)
 @api_dataset_bp.route('/dataset', methods=['POST'])
 @accounting_track
 @jsonapi
-@check_login
+@login_required
 def post_dataset():
     return {'results': dataset_service().save_dataset(Dataset.from_dict(request.get_json())).to_dict()}
 
@@ -24,7 +25,7 @@ def post_dataset():
 @api_dataset_bp.route('/dataset/<dataset>', methods=['GET'])
 @fetch_model
 @jsonapi
-@check_login
+@login_required
 def get_dataset(dataset):
     return {'results': dataset.to_dict()}
 
@@ -40,7 +41,7 @@ def get_dataset_guess():
 
 @api_dataset_bp.route('/dataset', methods=['GET'])
 @jsonapi
-@check_login
+@login_required
 def find_datasets():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -58,7 +59,7 @@ def find_datasets():
 @accounting_track
 @fetch_model
 @jsonapi
-@check_login
+@login_required
 def put_dataset(dataset):
     return {'results': dataset_service().update_dataset(dataset.id, Dataset.from_dict(request.get_json())).to_dict()}
 
@@ -67,7 +68,7 @@ def put_dataset(dataset):
 @fetch_model
 @accounting_track
 @jsonapi
-@check_login
+@login_required
 def delete_dataset(dataset):
     dataset_service().delete_dataset(dataset.id)
     return {'results': 'OK'}
