@@ -37,20 +37,6 @@ def get_engine(engine):
     This is the engine API
     Call this api passing a engine id (id column in engine table) and get back its data column.
     E.g. {"name": "no_op_engine", "tags": [], "description": "Helps engineering test dart", "ecs_task_definition": ...}
-    ---
-    tags:
-      - engine API
-    parameters:
-      - name: engine
-        in: path
-        type: string
-        required: true
-        description: The id column in engine table.
-    responses:
-      404:
-        description: Error, engine with provided id not found.
-      200:
-        description: Found engine with provided id.
     """
     return {'results': engine.to_dict()}
 
@@ -62,14 +48,6 @@ def find_engines():
     """
     This is the engine API
     Get back all existing engines.
-    ---
-    tags:
-      - engine API
-    responses:
-      404:
-        description: Error, engine with provided id not found.
-      200:
-        description: Found engine with provided id.
     """
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))

@@ -1,8 +1,11 @@
 #
 # Usage:
-# - Delete everything following and including "definitions:" from src/swagger/swagger.yaml
-# - python src/python/dart/tool/export_swagger_definitions.py >> src/swagger/swagger.yaml
+# - python src/python/dart/tool/export_swagger_definitions.py src/python/dart/web/api/swagger.yaml
 #
+from __future__ import print_function
+
+import filecmp
+import os
 import sys
 from yaml import dump
 try:
@@ -22,6 +25,54 @@ from dart.schema.workflow import workflow_schema, workflow_instance_schema
 
 
 def main():
+    """
+    This will read in the swagger.yaml file and replace everything in the
+    file after "definitions:" with the content of export_swagger_definitions.
+
+    If the --dry-run flag is specified, then the tool will produce an updated
+    swagger specification and check it against the original. If it differs,
+    the tool will exit with an error code and prompt the user to re-run the
+    tool without the flag and commit the resulting changes. This is intended
+    to be a safety check to use in the build to remind developers to update
+    the swagger when they update the schemas.
+    """
+    dry_run = False
+    args = list(sys.argv[1:])
+    if '--dry-run' in args:
+        args.remove('--dry-run')
+        dry_run = True
+
+    if not args:
+        print("Usage: [--dry-run] <path-to-swagger-spec>", file=sys.stderr)
+        return 1
+
+    swagger_spec_path = args[0]
+    updated_swagger_spec_path = swagger_spec_path + '.tmp'
+
+    with open(swagger_spec_path, 'rt') as input_file:
+        with open(updated_swagger_spec_path, 'wt') as output_file:
+            for line in input_file:
+                if line.strip().startswith('definitions:'):
+                    break
+                output_file.write(line)
+            export_swagger_definitions(output_file)
+
+    if dry_run:
+        if filecmp.cmp(swagger_spec_path, updated_swagger_spec_path):
+            print("No changes.")
+            os.remove(updated_swagger_spec_path)
+            return 0
+        else:
+            print("The generated swagger specification differs from %s" % swagger_spec_path, file=sys.stderr)
+            print("Please re-run this tool without --dry-run and commit the resulting changes.", file=sys.stderr)
+            return 1
+
+    os.rename(updated_swagger_spec_path, swagger_spec_path)
+    print("Updated %s" % swagger_spec_path)
+    return 0
+
+
+def export_swagger_definitions(out):
     data = {
         'definitions': {
             'Action': action_schema({'type': 'object', 'x-nullable': True}),
@@ -104,8 +155,7 @@ def main():
         }
     }
     fix_up(data, data, [None])
-    print dump(data, Dumper=Dumper, default_style=None, default_flow_style=False, explicit_start=False, explicit_end=False)
-    return 0
+    dump(data, out, Dumper=Dumper, default_style=None, default_flow_style=False, explicit_start=False, explicit_end=False)
 
 
 def action_context_schema():
