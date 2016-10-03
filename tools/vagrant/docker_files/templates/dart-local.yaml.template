@@ -249,10 +249,10 @@ logging:
 auth:
     use_auth: True
     config_path: ./ui/onelogin
-    module_source: ../auth/dummy_saml_auth.py
-    module: dummy_saml_auth
-    class: DummySamlAuth
-    appid: 578793000
+    module_source: ../auth/saml_auth.py
+    module: saml_auth
+    class: SamlAuth
+    appid: 000
     onelogin_server: https://rmn.onelogin.com
     private_key: ''
     x509cert: XXX
