@@ -26,6 +26,7 @@ class TestTriggerCrud(unittest.TestCase):
         args = {'completed_workflow_id': self.workflow.id}
         tr = Trigger(data=TriggerData('test-trigger', 'workflow_completion', [self.workflow.id], args))
         posted_tr = self.dart.save_trigger(tr)
+        tr.data.user_id = posted_tr.data.user_id
         self.assertEqual(posted_tr.data.to_dict(), tr.data.to_dict())
 
         trigger = self.dart.get_trigger(posted_tr.id)
