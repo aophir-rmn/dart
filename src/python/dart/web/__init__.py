@@ -81,6 +81,9 @@ db.init_app(app)
 app.config['auth'] = config['auth']
 write_onelogin_settings()
 
+if (app.config['auth'] and app.config['auth'].get('use_auth') == False):
+  app.config['LOGIN_DISABLED'] = True
+
 
 app.auth_module = imp.load_source(config['auth']['module'], config['auth'].get('module_source'))
 app.auth_class = getattr(app.auth_module, config['auth']['class'])
