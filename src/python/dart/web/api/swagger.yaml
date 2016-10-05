@@ -1762,7 +1762,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2033,7 +2033,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2128,7 +2128,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2205,7 +2205,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2275,7 +2275,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2662,7 +2662,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2728,7 +2728,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2858,7 +2858,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
@@ -2928,7 +2928,7 @@ definitions:
       tags:
         default: []
         items:
-          maxLength: 30
+          maxLength: 40
           pattern: ^[a-zA-Z0-9_]+$
           type: string
         minItems: 0
