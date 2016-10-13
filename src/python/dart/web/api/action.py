@@ -4,6 +4,7 @@ from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
 from jsonpatch import JsonPatch
+from flask_login import current_user
 
 from dart.message.trigger_proxy import TriggerProxy
 from dart.model.action import Action, ActionState
@@ -37,7 +38,7 @@ def post_datastore_actions(datastore):
 
     engine_name = datastore.data.engine_name
     saved_actions = [a.to_dict() for a in action_service().save_actions(actions, engine_name, datastore=datastore)]
-    trigger_proxy().try_next_action(datastore.id)
+    trigger_proxy().try_next_action({'datastore_id':datastore.id, 'log_info':{'user_id': current_user.email}})
     return {'results': saved_actions}
 
 

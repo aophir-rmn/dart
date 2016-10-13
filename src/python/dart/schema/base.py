@@ -70,6 +70,6 @@ def tag_list_schema():
         'x-schema-form': {'type': 'tabarray', 'title': "{{ value || 'tag ' + $index }}"},
         'type': 'array',
         'default': [],
-        'items': {'type': 'string', 'pattern': '^[a-zA-Z0-9_]+$', 'maxLength': 30},
+        'items': {'type': 'string', 'pattern': '^[a-zA-Z0-9_]+$', 'maxLength': 40},
         'minItems': 0,
     }

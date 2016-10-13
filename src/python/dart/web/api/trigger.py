@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from flask_login import current_user
 
 from jsonpatch import JsonPatch
 
@@ -23,7 +24,7 @@ api_trigger_bp = Blueprint('api_trigger', __name__)
 @login_required
 def post_trigger():
     trigger = Trigger.from_dict(request.get_json())
-    return {'results': trigger_service().save_trigger(trigger).to_dict()}
+    return {'results': trigger_service().save_trigger(trigger=trigger, user_id=current_user.email).to_dict()}
 
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['GET'])

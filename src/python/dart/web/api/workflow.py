@@ -1,8 +1,11 @@
 import json
+import uuid
+import logging
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from flask_login import current_user
 
 from jsonpatch import JsonPatch
 
@@ -17,7 +20,7 @@ from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 
 api_workflow_bp = Blueprint('api_workflow', __name__)
-
+_logger = logging.getLogger()
 
 @api_workflow_bp.route('/datastore/<datastore>/workflow', methods=['POST'])
 @fetch_model
@@ -157,7 +160,12 @@ def trigger_workflow(workflow):
     if workflow_service().find_workflow_instances_count(wf.id, states) >= wf.data.concurrency:
         return {'results': 'ERROR', 'error_message': 'Max concurrency reached: %s' % wf.data.concurrency}, 400, None
 
-    trigger_service().trigger_workflow_async(workflow.id)
+    wf_uuid = uuid.uuid4().hex # to avoid uuid serialization issues
+    _logger.info("Launching Workflow {workflow_id} for user={user_id} with uuid={wf_uuid}".
+                 format(workflow_id=workflow.id, user_id=user_id, wf_uuid=wf_uuid))
+
+    trigger_service().trigger_workflow_async({'workflow_id': workflow.id,
+                                              'log_info':{'user_id': current_user.email, 'wf_uuid': wf_uuid}})
     return {'results': 'OK'}
 
 
