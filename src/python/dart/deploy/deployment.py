@@ -14,7 +14,7 @@ class DeploymentTool(object):
         while True:
             response = boto3.client('cloudformation').describe_stacks(StackName=stack_name)
             status = response['Stacks'][0]['StackStatus']
-            if status == 'CREATE_IN_PROGRESS':
+            if status in  ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS']:
                 time.sleep(7)
                 continue
             if status in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']:

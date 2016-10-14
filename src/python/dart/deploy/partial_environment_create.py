@@ -35,6 +35,19 @@ class PartialEnvironmentCreateTool(DeploymentTool):
       *  assumes that IAM, SNS, and CloudWatch Logs are already setup
       *  uses input_config_path to drive CloudFormation stack creation, etc
       *  writes an updated config file to output_config_s3_path
+
+    The following are the stacks created/updated by this tool (in the order
+    of how the script deploys them):
+     - events
+     - rds
+     - elb
+     - elb-internal
+     - engine-taskrunner
+     - web
+     - web-internal
+     - engine-worker
+     - trigger-worker
+     - subscription-worker
     """
     def __init__(self, environment_name, input_config_path, output_config_s3_path, dart_email_username, stacks_to_skip):
         assert output_config_s3_path.startswith('s3://')
