@@ -49,9 +49,10 @@ class PartialEnvironmentCreateTool(DeploymentTool):
      - trigger-worker
      - subscription-worker
     """
-    def __init__(self, environment_name, input_config_path, output_config_s3_path, dart_email_username, stacks_to_skip):
+    def __init__(self, environment_name, mode, input_config_path, output_config_s3_path, dart_email_username, stacks_to_skip):
         assert output_config_s3_path.startswith('s3://')
         self.environment_name = environment_name
+        self.mode = mode
         self.input_config_path = input_config_path
         self.output_config_s3_path = output_config_s3_path
         self.dart_email_username = dart_email_username
@@ -74,11 +75,11 @@ class PartialEnvironmentCreateTool(DeploymentTool):
         _get_element(events_params, 'ParameterKey', 'TriggerQueueArn')['ParameterValue'] = trigger_queue_arn
 
         _logger.info('creating initial stacks')
-        events_stack_name = self._create_stack('events', output_config)
-        rds_stack_name = self._create_stack('rds', output_config)
-        elb_stack_name = self._create_stack('elb', output_config)
-        elb_int_stack_name = self._create_stack('elb-internal', output_config)
-        engine_taskrunner_stack_name = self._create_stack('engine-taskrunner', output_config)
+        events_stack_name = self._create_stack('events', self.mode, output_config)
+        rds_stack_name = self._create_stack('rds', self.mode, output_config)
+        elb_stack_name = self._create_stack('elb', self.mode, output_config)
+        elb_int_stack_name = self._create_stack('elb-internal', self.mode, output_config)
+        engine_taskrunner_stack_name = self._create_stack('engine-taskrunner', self.mode, output_config)
 
         _logger.info('waiting for stack completion')
         events_outputs = self._wait_for_stack_completion_and_get_outputs(events_stack_name, 1)
@@ -136,8 +137,8 @@ class PartialEnvironmentCreateTool(DeploymentTool):
         )
 
         _logger.info('creating and waiting for web stacks')
-        web_stack_name = self._create_stack('web', output_config)
-        web_internal_stack_name = self._create_stack('web-internal', output_config)
+        web_stack_name = self._create_stack('web', self.mode, output_config)
+        web_internal_stack_name = self._create_stack('web-internal', self.mode, output_config)
         web_outputs = self._wait_for_stack_completion_and_get_outputs(web_stack_name, 2)
         self._wait_for_stack_completion_and_get_outputs(web_internal_stack_name)
 
@@ -174,15 +175,15 @@ class PartialEnvironmentCreateTool(DeploymentTool):
         self._with_retries(add_s3_engine, output_config)
 
         _logger.info('creating and waiting for remaining stacks')
-        engine_worker_stack_name = self._create_stack('engine-worker', output_config)
-        trigger_worker_stack_name = self._create_stack('trigger-worker', output_config)
-        subscription_worker_stack_name = self._create_stack('subscription-worker', output_config)
+        engine_worker_stack_name = self._create_stack('engine-worker', self.mode, output_config)
+        trigger_worker_stack_name = self._create_stack('trigger-worker', self.mode, output_config)
+        subscription_worker_stack_name = self._create_stack('subscription-worker', self.mode, output_config)
         self._wait_for_stack_completion_and_get_outputs(engine_worker_stack_name)
         self._wait_for_stack_completion_and_get_outputs(trigger_worker_stack_name)
         self._wait_for_stack_completion_and_get_outputs(subscription_worker_stack_name)
 
-    def _create_stack(self, stack_name, dart_config, template_body_replacements=None):
-        stack = PutStack('create', stack_name, 'v1', dart_config)
+    def _create_stack(self, stack_name, mode, dart_config, template_body_replacements=None):
+        stack = PutStack(mode, stack_name, 'v1', dart_config)
         if stack_name in self.stacks_to_skip:
             _logger.info('skipping stack creation: %s' % stack.dart_stack_name)
             return stack.dart_stack_name
@@ -222,6 +223,7 @@ class PartialEnvironmentCreateTool(DeploymentTool):
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--environment-name', action='store', dest='environment_name', required=True)
+    parser.add_argument('-m', '--mode', action='store', dest='mode', required=True)
     parser.add_argument('-i', '--input-config-path', action='store', dest='input_config_path', required=True)
     parser.add_argument('-o', '--output-config-s3-path', action='store', dest='output_config_s3_path', required=True)
     parser.add_argument('-u', '--dart-email-username', action='store', dest='dart_email_username', required=True)
@@ -233,6 +235,7 @@ if __name__ == '__main__':
     args = _parse_args()
     PartialEnvironmentCreateTool(
         args.environment_name,
+        args.mode,
         args.input_config_path,
         args.output_config_s3_path,
         args.dart_email_username,
