@@ -24,7 +24,7 @@ from dart.util.json_util import DartJsonEncoder
 
 class VersionedAuditableSerializable(JsonSerializableBase):
     id = Column(String(length=36), primary_key=True)
-    version_id = Column(Integer, nullable=False, server_default='0')
+    version_id = Column(Integer, index=True, nullable=False, server_default='0')
     created = Column(TIMESTAMP, server_default=db.func.current_timestamp())
     updated = Column(TIMESTAMP, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     __mapper_args__ = {"version_id_col": version_id}
@@ -94,7 +94,7 @@ class SubscriptionElementDao(db.Model, VersionedAuditableSerializable):
     __tablename__ = 'subscription_element'
     __modelclass__ = SubscriptionElement
     subscription_id = Column(String(length=36), nullable=False)
-    s3_path = Column(String(length=1024), nullable=False)
+    s3_path = Column(String(length=1024), index=True, nullable=False)
     file_size = Column(BigInteger, nullable=False)
     state = Column(String(length=50), nullable=False)
     action_id = Column(String(length=36))
@@ -111,7 +111,7 @@ class MessageDao(db.Model, VersionedAuditableSerializable):
     ecs_cluster = Column(String(length=70), nullable=False)
     ecs_container_instance_arn = Column(String(length=256), nullable=False)
     ecs_task_arn = Column(String(length=256), nullable=False)
-    state = Column(String(length=50), nullable=False)
+    state = Column(String(length=50), index=True, nullable=False)
 
 
 class AccountingDao(db.Model, VersionedAuditableSerializable):
