@@ -1757,6 +1757,7 @@ definitions:
         - FINISHING
         - COMPLETED
         - FAILED
+        - SKIPPED
         - TEMPLATE
         type: string
       tags:
