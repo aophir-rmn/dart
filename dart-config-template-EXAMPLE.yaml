@@ -546,8 +546,8 @@ auth:
     module: saml_auth # name of class in 'auth.module_source'
     class: SamlAuth # see above
     # onelogin specifcs
-    appid: 578793 # onelogin specific. e.g. "{{ onelogin_server }}/trust/saml2/http-redirect/slo/{{ appid }}"
-    onelogin_server: https://rmn.onelogin.com # "{{ onelogin_server }}/trust/saml2/http-redirect/slo/{{ appid }}"
+    appid: aaa # onelogin specific. e.g. "{{ onelogin_server }}/trust/saml2/http-redirect/slo/{{ appid }}"
+    onelogin_server: xxx.onelogin.com # "{{ onelogin_server }}/trust/saml2/http-redirect/slo/{{ appid }}"
     x509cert: MIIEN
     dart_server: https://localhost:5000
     ssl_cert_path: ./ui/onelogin/cert.pem # for local dev if you wan to emulate https
