@@ -259,7 +259,7 @@ paths:
         "200":
           description: "returns a success message"
           schema:
-            $ref: "#/definitions/OKResponse"
+            $ref: "#/definitions/SubscriptionResponse"
   /datastore:
     post:
       operationId: createDatastore
