@@ -15,22 +15,23 @@ api_dataset_bp = Blueprint('api_dataset', __name__)
 
 
 @api_dataset_bp.route('/dataset', methods=['POST'])
+@login_required
 @accounting_track
 @jsonapi
-@login_required
 def post_dataset():
     return {'results': dataset_service().save_dataset(Dataset.from_dict(request.get_json())).to_dict()}
 
 
 @api_dataset_bp.route('/dataset/<dataset>', methods=['GET'])
+@login_required
 @fetch_model
 @jsonapi
-@login_required
 def get_dataset(dataset):
     return {'results': dataset.to_dict()}
 
 
 @api_dataset_bp.route('/dataset/guess', methods=['GET'])
+@login_required
 @jsonapi
 def get_dataset_guess():
     s3_path = request.args.get('s3_path')
@@ -40,8 +41,8 @@ def get_dataset_guess():
 
 
 @api_dataset_bp.route('/dataset', methods=['GET'])
-@jsonapi
 @login_required
+@jsonapi
 def find_datasets():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -56,19 +57,19 @@ def find_datasets():
 
 
 @api_dataset_bp.route('/dataset/<dataset>', methods=['PUT'])
+@login_required
 @accounting_track
 @fetch_model
 @jsonapi
-@login_required
 def put_dataset(dataset):
     return {'results': dataset_service().update_dataset(dataset.id, Dataset.from_dict(request.get_json())).to_dict()}
 
 
 @api_dataset_bp.route('/dataset/<dataset>', methods=['DELETE'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def delete_dataset(dataset):
     dataset_service().delete_dataset(dataset.id)
     return {'results': 'OK'}

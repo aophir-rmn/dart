@@ -15,24 +15,24 @@ api_datastore_bp = Blueprint('api_datastore', __name__)
 
 
 @api_datastore_bp.route('/datastore', methods=['POST'])
+@login_required
 @accounting_track
 @jsonapi
-@login_required
 def post_datastore():
     return {'results': datastore_service().save_datastore(Datastore.from_dict(request.get_json())).to_dict()}
 
 
 @api_datastore_bp.route('/datastore/<datastore>', methods=['GET'])
+@login_required
 @fetch_model
 @jsonapi
-@login_required
 def get_datastore(datastore):
     return {'results': datastore.to_dict()}
 
 
 @api_datastore_bp.route('/datastore', methods=['GET'])
-@jsonapi
 @login_required
+@jsonapi
 def find_datastores():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -47,20 +47,20 @@ def find_datastores():
 
 
 @api_datastore_bp.route('/datastore/<datastore>', methods=['PUT'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def put_datastore(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     return update_datastore(datastore, Datastore.from_dict(request.get_json()))
 
 
 @api_datastore_bp.route('/datastore/<datastore>', methods=['PATCH'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def patch_datastore(datastore):
     """ :type datastore: dart.model.datastore.Datastore """
     p = JsonPatch(request.get_json())
@@ -92,10 +92,10 @@ def update_datastore(datastore, updated_datastore):
 
 
 @api_datastore_bp.route('/datastore/<datastore>', methods=['DELETE'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def delete_datastore(datastore):
     datastore_service().delete_datastore(datastore.id)
     return {'results': 'OK'}
