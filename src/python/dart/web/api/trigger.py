@@ -18,26 +18,26 @@ api_trigger_bp = Blueprint('api_trigger', __name__)
 
 
 @api_trigger_bp.route('/trigger', methods=['POST'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def post_trigger():
     trigger = Trigger.from_dict(request.get_json())
     return {'results': trigger_service().save_trigger(trigger=trigger, user_id=current_user.email).to_dict()}
 
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['GET'])
+@login_required
 @fetch_model
 @jsonapi
-@login_required
 def get_trigger(trigger):
     return {'results': trigger.to_dict()}
 
 
 @api_trigger_bp.route('/trigger', methods=['GET'])
-@jsonapi
 @login_required
+@jsonapi
 def find_triggers():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -52,8 +52,8 @@ def find_triggers():
 
 
 @api_trigger_bp.route('/trigger_type', methods=['GET'])
-@jsonapi
 @login_required
+@jsonapi
 def get_trigger_types():
     limit = int(request.args.get('limit', 20))
     offset = int(request.args.get('offset', 0))
@@ -67,20 +67,20 @@ def get_trigger_types():
 
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['PUT'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def put_trigger(trigger):
     """ :type trigger: dart.model.trigger.Trigger """
     return update_trigger(trigger, Trigger.from_dict(request.get_json()))
 
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['PATCH'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def patch_trigger(trigger):
     """ :type trigger: dart.model.trigger.Trigger """
     p = JsonPatch(request.get_json())
@@ -104,10 +104,10 @@ def update_trigger(trigger, updated_trigger):
 
 
 @api_trigger_bp.route('/trigger/<trigger>', methods=['DELETE'])
+@login_required
 @fetch_model
 @accounting_track
 @jsonapi
-@login_required
 def delete_trigger(trigger):
     trigger_service().delete_trigger(trigger.id)
     return {'results': 'OK'}
