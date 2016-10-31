@@ -69,6 +69,7 @@ script:
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/schema/ "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/graph "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/crud "test_*.py"  
+  - docker-compose exec web python -m unittest discover /tmp/src/python/dart/engine/emr/test "test_start_datastore.py"
 
 # send notifications to DWH_alerts room
 notifications:

@@ -10,3 +10,4 @@ settings.json
 dart.yaml
 pip-*/
 easy_install-*/
+configs*.json
