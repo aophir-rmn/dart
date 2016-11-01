@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from dart.auth.required_roles import required_roles
 from jsonpatch import JsonPatch
 from flask_login import current_user
 
@@ -21,6 +22,7 @@ api_action_bp = Blueprint('api_action', __name__)
 @api_action_bp.route('/datastore/<datastore>/action', methods=['POST'])
 @login_required
 @fetch_model
+@required_roles(['Create'])
 @accounting_track
 @jsonapi
 def post_datastore_actions(datastore):
@@ -45,6 +47,7 @@ def post_datastore_actions(datastore):
 @api_action_bp.route('/workflow/<workflow>/action', methods=['POST'])
 @login_required
 @fetch_model
+@required_roles(['Create'])
 @accounting_track
 @jsonapi
 def post_workflow_actions(workflow):
@@ -101,6 +104,7 @@ def get_action(action):
 @api_action_bp.route('/action/<action>', methods=['PUT'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def put_action(action):
@@ -111,6 +115,7 @@ def put_action(action):
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def patch_action(action):
@@ -141,6 +146,7 @@ def update_action(action, updated_action):
 @api_action_bp.route('/action/<action>', methods=['DELETE'])
 @login_required
 @fetch_model
+@required_roles(['Delete'])
 @accounting_track
 @jsonapi
 def delete_action(action):

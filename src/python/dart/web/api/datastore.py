@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from dart.auth.required_roles import required_roles
 from jsonpatch import JsonPatch
 
 from dart.model.datastore import Datastore, DatastoreState
@@ -10,7 +11,6 @@ from dart.service.action import ActionService
 from dart.service.datastore import DatastoreService
 from dart.service.filter import FilterService
 from dart.web.api.entity_lookup import fetch_model, accounting_track
-
 api_datastore_bp = Blueprint('api_datastore', __name__)
 
 
@@ -25,6 +25,7 @@ def post_datastore():
 @api_datastore_bp.route('/datastore/<datastore>', methods=['GET'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @jsonapi
 def get_datastore(datastore):
     return {'results': datastore.to_dict()}
@@ -49,6 +50,7 @@ def find_datastores():
 @api_datastore_bp.route('/datastore/<datastore>', methods=['PUT'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def put_datastore(datastore):
@@ -59,6 +61,7 @@ def put_datastore(datastore):
 @api_datastore_bp.route('/datastore/<datastore>', methods=['PATCH'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def patch_datastore(datastore):
@@ -94,6 +97,7 @@ def update_datastore(datastore, updated_datastore):
 @api_datastore_bp.route('/datastore/<datastore>', methods=['DELETE'])
 @login_required
 @fetch_model
+@required_roles(['Delete'])
 @accounting_track
 @jsonapi
 def delete_datastore(datastore):

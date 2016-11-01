@@ -1,5 +1,9 @@
 import os
-from flask import Blueprint
+import logging
+from flask import Blueprint, request
+from flask.ext.jsontools import jsonapi
+from flask.ext.login import login_required
+from dart.auth.required_roles import required_roles
 from sqlalchemy import text
 
 from dart.context.database import db
@@ -7,14 +11,18 @@ from dart.model.mutex import Mutexes, MutexState
 from dart.util.rand import random_id
 from dart.config.config import configuration
 
-from dart.web.ui.admin.users_keys_populator import populate_dart_client_user, populate_dart_client_apikeys
+from dart.web.ui.admin.admin_query import populate_dart_client_user, populate_dart_client_apikeys, clear_roles_table,\
+    populate_roles_table, populate_user_roles_table, getPermissionServiceRolesAndIds
 
 admin_bp = Blueprint('admin', __name__)
 
 CONFIG_PATH = os.environ['DART_CONFIG']
 CONFIG = configuration(CONFIG_PATH)
 AUTH_CONFIG = CONFIG['auth']
+DART_CLIENT_NAME = CONFIG['authorization']['dart_client_name']
+PERMISSION_CONFIG = CONFIG['permission_service']
 
+_logger = logging.getLogger(__name__)
 
 def populate_user_api_secret_keys():
     ''' Under auth.predefined_auth_services we keep a triplet <user,api_key, secretKey>
@@ -62,12 +70,45 @@ def create_all():
 
     # We set a user for dart_client with a apikey/secret (read from config) so that dart_Client can work.
     # api auth expects a user to exist in the user table and have an entry in the api_key table (with key/secret values set).
-    DART_CLIENT_USER = 'dart@client.rmn'
-    populate_dart_client_user(DART_CLIENT_USER)
-    populate_dart_client_apikeys(_credential, _secret, DART_CLIENT_USER)
+    populate_dart_client_user(DART_CLIENT_NAME)
+    populate_dart_client_apikeys(_credential, _secret, DART_CLIENT_NAME)
 
 
     # populate user and keys for external service (not dart client)
     populate_user_api_secret_keys()
 
     return 'OK'
+
+
+@admin_bp.route('/populate_roles', methods=['post'])
+@login_required
+@required_roles['CREATE']
+@jsonapi
+def populate_roles():
+    ps_token = ""
+    req_json = request.get_json()
+    if (req_json and req_json.get("token")):
+        ps_token = req_json.get("token")
+    else:
+        ps_token = PERMISSION_CONFIG.get('token')
+
+    is_success = False
+    inputs = {}
+    try:
+        roles_2_ids, user_2_roles = getPermissionServiceRolesAndIds(
+            host=PERMISSION_CONFIG.get('host'),
+            app_name=PERMISSION_CONFIG.get('app_name'),
+            token=ps_token)
+        inputs["role_id_names"] = roles_2_ids
+        inputs["user_2_roles"] = user_2_roles
+
+        is_success = clear_roles_table() and \
+                     populate_roles_table(inputs["role_id_names"]) and \
+                     populate_user_roles_table(inputs["user_2_roles"])
+    except Exception as err:
+        _logger.error("Input {inputs} failed to populate or it is in wrong format. err={err}".format(inputs=inputs, err=err))
+
+    if is_success:
+        return ({'results': 'OK'}, 200)
+
+    return ({'results': 'Failure'}, 500)

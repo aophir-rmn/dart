@@ -9,7 +9,6 @@ class DummySamlAuth(SamlAuth):
         self.auth = self._init_saml_auth()
 
     def handle_login_request(self):
-        #session['user_id'] = 'dart@client.rmn'
         return redirect('/')
 
     def handle_logout_request(self):
