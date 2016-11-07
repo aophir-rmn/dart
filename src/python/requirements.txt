@@ -22,3 +22,6 @@ retrying==1.3.3
 SQLAlchemy==1.0.15
 sqlalchemy-redshift==0.4.0
 uwsgi==2.0.11.2
+
+# Development dependencies
+mock==2.0.0
