@@ -48,9 +48,9 @@ def start_datastore(emr_engine, datastore, action):
     emr_engine.dart.patch_datastore(datastore, extra_data={'cluster_id': cluster_id})
     emr_engine.dart.patch_action(action, progress=0.1)
 
-    cluster = None
     while True:
-        state = emr_engine.conn.describe_cluster(cluster_id).status.state
+        cluster = emr_engine.conn.describe_cluster(cluster_id)
+        state = cluster.status.state
         # http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/ProcessingCycle.html
         # using cluster state since describe_jobflow is deprecated
         # https://aws.amazon.com/elasticmapreduce/faqs/
