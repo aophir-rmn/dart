@@ -60,7 +60,7 @@ def start_datastore(emr_engine, datastore, action):
             break
 
     if state not in ['WAITING']:
-        raise Exception('cluster_id=%s not in WAITING state, but in state: %s' % (cluster_id, cluster.state))
+        raise Exception('cluster_id=%s not in WAITING state, but in state: %s' % (cluster_id, state))
 
     emr_engine.dart.patch_datastore(
         datastore,
