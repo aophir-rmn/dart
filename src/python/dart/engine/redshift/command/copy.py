@@ -1,10 +1,10 @@
 from itertools import islice
-import datetime
+from dart.util.strings import substitute_date_tokens
+from datetime import datetime
 import json
 import logging
 import os
 import tempfile
-
 import boto3
 
 from dart.engine.redshift.admin.utils import lookup_credentials
@@ -152,9 +152,8 @@ def _load_stage_table(action, conn, dart, dataset, datastore, manifests, stage_s
             conn.execute(sql)
         except Exception as e:
             if "Check 'stl_load_errors' system table for details" in e.message:
-                filename = dataset.data.location.format(YEAR=datetime.datetime.utcnow().year,
-                                                        MONTH=datetime.datetime.utcnow().month,
-                                                        DAY=datetime.datetime.utcnow().day)
+                now = datetime.utcnow()
+                filename = substitute_date_tokens(dataset.data.location, now)
                 stl_load_error_sql = "SELECT * FROM pg_catalog.stl_load_errors WHERE filename LIKE '{filename}%%' " \
                                      "ORDER BY starttime DESC LIMIT 1".format(filename=filename)
                 stl_load_error = conn.execute(stl_load_error_sql).fetchone()
@@ -171,7 +170,6 @@ def _load_stage_table(action, conn, dart, dataset, datastore, manifests, stage_s
                                     "Raw Field Value: {raw_field_value}\n" \
                                     "Error Code: {err_code}\n" \
                                     "Error Reason: {err_reason}"
-                _logger.info("STL_LOAD: %s", stl_load_error)
                 exception_message = exception_message.format(
                     table_name=stage_table_name,
                     starttime=stl_load_error['starttime'],
