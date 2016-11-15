@@ -26,6 +26,7 @@ from dart.web.api.trigger import api_trigger_bp
 from dart.web.api.workflow import api_workflow_bp
 from dart.web.api.subscription import api_subscription_bp
 from dart.web.ui.index import index_bp
+from flask.ext.login import login_required
 
 from jinja2 import Environment, FileSystemLoader
 import os
@@ -107,6 +108,7 @@ app.register_blueprint(index_bp)
 @app.route('/apidocs')
 @app.route('/apidocs/')
 @app.route('/apidocs/index.html')
+@login_required
 def get_apidocs():
     swagger_ui_url = urlparse.urljoin(request.base_url, '/static/apidocs/index.html?' + urllib.urlencode({
         'url': urlparse.urljoin(request.base_url, '/api/1/swagger.json')
@@ -115,6 +117,7 @@ def get_apidocs():
 
 
 @app.route('/api/1/swagger.json', methods=['GET'])
+@login_required
 def get_swagger():
     swagger_spec = yaml.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                'api',
