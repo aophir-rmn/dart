@@ -38,7 +38,7 @@ def workflow_instance_schema():
             'engine_name': {'type': 'string'},
             'state': {'type': 'string', 'enum': WorkflowInstanceState.all(), 'default': WorkflowInstanceState.QUEUED},
             'trigger_type': {'type': 'string'},
-            'trigger_id': {'type': 'string'},
+            'trigger_id': {'type': ['string', 'null']},
             'queued_time': {'type': ['string', 'null']},
             'start_time': {'type': ['string', 'null']},
             'end_time': {'type': ['string', 'null']},

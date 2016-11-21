@@ -2939,6 +2939,7 @@ definitions:
           type: tabarray
       trigger_id:
         type: string
+        x-nullable: true
       trigger_type:
         type: string
       user_id:
