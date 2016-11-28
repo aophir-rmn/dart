@@ -5,6 +5,8 @@ from sqlalchemy import BigInteger, Column, Integer, TIMESTAMP, String, Text, Boo
 from sqlalchemy.dialects.postgresql import JSONB
 from dart.model.action import Action
 from dart.model.accounting import Accounting
+from dart.model.authorization_roles import AuthorizationRoles
+from dart.model.user_roles import UserRoles
 
 from dart.model.dataset import Dataset
 from dart.model.datastore import Datastore
@@ -36,6 +38,21 @@ class VersionedAuditableSerializable(JsonSerializableBase):
 
 class VersionedAuditableData(VersionedAuditableSerializable):
     data = Column(JSONB)
+
+
+class AuthorizationRolesDao(db.Model):
+    __tablename__ = 'authorization_roles'
+    __modelclass__ = AuthorizationRoles
+    role_id = Column(String(length=36), primary_key=True)
+    role_name = Column(String(length=255), unique=True, nullable=False)
+
+
+class UserRolesDao(db.Model):
+    __tablename__ = 'user_roles'
+    __modelclass__ = UserRoles
+    user_id = Column(String(length=36), primary_key=True)
+    action_roles = Column(JSONB)
+    membership_roles = Column(JSONB)
 
 
 class EngineDao(db.Model, VersionedAuditableData):

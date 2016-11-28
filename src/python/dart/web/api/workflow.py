@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from dart.auth.required_roles import required_roles
 from flask_login import current_user
 
 from jsonpatch import JsonPatch
@@ -25,6 +26,7 @@ _logger = logging.getLogger()
 @api_workflow_bp.route('/datastore/<datastore>/workflow', methods=['POST'])
 @login_required
 @fetch_model
+@required_roles(['Create'])
 @accounting_track
 @jsonapi
 def post_workflow(datastore):
@@ -106,6 +108,7 @@ def _find_workflow_instances(workflow=None):
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PUT'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def put_workflow(workflow):
@@ -116,6 +119,7 @@ def put_workflow(workflow):
 @api_workflow_bp.route('/workflow/<workflow>', methods=['PATCH'])
 @login_required
 @fetch_model
+@required_roles(['Edit'])
 @accounting_track
 @jsonapi
 def patch_workflow(workflow):
@@ -148,6 +152,7 @@ def update_workflow(workflow, updated_workflow):
 @api_workflow_bp.route('/workflow/<workflow>/do-manual-trigger', methods=['POST'])
 @login_required
 @fetch_model
+@required_roles(['Create'])
 @accounting_track
 @jsonapi
 def trigger_workflow(workflow):
@@ -172,6 +177,7 @@ def trigger_workflow(workflow):
 @api_workflow_bp.route('/workflow/<workflow>', methods=['DELETE'])
 @login_required
 @fetch_model
+@required_roles(['Delete'])
 @accounting_track
 @jsonapi
 def delete_workflow(workflow):
@@ -184,6 +190,7 @@ def delete_workflow(workflow):
 @api_workflow_bp.route('/workflow/<workflow>/instance', methods=['DELETE'])
 @login_required
 @fetch_model
+@required_roles(['Delete'])
 @accounting_track
 @jsonapi
 def delete_workflow_instances(workflow):

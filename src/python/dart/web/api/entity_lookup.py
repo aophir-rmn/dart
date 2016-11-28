@@ -36,6 +36,14 @@ class EntityLookupService(object):
         return get_func(id, raise_when_missing=False)
 
 
+def get_known_entity(entity_name, entity_id):
+    lookup_service = current_app.dart_context.get(EntityLookupService)
+    model = lookup_service.get_entity(entity_name, entity_id)
+    if model:
+        return model
+
+    return None
+
 def fetch_model(f):
     @wraps(f)
     def wrapper(*args, **kwargs):

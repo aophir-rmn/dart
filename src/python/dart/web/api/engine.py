@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
 from flask.ext.login import login_required
+from dart.auth.required_roles import required_roles
 
 from dart.message.trigger_proxy import TriggerProxy
 from dart.model.action import ActionState
