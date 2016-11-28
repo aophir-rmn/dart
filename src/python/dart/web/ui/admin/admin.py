@@ -82,7 +82,7 @@ def create_all():
 
 @admin_bp.route('/populate_roles', methods=['post'])
 @login_required
-@required_roles['CREATE']
+@required_roles(['Create'])
 @jsonapi
 def populate_roles():
     ps_token = ""
@@ -101,6 +101,8 @@ def populate_roles():
             token=ps_token)
         inputs["role_id_names"] = roles_2_ids
         inputs["user_2_roles"] = user_2_roles
+        _logger.info("role_id_names = {roles_2_ids}".format(roles_2_ids=roles_2_ids))
+        _logger.info("user_2_roles = {user_2_roles}".format(user_2_roles=user_2_roles))
 
         is_success = clear_roles_table() and \
                      populate_roles_table(inputs["role_id_names"]) and \

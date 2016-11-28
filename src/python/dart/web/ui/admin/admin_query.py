@@ -98,6 +98,9 @@ def getPermissionServiceRolesAndIds(host, app_name, token):
     # We need the id-name mapping because querying user's roles returns ids (both app and role id)
     role_id_names = {}
     role_id_namesreq = requests.get(url, headers=AUTH_HEADER)
+    if (role_id_namesreq.status_code == '401'):
+        _logger.error("Need new token: error={code}".format(code=role_id_namesreq.status_code))
+
     for role in role_id_namesreq.json():
         role_id_names[role["id"]] = role["displayName"]
     _logger.info("1. role_id_names = {role_id_names}".format(role_id_names=role_id_names))
