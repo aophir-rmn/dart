@@ -67,6 +67,8 @@ def api_auth(request):
         return basic_auth(auth_header, api_key_service, user_service)
     elif (auth_algo_name == 'DART1_HMAC_SHA256'):
         pass
+    else:
+        raise DartAuthenticationException('DART has not basic auth')
 
 
     # We did not match any auth algorithm if we reached here.

@@ -15,6 +15,7 @@ Note:  All permissions are tied to the datastore owner on which we operate.
 """
 import logging
 import os
+import uuid
 from dart.config.config import configuration
 
 from flask_login import current_user
@@ -104,21 +105,29 @@ def dart_required_roles(action_roles):
                 if tmp_ds and tmp_ds.data:
                     datastore_data = tmp_ds.data
 
-        actions, memberships, is_member_all = get_current_user_permssions(datastore_data.user_id if hasattr(datastore_data, "user_id") else None)
+        datastore_user_id = datastore_data.user_id if hasattr(datastore_data, "user_id") else None
+        actions, memberships, is_member_all = get_current_user_permssions(datastore_user_id)
         if is_member_all and user != DART_CLIENT_NAME:
             # datastore_data.user_id = current_user.email
             # TODO: Should we overwrite the user by whoever runs it?
             pass
 
-        return memberships, is_member_all
+        return datastore_user_id, memberships, is_member_all
 
     def get_current_user_permssions(user):
         if (user == None or user == "" or user == "anonymous" or user == "unknown"):
-            _logger.debug("Assuming user {user} is member of all memberships groups".format(user=user))
+            _logger.info("Authorization: Assuming user {user} is member of all memberships groups".format(user=user))
             return [], [], True
 
         user_roles_service = current_app.dart_context.get(UserRolesService)
-        actions, memberships = user_roles_service.get_user_roles(user)
+        actions = []
+        memberships = []
+        try:
+            actions, memberships = user_roles_service.get_user_roles(user)
+        except Exception as err:
+            error_str = "Authorization: Cannot retrieve user from user_roles table. error: {error}".format(error=err)
+            _logger.error(error_str)
+
         return actions, memberships, False # the Can_ prefixed roles and is_Member_Of prefix roles
 
     def wrap(f):
@@ -128,28 +137,42 @@ def dart_required_roles(action_roles):
             user = 'anonymous'
             if current_user and current_user.email:
                 user = current_user.email
-                _logger.debug("Authorizing user={user}, action_roles={action_roles}".format(
+                _logger.info("Authorization: Authorizing user={user}, action_roles={action_roles}".format(
                     user=user, action_roles=action_roles))
             else:
-                _logger.error("Cannot authorize anonymous user. user={user}, action_roles={action_roles}".format(
+                _logger.error("Authorization: Cannot authorize anonymous user. user={user}, action_roles={action_roles}".format(
                     user=user, action_roles=action_roles))
                 return response_authorization_error("anonymous users are not allowed")
+
+            DEBUG_ID = "Authorization: {user}-{id} ".format(user=user, id=uuid.uuid4().hex)
 
             # Verify input is in correct format for action_roles
             for action_role in action_roles:
                 if action_role not in ActionRoles.all():
-                    _logger.error("Missing action_roles, not in ActionRoles {all}. user={user}, action_roles={action_roles}".format(
+                    _logger.error(DEBUG_ID + "Missing action_roles, not in ActionRoles {all}. user={user}, action_roles={action_roles}".format(
                         user=user, action_roles=action_roles, all=ActionRoles.all()))
                     return response_authorization_error("action-roles only allow %s values" % ActionRoles.all())
 
+            if user == DART_CLIENT_NAME:
+                _logger.info(DEBUG_ID + "Authorization: User {user} is the dart client superuser".format(user=user))
+
             # internal dart user, has superuser privileges
             if user != DART_CLIENT_NAME:
+
                 # get current user's permission from the permission service.
                 # We expect them to be prefixed by Is_Member_Of (members) or Can_ (actions).
                 # Ideally we cache these values.
                 current_user_actions, current_user_memberships, _ignore = get_current_user_permssions(user)
+                _logger.info(DEBUG_ID + "current_user_actions={actions}, current_user_memberships={memberships}".\
+                              format(memberships=current_user_memberships, actions=current_user_actions))
+
+                if RoleNames.get_membership('Admin') in current_user_memberships:
+                    _logger.info(DEBUG_ID + " User {user} is an admin".format(user=user))
+
                 if RoleNames.get_membership('Admin') not in current_user_memberships:
-                    ds_memberships, is_member_all = get_datastore_owner_membership_roles(user, kwargs)
+                    datastore_user_id, ds_memberships, is_member_all = get_datastore_owner_membership_roles(user, kwargs)
+                    _logger.info(DEBUG_ID + "datastore_user_id={ds_user}, ds_membership={ds_mem}, member of all= {is_all}".\
+                                  format(ds_user=datastore_user_id, ds_mem=ds_memberships, is_all=is_member_all))
 
                     # intersection of current user memberships and datastore memberships
                     # For simplicity we might want to make sure ds owner belongs to a single group (e.g special PS user)
@@ -161,10 +184,14 @@ def dart_required_roles(action_roles):
                         shared_memberships = list(set(current_user_memberships))
 
                     if not shared_memberships:
-                        err = "Current user memberships {current_user_memberships} do not overlap with datastore's meberships {ds_memberships}". \
-                            format(current_user_memberships=current_user_memberships, ds_memberships=ds_memberships)
+                        err = DEBUG_ID + """Current user's {user} memberships {current_user_memberships} do not
+                                 overlap with datastore's user owner {ds_user} meberships {ds_memberships}""".\
+                                format(current_user_memberships=current_user_memberships, ds_memberships=ds_memberships,
+                                       user=user, ds_user=datastore_user_id)
                         _logger.error(err)
                         return response_authorization_error(err)
+                    else:
+                        _logger.info(DEBUG_ID + "shared_memberships={shared}".format(shared=shared_memberships))
 
                     # If we do not have top level (E.g. Can_Run) roles we need to make sure we have membership level
                     # permission. E.g. Can_Run_BA, where the group (BA) is a group shared between current_user and ds owner groups.
@@ -174,15 +201,21 @@ def dart_required_roles(action_roles):
                         if role not in current_user_actions:
                             missing_top_level_roles.append(role)
 
+                    _logger.info(DEBUG_ID + "missing_top_level_roles={missing}".format(missing=missing_top_level_roles))
                     if missing_top_level_roles:
                         group_names = [membership.lstrip(RoleNames.get_membership("")) for membership in shared_memberships]# E.g. 'Is_Member_Of_BA' => 'BA'
                         group_roles= []
                         for missing_role in missing_top_level_roles:
                             group_roles.extend(["{mr}_{group}".format(mr=missing_role, group=group_name) for group_name in group_names])
+
+                        _logger.info(DEBUG_ID + "group_roles={group_roles}".format(group_roles=group_roles))
                         if not (set(group_roles) & set(current_user_actions)):
-                            _logger.error("group specific roles {group_roles} not exisiting for user's permissions {current_user_actions}. user={user}, action_roles={action_roles}".
-                                          format(user=user, action_roles=action_roles, current_user_actions=current_user_actions, group_roles=group_roles))
-                            return response_authorization_error("Missing group level role for action %s" % missing_role)
+                            error_str = DEBUG_ID + """group specific roles {group_roles} not exisiting for user's permissions
+                                           {current_user_actions}. user={user}, action_roles={action_roles}""". \
+                                          format(user=user, action_roles=action_roles,
+                                                 current_user_actions=current_user_actions, group_roles=group_roles)
+                            _logger.error(error_str)
+                            return response_authorization_error(error_str)
 
             # clear to run
             return f(*args, **kwargs)
