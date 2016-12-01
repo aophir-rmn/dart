@@ -1,0 +1,284 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart web stack
+
+Parameters:
+
+    DartEnv:
+        Type: String
+
+    # ecs
+
+    VpcSubnetIds:
+        Type: List<AWS::EC2::Subnet::Id>
+
+    AvailabilityZones:
+        Type: List<AWS::EC2::AvailabilityZone::Name>
+
+    DartContainerInstanceProfileName:
+        Type: String
+
+    DartKeyName:
+        Type: AWS::EC2::KeyPair::KeyName
+
+    DartSecurityGroupName:
+        Type: AWS::EC2::SecurityGroup::GroupName
+
+    WebServiceRoleName:
+        Type: String
+
+    DartLogGroupName:
+        Type: String
+
+    # flask task
+
+    FlaskContainerName:
+        Type: String
+
+    FlaskDockerImage:
+        Type: String
+
+    # environment variables
+
+    DartConfig:
+        Type: String
+
+    FlaskVersion:
+        Type: String
+
+    # nginx task
+
+    NginxContainerName:
+        Type: String
+
+    NginxDockerImage:
+        Type: String
+
+    # load balancing
+
+    WebDirection:
+        Type: String
+        AllowedValues:
+            - internal
+            - external
+
+    HostedZoneName:
+        Type: String
+
+    RecordSetName:
+        Type: String
+
+
+Mappings:
+    
+    EnvMap:
+        prod:  { Ec2InstanceType: m3.medium }
+        stage: { Ec2InstanceType: m3.medium }
+
+    WebDirectionMap:
+        internal: { ElbScheme: internal }
+        external: { ElbScheme: internet-facing }
+
+
+Resources:
+
+    Cluster:
+        Type: AWS::ECS::Cluster
+        Properties:
+            ClusterName: !null
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Volumes:
+              - Name: ecs-agent-data
+                Host: { SourcePath: /var/lib/ecs/data }
+            ContainerDefinitions:
+              - Name: !Ref FlaskContainerName
+                Image: !Ref FlaskDockerImage
+                Cpu: 256
+                Memory: 1024
+                PortMappings:
+                  - HostPort: 9191
+                    ContainerPort: 9191
+                LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref DartLogGroupName
+                        awslogs-region: !Sub ${AWS::Region}
+                        awslogs-stream-prefix: web-flask
+                MountPoints:
+                  - SourceVolume: ecs-agent-data
+                    ContainerPath: /mnt/ecs_agent_data
+                    ReadOnly: true
+                Environment:
+                  - Name: DART_ROLE
+                    Value: web
+                  - Name: DART_CONFIG
+                    Value: !Ref DartConfig
+                  - Name: AWS_DEFAULT_REGION
+                    Value: !Ref AWS::Region
+                  - Name: DART_WEB_VERSION
+                    Value: !Ref FlaskVersion
+              - Name: !Ref NginxContainerName
+                Image: !Ref NginxDockerImage
+                Cpu: 256
+                Memory: 700
+                PortMappings:
+                  - HostPort: 8080
+                    ContainerPort: 8080
+                LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref DartLogGroupName
+                        awslogs-region: !Sub ${AWS::Region}
+                        awslogs-stream-prefix: web-nginx
+                VolumesFrom: [ { SourceContainer: !Ref FlaskContainerName } ]
+
+    WebServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Statement:
+                  - Effect: Allow
+                    Principal: { Service: [ ecs.amazonaws.com ] }
+                    Action: [ 'sts:AssumeRole' ]
+            Policies:
+              - PolicyName: elb-ec2
+                PolicyDocument:
+                    Statement:
+                      - Effect: Allow
+                        Action:
+                          - elasticloadbalancing:Describe*
+                          - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                          - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                          - ec2:Describe*
+                          - ec2:AuthorizeSecurityGroupIngress
+                        Resource: '*'
+
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref Cluster
+            DesiredCount: 0
+            LoadBalancers:
+              - ContainerName: !Ref NginxContainerName
+                ContainerPort: 8080
+                LoadBalancerName: !Ref ElasticLoadBalancer
+            Role: !Ref WebServiceRoleName
+            TaskDefinition: !Ref TaskDefinition
+
+    AutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            VPCZoneIdentifier: !Ref VpcSubnetIds
+            AvailabilityZones: !Ref AvailabilityZones
+            MinSize: 2
+            MaxSize: 5
+            HealthCheckType: ELB
+            HealthCheckGracePeriod: 900
+            LoadBalancerNames: [ !Ref ElasticLoadBalancer ]
+
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            KeyName: !Ref DartKeyName
+            ImageId: ami-40286957
+            AssociatePublicIpAddress: true
+            SecurityGroups: [ !Ref DartSecurityGroupName ]
+            IamInstanceProfile: !Ref DartContainerInstanceProfileName
+            InstanceType: !FindInMap [ EnvMap, !Ref DartEnv, Ec2InstanceType ]
+
+    # scale up
+
+    CPUAlarmHigh:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Scale-up if CPU > 90% for 10 minutes
+            MetricName: CPUUtilization
+            Namespace: AWS/EC2
+            Statistic: Average
+            Period: 300
+            EvaluationPeriods: 2
+            Threshold: 90
+            AlarmActions: [ !Ref ScaleUpPolicy ]
+            Dimensions:
+              - Name: AutoScalingGroupName
+                Value: !Ref AutoScalingGroup
+            ComparisonOperator: GreaterThanThreshold
+
+    ScaleUpPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties:
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            Cooldown: 60
+            ScalingAdjustment: 1
+
+    # scale down
+
+    CPUAlarmLow:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Scale-down if CPU < 70% for 10 minutes
+            MetricName: CPUUtilization
+            Namespace: AWS/EC2
+            Statistic: Average
+            Period: 300
+            EvaluationPeriods: 2
+            Threshold: 70
+            AlarmActions: [ !Ref ScaleDownPolicy ]
+            Dimensions:
+              - Name: AutoScalingGroupName
+                Value: !Ref AutoScalingGroup
+            ComparisonOperator: LessThanThreshold
+
+    ScaleDownPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties:
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            Cooldown: 60
+            ScalingAdjustment: -1
+
+    # elastic load balancing
+
+    ElasticLoadBalancer:
+        Type: AWS::ElasticLoadBalancing::LoadBalancer
+        Properties:
+            CrossZone: true
+            Scheme: !FindInMap [ WebDirectionMap, !Ref DartEnv, Ec2InstanceType ]
+            Subnets: !Ref VpcSubnetIds
+            SecurityGroups: !Ref DartSecurityGroup
+            Listeners:
+              - LoadBalancerPort: 80
+                InstancePort: 8080
+                Protocol: HTTP
+                PolicyNames: [ DartWebVersionCookieStickinessPolicy ]
+            HealthCheck:
+                Target: HTTP:8080/info
+                HealthyThreshold: 2
+                UnhealthyThreshold: 7
+                Interval: 30
+                Timeout: 10
+            ConnectionDrainingPolicy:
+                Enabled: true
+                Timeout: 300
+            AppCookieStickinessPolicy:
+              - CookieName: dart.web.version
+                PolicyName: DartWebVersionCookieStickinessPolicy
+
+    ElbRecordSetGroup:
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneName: !Ref HostedZoneName
+            RecordSets:
+              - Name: !Ref RecordSetName
+                Type: A
+                AliasTarget:
+                    EvaluateTargetHealth: false
+                    DNSName: !GetAtt ElasticLoadBalancer.CanonicalHostedZoneName
+                    HostedZoneId: !GetAtt ElasticLoadBalancer.CanonicalHostedZoneNameID
+
+    

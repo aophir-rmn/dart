@@ -13,8 +13,8 @@ from dart.config.config import configuration, get_secrets_config, dart_root_rela
 from dart.deploy.deployment import DeploymentTool
 from dart.deploy.put_stack import PutStack
 from dart.engine.dynamodb.add_engine import add_dynamodb_engine
-from dart.engine.emr.add_engine import add_emr_engine
-from dart.engine.emr.add_sub_graphs import add_emr_engine_sub_graphs
+from engine.emr import add_emr_engine
+from engine.emr import add_emr_engine_sub_graphs
 from dart.engine.no_op.add_engine import add_no_op_engine
 from dart.engine.no_op.add_sub_graphs import add_no_op_engine_sub_graphs
 from dart.engine.redshift.add_engine import add_redshift_engine

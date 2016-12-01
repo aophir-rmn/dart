@@ -1,0 +1,3 @@
+StackType: core
+StackArn: !create
+Parameters: []

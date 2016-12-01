@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart IAM stack
+
+
+Parameters:
+
+    DartLogGroupArn:
+        Type: String
+
+    TriggerQueueArn:
+        Type: String
+
+    SubscriptionQueueArn:
+        Type: String
+
+    S3ConfigBucketName:
+        Type: String
+
+    S3DataBucketName:
+        Type: String
+
+
+Resources:
+
+    # profile for worker containers
+
+    DartContainerInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles: [ !Ref DartContainerInstanceProfileRole ]
+
+    DartContainerInstanceProfileRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal: { Service: [ ec2.amazonaws.com ] }
+                    Action: [ 'sts:AssumeRole' ]
+            ManagedPolicyArns:
+              - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+              - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+            Policies:
+              - PolicyName: passrole
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: iam:PassRole
+                        Resource:
+                          - !GetAtt EcsServiceRole.Arn
+                          - !GetAtt UdsInstanceProfileRole.Arn
+              - PolicyName: events
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: events:*
+                        Resource: '*'
+              - PolicyName: autoscaling
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: autoscaling:*
+                        Resource: '*'
+              - PolicyName: ecs
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: ecs:*
+                        Resource: '*'
+              - PolicyName: emr
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: elasticmapreduce:*
+                        Resource: '*'
+              - PolicyName: redshift
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: redshift:*
+                        Resource: '*'
+              - PolicyName: dynamodb
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: dynamodb:*
+                        Resource: '*'
+              - PolicyName: sqs
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: sqs:*
+                        Resource:
+                          - !Ref TriggerQueueArn
+                          - !Ref SubscriptionQueueArn
+              - PolicyName: cloudwatch
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: [ 'logs:Create*', 'logs:PutLogEvents' ]
+                        Resource: !Ref DartLogGroupArn
+              - PolicyName: tags
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: [ 'ec2:DescribeTags', 'ec2:CreateTags' ]
+                        Resource: '*'
+              - PolicyName: describe
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: ec2:Describe
+                        Resource: '*'
+              - PolicyName: get-instance-profile
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: iam:GetInstanceProfile
+                        Resource: '*'
+              - PolicyName: s3-bucket-access
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: s3:*
+                        Resource:
+                          - !Sub arn:aws:s3:::${S3ConfigBucketName}
+                          - !Sub arn:aws:s3:::${S3ConfigBucketName}/*
+                          - !Sub arn:aws:s3:::${S3DataBucketName}
+                          - !Sub arn:aws:s3:::${S3DataBucketName}/*
+
+
+
+Outputs:
+
+    DartContainerInstanceProfileName:
+        Value: !Ref DartContainerInstanceProfile
+
+    DartContainerInstanceProfileRoleArn:
+        Value: !GetAtt DartContainerInstanceProfileRole.Arn
+
+    UdsInstanceProfileName:
+        Value: !Ref UdsInstanceProfile

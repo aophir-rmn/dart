@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart trigger worker stack
+
+Parameters:
+
+    DartEnv:
+        Type: String
+
+    # ecs
+
+    VpcSubnetIds:
+        Type: List<AWS::EC2::Subnet::Id>
+
+    AvailabilityZones:
+        Type: List<AWS::EC2::AvailabilityZone::Name>
+
+    DartContainerInstanceProfileName:
+        Type: String
+
+    DartKeyName:
+        Type: AWS::EC2::KeyPair::KeyName
+
+    DartSecurityGroupName:
+        Type: AWS::EC2::SecurityGroup::GroupName
+
+    DartLogGroupName:
+        Type: String
+
+    # task
+
+    TriggerWorkerDockerImage:
+        Type: String
+
+    # environment variables
+
+    DartConfig:
+        Type: String
+
+
+Mappings:
+    
+    EnvMap:
+        prod:  { Ec2InstanceType: t2.micro }
+        stage: { Ec2InstanceType: t2.micro }
+
+
+Resources:
+
+    Cluster:
+        Type: AWS::ECS::Cluster
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Volumes:
+              - Name: ecs-agent-data
+                Host: { SourcePath: /var/lib/ecs/data }
+            ContainerDefinitions:
+              - Name: dart-trigger-worker
+                Image: !Ref TriggerWorkerDockerImage
+                Cpu: 64
+                Memory: 256
+                LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref DartLogGroupName
+                        awslogs-region: !Sub ${AWS::Region}
+                        awslogs-stream-prefix: trigger-worker
+                MountPoints:
+                  - SourceVolume: ecs-agent-data
+                    ContainerPath: /mnt/ecs_agent_data
+                    ReadOnly: true
+                Environment:
+                  - Name: DART_ROLE
+                    Value: worker:trigger
+                  - Name: DART_CONFIG
+                    Value: !Ref DartConfig
+                  - Name: AWS_DEFAULT_REGION
+                    Value: !Ref AWS::Region
+
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref Cluster
+            DesiredCount: 1
+            TaskDefinition: !Ref TaskDefinition
+
+    AutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            VPCZoneIdentifier: !Ref VpcSubnetIds
+            AvailabilityZones: !Ref AvailabilityZones
+            MinSize: 1
+            MaxSize: 1
+            HealthCheckType: EC2
+            HealthCheckGracePeriod: 900
+
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            KeyName: !Ref DartKeyName
+            ImageId: ami-40286957
+            AssociatePublicIpAddress: true
+            SecurityGroups: [ !Ref DartSecurityGroupName ]
+            IamInstanceProfile: !Ref DartContainerInstanceProfileName
+            InstanceType: !FindInMap [ EnvMap, !Ref DartEnv, Ec2InstanceType ]

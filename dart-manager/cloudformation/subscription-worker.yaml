@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart subscription worker stack
+
+Parameters:
+
+    DartEnv:
+        Type: String
+
+    # ecs
+
+    VpcSubnetIds:
+        Type: List<AWS::EC2::Subnet::Id>
+
+    AvailabilityZones:
+        Type: List<AWS::EC2::AvailabilityZone::Name>
+
+    DartContainerInstanceProfileName:
+        Type: String
+
+    DartKeyName:
+        Type: AWS::EC2::KeyPair::KeyName
+
+    DartSecurityGroupName:
+        Type: AWS::EC2::SecurityGroup::GroupName
+
+    DartLogGroupName:
+        Type: String
+
+    # task
+
+    SubscriptionWorkerDockerImage:
+        Type: String
+
+    # environment variables
+
+    DartConfig:
+        Type: String
+
+    # scale policy
+
+    SubscriptionQueueName:
+        Type: String
+
+
+Mappings:
+    
+    EnvMap:
+        prod:  { Ec2InstanceType: m3.medium }
+        stage: { Ec2InstanceType: m3.medium }
+
+
+Resources:
+
+    Cluster:
+        Type: AWS::ECS::Cluster
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Volumes:
+              - Name: ecs-agent-data
+                Host: { SourcePath: /var/lib/ecs/data }
+            ContainerDefinitions:
+              - Name: dart-subscription-worker
+                Image: !Ref SubscriptionWorkerDockerImage
+                Cpu: 64
+                Memory: 256
+                LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref DartLogGroupName
+                        awslogs-region: !Sub ${AWS::Region}
+                        awslogs-stream-prefix: subscription-worker
+                MountPoints:
+                  - SourceVolume: ecs-agent-data
+                    ContainerPath: /mnt/ecs_agent_data
+                    ReadOnly: true
+                Environment:
+                  - Name: DART_ROLE
+                    Value: worker:subscription
+                  - Name: DART_CONFIG
+                    Value: !Ref DartConfig
+                  - Name: AWS_DEFAULT_REGION
+                    Value: !Ref AWS::Region
+
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref Cluster
+            DesiredCount: 0
+            TaskDefinition: !Ref TaskDefinition
+
+    AutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            VPCZoneIdentifier: !Ref VpcSubnetIds
+            AvailabilityZones: !Ref AvailabilityZones
+            MinSize: 1
+            MaxSize: 5
+            HealthCheckType: EC2
+            HealthCheckGracePeriod: 900
+
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            KeyName: !Ref DartKeyName
+            ImageId: ami-40286957
+            AssociatePublicIpAddress: true
+            SecurityGroups: [ !Ref DartSecurityGroupName ]
+            IamInstanceProfile: !Ref DartContainerInstanceProfileName
+            InstanceType: !FindInMap [ EnvMap, !Ref DartEnv, Ec2InstanceType ]
+
+
+    # scale up
+
+    SubscriptionQueueDepthHigh:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Scale-up if subscription queue depth > 3 for 5 minutes
+            MetricName: ApproximateNumberOfMessagesVisible
+            Namespace: AWS/SQS
+            Statistic: Average
+            Period: 300
+            EvaluationPeriods: 1
+            Threshold: 3
+            AlarmActions: [ !Ref ScaleUpPolicy ]
+            Dimensions:
+              - Name: QueueName
+                Value: !Ref SubscriptionQueueName
+            ComparisonOperator: GreaterThanThreshold
+
+    ScaleUpPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties:
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            Cooldown: 60
+            ScalingAdjustment: 1
+
+    # scale down
+
+    SubscriptionQueueDepthLow:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Scale-down if subscription queue depth < 1 for 50 minutes
+            MetricName: ApproximateNumberOfMessagesVisible
+            Namespace: AWS/SQS
+            Statistic: Average
+            Period: 300
+            EvaluationPeriods: 10
+            Threshold: 1
+            AlarmActions: [ !Ref ScaleDownPolicy ]
+            Dimensions:
+              - Name: QueueName
+                Value: !Ref SubscriptionQueueName
+            ComparisonOperator: LessThanThreshold
+
+    ScaleDownPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties:
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            Cooldown: 60
+            ScalingAdjustment: -1

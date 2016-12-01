@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart engine taskrunner stack
+
+Parameters:
+
+    DartEnv:
+        Type: String
+
+    # ecs
+
+    VpcSubnetIds:
+        Type: List<AWS::EC2::Subnet::Id>
+
+    AvailabilityZones:
+        Type: List<AWS::EC2::AvailabilityZone::Name>
+
+    DartContainerInstanceProfileName:
+        Type: String
+
+    DartKeyName:
+        Type: AWS::EC2::KeyPair::KeyName
+
+    DartSecurityGroupName:
+        Type: AWS::EC2::SecurityGroup::GroupName
+
+
+Mappings:
+    
+    EnvMap:
+        prod:  { Ec2InstanceType: t2.large }
+        stage: { Ec2InstanceType: t2.large }
+
+
+Resources:
+
+    Cluster:
+        Type: AWS::ECS::Cluster
+
+    AutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            VPCZoneIdentifier: !Ref VpcSubnetIds
+            AvailabilityZones: !Ref AvailabilityZones
+            MinSize: 1
+            MaxSize: 1
+            HealthCheckType: EC2
+            HealthCheckGracePeriod: 900
+
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            KeyName: !Ref DartKeyName
+            ImageId: ami-40286957
+            AssociatePublicIpAddress: true
+            SecurityGroups: [ !Ref DartSecurityGroupName ]
+            IamInstanceProfile: !Ref DartContainerInstanceProfileName
+            InstanceType: !FindInMap [ EnvMap, !Ref DartEnv, Ec2InstanceType ]
+
+    # scale up
+
+    ScaleUpPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties:
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            Cooldown: 300
+            ScalingAdjustment: 1
+
+    MemoryReservationTooHighAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Cluster memory reservation > 90% for 1 minute
+            MetricName: MemoryReservation
+            Namespace: AWS/ECS
+            Statistic: Average
+            Period: 60
+            EvaluationPeriods: 1
+            Threshold: 90
+            AlarmActions: [ !Ref ScaleUpPolicy ]
+            ComparisonOperator: GreaterThanThreshold
+            Dimensions:
+              - Name: ClusterName
+                Value: !Ref Cluster
+            
+
+    CpuReservationTooHighAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Cluster memory reservation > 90% for 1 minute
+            MetricName: CPUReservation
+            Namespace: AWS/ECS
+            Statistic: Average
+            Period: 60
+            EvaluationPeriods: 1
+            Threshold: 90
+            AlarmActions: [ !Ref ScaleUpPolicy ]
+            ComparisonOperator: GreaterThanThreshold
+            Dimensions:
+              - Name: ClusterName
+                Value: !Ref Cluster
+
+    # IAM
+
+    UdsInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles: [ Ref: UdsInstanceProfileRole ]
+
+    UdsInstanceProfileRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Action: [ 'sts:AssumeRole' ]
+                    Principal: { Service: [ elasticmapreduce.amazonaws.com ] }
+            ManagedPolicyArns: [ 'arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole' ]
+            Policies:
+              - PolicyName: !Sub get-auth-token
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: ecr:GetAuthorizationToken
+                        Resource: '*'
+              - PolicyName: !Sub sqs
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: sqs:*
+                        Resource:
+                          - !GetAtt TriggerQueueArn
+                          - !GetAtt SubscriptionQueueArn
+              - PolicyName: !Sub tags
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: [ 'ec2:DescribeTags', 'ec2:CreateTags' ]
+                        Resource: '*'
+              - PolicyName: !Sub s3-bucket-access
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: s3:*
+                        Resource:
+                          - !Sub arn:aws:s3:::${S3ConfigBucketName}
+                          - !Sub arn:aws:s3:::${S3ConfigBucketName}/*
+                          - !Sub arn:aws:s3:::${S3DataBucketName}
+                          - !Sub arn:aws:s3:::${S3DataBucketName}/*

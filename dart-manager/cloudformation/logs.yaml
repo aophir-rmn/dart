@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dart log stack
+
+Parameters:
+
+    DartTag:
+        Type: String
+
+    DartEnv:
+        Type: String
+
+    DartAlertsEmailAddress:
+        Type: String
+
+    MetricsNamespace:
+        Type: String
+        Default: Dart/LogMetrics
+
+    TracebackMetricName:
+        Type: String
+        Default: TracebackInDartSyslog
+
+Mappings:
+    
+    EnvMap:
+        prod:  { LogRetentionInDays: 60 }
+        stage: { LogRetentionInDays: 14 }
+
+
+Resources:
+
+    DartLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Sub ${DartTag}-${DartEnv}-log-group
+            LogRetentionInDays: !FindInMap [ EnvMap, !Ref DartEnv, LogRetentionInDays ]
+
+    TracebackMetricFilter:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref DartLogGroup
+            FilterPattern: Traceback
+            MetricTransformations:
+              - MetricName: !Ref TracebackMetricName
+                MetricNamespace: !Ref MetricsNamespace
+                MetricValue: 1
+
+    TracebackInLogsAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: Alarm when exception count >= 1
+            MetricName: !Ref TracebackMetricName
+            Namespace: !Ref MetricsNamespace
+            Statistic: Sum
+            Period: 60
+            EvaluationPeriods: 1
+            Threshold: 1
+            AlarmActions: [ !Ref EmailNotificationAction ]
+            ComparisonOperator: GreaterThanOrEqualToThreshold
+
+    EmailNotificationAction:
+        Type: AWS::SNS::Topic
+        Properties:
+            DisplayName: !Sub ${DartTag}-${DartEnv}-alerts
+            TopicName: !Sub ${DartTag}-${DartEnv}-alerts
+            Subscription:
+              - Endpoint: !Ref DartAlertsEmailAddress
+                Protocol: email
+
+
+Outputs:
+
+    DartLogGroupArn:
+        Value: !GetAtt DartLogGroup.Arn
+
+    DartLogGroupName:
+        Value: !Ref DartLogGroup

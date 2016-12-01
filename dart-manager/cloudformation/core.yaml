@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates resources shared between Dart environments
+
+
+Resources:
+
+    # Config bucket
+
+    ConfigBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
+        Properties:
+            BucketName: !DartRef ConfigBucketName
+            AccessControl: LogDeliveryWrite
+            LoggingConfiguration:
+                LogFilePrefix: dart-bucket-logs/config/
+
+    ConfigBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket: !Sub ConfigBucket
+            PolicyDocument:
+                Version: 2012-10-17
+                Id: PutObjPolicy
+                Statement:
+                    # only allow uploads with server-side encryption enabled
+                    - Sid: DenyIncorrectEncryptionHeader
+                      Effect: Deny
+                      Principal: '*'
+                      Action: s3:PutObject
+                      Resource: !Sub arn:aws:s3:::${ConfigBucket}/secrets/*
+                      Condition: { StringNotEquals: { 's3:x-amz-server-side-encryption': 'aws:kms' } }
+                    - Sid: DenyUnEncryptedObjectUploads
+                      Effect: Deny
+                      Principal: '*'
+                      Action: s3:PutObject
+                      Resource: !Sub arn:aws:s3:::${ConfigBucket}/secrets/*
+                      Condition: { Null: { 's3:x-amz-server-side-encryption': true } }
+
+    # Data bucket
+
+    DataBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
+        Properties:
+            BucketName: !DartRef DataBucketName
+            LoggingConfiguration:
+                DestinationBucketName: !Ref ConfigBucket
+                LogFilePrefix: dart-bucket-logs/data/
+
+    ObjectCreationEventsSNSTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            DisplayName: !Sub dart-${DartEnv}-object-creation-events
+            TopicName: !Sub dart-${DartEnv}-object-creation-events
+            Subscription:
+              - Endpoint: !Ref SubscriptionQueueArn
+                Protocol: sqs
+
+    ObjectCreationEventsSNSTopicPolicy:
+        Type: AWS::SNS::TopicPolicy
+        Properties:
+            Topics: !Ref ObjectCreationEventsSNSTopic
+            PolicyDocument:
+                Version: 2008-10-17
+                Id: dart-data-s3-object-creation-events
+                Statement:
+                  - Sid: dart-data-s3-object-creation-events
+                    Effect: Allow
+                    Principal: { AWS: "*" }
+                    Action: [ 'SNS:Publish' ]
+                    Resource: !Ref ObjectCreationEventsSNSTopic
+                    Condition: { ArnLike: { 'aws:SourceArn': !Sub 'arn:aws:s3:*:*:${DartDataBucketName}' } }
+
+    # Admin group
+
+    AdminRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub dart-admin
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal: { AWS: !Sub '${AWS::AccountId}' }
+                    Action: sts:AssumeRole
+            Policies:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow # move to env
+                    Action:
+                      - ecr:GetDownloadUrlForLayer
+                      - ecr:BatchGetImage
+                      - ecr:BatchCheckLayerAvailability
+                      - ecr:PutImage
+                      - ecr:InitiateLayerUpload
+                      - ecr:UploadLayerPart
+                      - ecr:CompleteLayerUpload
+                      - ecr:DescribeRepositories
+                      - ecr:GetRepositoryPolicy
+                      - ecr:ListImages
+                      - ecr:DeleteRepository
+                      - ecr:BatchDeleteImage
+                      - ecr:SetRepositoryPolicy
+                      - ecr:DeleteRepositoryPolicy
+                    Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${DartTag}/*
+                  - Effect: Allow
+                    Action: [ 'ecr:GetAuthorizationToken' ]
+                    Resource: '*'
+
+    AdminGroup:
+        Type: AWS::IAM::Group
+        Properties:
+            GroupName: !Sub dart-admins
+            Policies:
+              - PolicyName: assume-admin-role
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: sts:AssumeRole
+                        Resource: !GetAtt AdminRole.Arn
+
+
+
+Outputs:
+
+    ConfigBucketName:
+        Value: !Ref ConfigBucket
+        Export: { Name: DartConfigBucketName }
+
+    DataBucketName:
+        Value: !Ref DataBucket
+        Export: { Name: DartDataBucketName }
+
+    AdminRole:
+        Value: !Ref AdminRole
+        Export: { Name: DartAdminRole } # name? arn?
+
+    DartTag:
+        Value: !DartRef DartTag
