@@ -81,26 +81,32 @@ def dart_required_roles(action_roles):
     def response_authorization_error(error, code=403):
         return make_response(error, code)
 
+    def does_key_exist(kwargs, dart_type):
+        return kwargs.get(dart_type) and \
+               hasattr(kwargs.get(dart_type), 'data') and \
+               hasattr(kwargs[dart_type].data, 'datastore_id')
+
     # Retrieve all its Is_Member_Of roles.
     def get_datastore_owner_membership_roles(user, kwargs):
+        _logger.info("Authorization: kwargs={0}".format(kwargs))
 
         # Not authorizing post for DATASTORE (create datastore)
         # We place all calls after @fetch_model to already get he object (Action, WF, WF_instance, ds)
         datastore_data = None
-        if kwargs.get("datastore") and kwargs.get("datastore").data:
+        if kwargs.get("datastore") and hasattr(kwargs.get("datastore"), 'data'):
             datastore_data = kwargs.get("datastore").data
 
-        elif kwargs["workflow"] and kwargs["workflow"].data and kwargs["workflow"].data.datastore_id:
+        elif does_key_exist(kwargs=kwargs, dart_type="workflow"):
             tmp_ds = get_known_entity("datastore", kwargs["workflow"].data.datastore_id)
             if tmp_ds and tmp_ds.data:
                 datastore_data = tmp_ds.data
 
-        elif kwargs["workflow_instance"] and kwargs["workflow_instance"].data and kwargs["workflow_instance"].data.datastore_id:
+        elif does_key_exist(kwargs=kwargs, dart_type="workflow_instance"):
                 tmp_ds = get_known_entity("datastore", kwargs["workflow_instance"].data.datastore_id)
                 if tmp_ds and tmp_ds.data:
                     datastore_data = tmp_ds.data
 
-        elif kwargs["action"] and kwargs["action"].data and kwargs["action"].data.datastore_id:
+        elif does_key_exist(kwargs=kwargs, dart_type="action"):
                 tmp_ds = get_known_entity("datastore", kwargs["action"].data.datastore_id)
                 if tmp_ds and tmp_ds.data:
                     datastore_data = tmp_ds.data
