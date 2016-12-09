@@ -2850,6 +2850,10 @@ definitions:
         x-schema-form:
           title: '{{ value || ''email '' + $index }}'
           type: tabarray
+      retries_on_failure:
+        default: 0
+        minimum: 0
+        type: integer
       state:
         default: INACTIVE
         enum:
@@ -2915,6 +2919,10 @@ definitions:
       queued_time:
         type: string
         x-nullable: true
+      retry_num:
+        default: 0
+        minimum: 0
+        type: integer
       start_time:
         type: string
         x-nullable: true
