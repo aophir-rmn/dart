@@ -182,7 +182,7 @@ overlap with datastore's user owner {ds_user} meberships {ds_memberships}""". \
 # kwargs - paramaters sent via the decorator (def wrapped_f(*args, **kwargs))
 # user_roles_service - Service function to access the DAO holding user roles.
 # get_known_entity - a function that return the model of an object by its name and id. Used by
-                     get_datastore_owner_membership_roles, e.g. get_known_entity("datastore", datastore_id)
+#                     get_datastore_owner_membership_roles, e.g. get_known_entity("datastore", datastore_id)
 # debug_uuid - unique uuid for this invocation used to track logs belonging to the same call to this function.
 # action_roles - The roles specified in the api endpoint that was called. E.g. @required_roles(['Edit'])
 #                This is the role we try to authorize against.
