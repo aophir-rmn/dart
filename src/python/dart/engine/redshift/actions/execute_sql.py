@@ -17,7 +17,12 @@ def execute_sql(redshift_engine, datastore, action):
     txn = conn.begin()
     try:
         action = redshift_engine.dart.patch_action(action, progress=.1)
-        conn.execute(sanitized_query(action.data.args['sql_script']))
+        datastore_user_id = datastore.data.user_id if hasattr(datastore.data, 'user_id') else 'anonymous'
+        sanitzed_sql = sanitized_query(action.data.args['sql_script'])
+
+        # Adding  --USER-ID helps identify who this query run belongs to.
+        sql_to_execute = "---USER_ID={user_id}\n{sanitzed_sql}".format(sanitzed_sql=sanitzed_sql, user_id=datastore_user_id)
+        conn.execute(sql_to_execute)
         txn.commit()
         redshift_engine.dart.patch_action(action, progress=1)
     except:

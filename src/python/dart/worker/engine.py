@@ -85,15 +85,17 @@ class EngineWorker(Tool):
 
                 engine = engine_service.get_engine_by_name(action.data.engine_name)
 
+                # our best granualrity of a user_id to identifu who is running this workflow's action.
+                datastore_user_id = datastore.data.user_id if hasattr(datastore.data, 'user_id') else 'anonymous'
                 if self.dart_config['dart'].get('use_local_engines'):
                     config = self.dart_config['engines'][engine.data.name]
                     engine_instance = locate(config['path'])(**config.get('options', {}))
-                    self._launch_in_memory_engine(engine, engine_instance, action)
+                    self._launch_in_memory_engine(engine, engine_instance, action, datastore_user_id)
                     # empty string allows differentiation from null, yet is still falsey
                     action_service.update_action_ecs_task_arn(action, '')
 
                 elif engine.data.ecs_task_definition_arn:
-                    ecs_task_arn = self._try_run_task(engine, action)
+                    ecs_task_arn = self._try_run_task(engine, action, datastore_user_id)
                     if ecs_task_arn:
                         action_service.update_action_ecs_task_arn(action, ecs_task_arn)
                     else:
@@ -115,7 +117,7 @@ class EngineWorker(Tool):
                 db.session.rollback()
 
     @db_mutex(Mutexes.START_ENGINE_TASK)
-    def _try_run_task(self, engine, action):
+    def _try_run_task(self, engine, action, datastore_user_id):
         _logger.info('trying to run ecs task')
 
         response = boto3.client('ecs').run_task(
@@ -125,7 +127,8 @@ class EngineWorker(Tool):
                 'containerOverrides': [
                     {
                         'name': containerDefinition['name'],
-                        'environment': [{'name': 'DART_ACTION_ID', 'value': action.id}]
+                        'environment': [{'name': 'DART_ACTION_ID', 'value': action.id},
+                                        {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
                     }
                     for containerDefinition in engine.data.ecs_task_definition['containerDefinitions']
                 ]
@@ -245,10 +248,11 @@ class EngineWorker(Tool):
                             break
 
     @staticmethod
-    def _launch_in_memory_engine(engine, engine_instance, action):
+    def _launch_in_memory_engine(engine, engine_instance, action, datastore_user_id):
         def target():
             engine_instance.run()
         os.environ['DART_ACTION_ID'] = action.id
+        os.environ['DART_ACTION_USER_ID'] = datastore_user_id
         p = Process(target=target)
         p.start()
         values = (engine.data.name, p.pid, action.id)
