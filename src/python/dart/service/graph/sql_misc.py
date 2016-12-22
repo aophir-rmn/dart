@@ -1,4 +1,4 @@
-ENTITY_IDENTIFIER_SQL = """
+ENTITY_IDENTIFIER_SQL_ = """
     SELECT DISTINCT *
     FROM (
         SELECT 'action', id, data ->> 'name'
@@ -32,8 +32,10 @@ ENTITY_IDENTIFIER_SQL = """
     ) t
     LIMIT 20
 """
+ENTITY_IDENTIFIER_SQL = ''.join(ENTITY_IDENTIFIER_SQL_.split('\n'))
 
-DATASTORE_ONE_OFFS_SQL = """
+
+DATASTORE_ONE_OFFS_SQL_ = """
   SELECT 'datastore', d.id, NULL, NULL, a.id, a.name, a.state, a.sub_type
     FROM datastore d
     JOIN LATERAL (
@@ -56,8 +58,10 @@ DATASTORE_ONE_OFFS_SQL = """
    WHERE d.id IN ({d_ids})
 ORDER BY d.created, a.order_idx, a.created
 """
+DATASTORE_ONE_OFFS_SQL = ''.join(DATASTORE_ONE_OFFS_SQL_.split('\n'))
 
-WORKFLOW_INSTANCE_SQL = """
+
+WORKFLOW_INSTANCE_SQL_ = """
      SELECT 'workflow', w.id, wfis.id, wfis.state, a.id,
             CASE WHEN a.data ->> 'state' = 'RUNNING' THEN CONCAT(a.data ->> 'name', CONCAT(' - ', CONCAT(CAST(100 * COALESCE(CAST(a.data ->> 'progress' AS FLOAT), 0.0) AS INT), '%')))
                 ELSE a.data ->> 'name'
@@ -77,3 +81,4 @@ WORKFLOW_INSTANCE_SQL = """
       WHERE w.id IN ({wf_ids})
    ORDER BY wfis.created, CAST(a.data ->> 'order_idx' AS FLOAT), a.created
 """
+WORKFLOW_INSTANCE_SQL = ''.join(WORKFLOW_INSTANCE_SQL_.split('\n'))
