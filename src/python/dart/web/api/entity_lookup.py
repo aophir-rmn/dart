@@ -42,6 +42,7 @@ def get_known_entity(entity_name, entity_id):
     if model:
         return model
 
+    _logger.warn("Entity not found! {entity} with id {id}".format(entity=entity_name, id=entity_id))
     return None
 
 def fetch_model(f):
