@@ -1,4 +1,4 @@
-RECURSIVE_SQL = """
+RECURSIVE_SQL_ = """
     WITH RECURSIVE entity_graph(type, id, name, state, sub_type, related_type, related_id, related_is_a) AS (
 
         VALUES (:entity_type, :entity_id, :name, :state, :sub_type, NULL, NULL, NULL)
@@ -235,3 +235,4 @@ RECURSIVE_SQL = """
     SELECT * FROM entity_graph
     LIMIT 1000;
     """
+RECURSIVE_SQL = ''.join(RECURSIVE_SQL_.split('\n'))
