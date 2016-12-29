@@ -40,24 +40,29 @@ def dart_required_roles(action_roles):
     @wraps(f)
     def wrapped_f(*args, **kwargs):
 
-        inputs = prepare_inputs(current_user=current_user,
-                                kwargs=kwargs,
-                                user_roles_service=current_app.dart_context.get(UserRolesService),
-                                get_known_entity=get_known_entity,
-                                debug_uuid=uuid.uuid4().hex,
-                                action_roles=action_roles,
-                                dart_client_name=DART_CLIENT_NAME)
-        if isinstance(inputs, basestring):
-            _logger.error(inputs)
-            return make_response(inputs, 403)
+        try:
+            inputs = prepare_inputs(current_user=current_user,
+                                    kwargs=kwargs,
+                                    user_roles_service=current_app.dart_context.get(UserRolesService),
+                                    get_known_entity=get_known_entity,
+                                    debug_uuid=uuid.uuid4().hex,
+                                    action_roles=action_roles,
+                                    dart_client_name=DART_CLIENT_NAME)
+            if isinstance(inputs, basestring):
+                _logger.error(inputs)
+                return make_response(inputs, 403)
 
-        # Else we assume inputs is a dictionary of params to authorization_decorator(...)
-        inputs['dart_client_name_'] = DART_CLIENT_NAME
-        inputs['action_roles_'] = action_roles
-        err = authorization_decorator(**inputs)
-        if err:
-            _logger.error(err)
-            return make_response(err, 403)
+            # Else we assume inputs is a dictionary of params to authorization_decorator(...)
+            inputs['dart_client_name_'] = DART_CLIENT_NAME
+            inputs['action_roles_'] = action_roles
+            err = authorization_decorator(**inputs)
+            if err:
+                _logger.error(err)
+                return make_response(err, 403)
+
+        # To catch unexpected errors and return 500 error.
+        except Exception as err:
+            return make_response(str(err), 500)
 
         # clear to run
         return f(*args, **kwargs)
