@@ -43,6 +43,7 @@ before_install:
   - pip install -r src/python/requirements.txt
   # Install the dart source itself into the virtualenv to enable running the swagger tool
   - pip install -e src/python
+  - pip install nose # nose will be used to run unit tests under <root>/tests
   # Run the swagger export tool here to ensure that the swagger definitions are up-to-date
   - python src/python/dart/tool/export_swagger_definitions.py src/python/dart/web/api/swagger.yaml --dry-run
   # we do not use nosetests because it does not run the class setup method.
@@ -66,6 +67,7 @@ before_script:
 # commands to run tests
 script:
   # Running unit-tests against the containers
+  - nosetests tests/
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/schema/ "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/graph "test_*.py"
   - docker-compose exec web python -m unittest discover /tmp/src/python/dart/test/crud "test_*.py"  
