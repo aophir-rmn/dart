@@ -94,10 +94,6 @@ def get_datastore_owner_membership_roles(user, user_roles_service, get_known_ent
 
     datastore_user_id = datastore_data.user_id if hasattr(datastore_data, "user_id") else None
     actions, memberships, is_member_all = get_current_user_permssions(datastore_user_id, user_roles_service)
-    if is_member_all and user != DART_CLIENT_NAME:
-        # datastore_data.user_id = current_user.email
-        # TODO: Should we overwrite the user by whoever runs it?
-        pass
 
     return datastore_user_id, memberships, is_member_all
 
