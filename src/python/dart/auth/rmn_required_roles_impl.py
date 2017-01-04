@@ -13,6 +13,8 @@ Note:  All permissions are tied to the datastore owner on which we operate.
 
     * No limit on creating datastores.
 """
+from collections import namedtuple
+
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -62,13 +64,22 @@ action_roles - Array What action roles are required, implies and, (e.g. edit/run
                permission, such as Can_edit_BA do we need to check datastore owner.
 """
 
-def does_key_exist(kwargs, dart_type):
-    return kwargs.get(dart_type) and \
-           hasattr(kwargs.get(dart_type), 'data') and \
-           hasattr(kwargs[dart_type].data, 'datastore_id')
+def does_key_exist(kwargs, dart_type, id_type='datastore_id'):
+
+    does_type_exist = \
+        kwargs.get(dart_type) and \
+        hasattr(kwargs.get(dart_type), 'data') and \
+        hasattr(kwargs.get(dart_type).data, id_type)
+
+    does_datastore_exist = True
+    if does_type_exist and (id_type == 'datastore_id'):
+        # This is to make sure that if we do have a datastore_id (id_type) it should be Truthy (not empty).
+        does_datastore_exist = bool(kwargs.get(dart_type).data.datastore_id)
+
+    return does_type_exist and does_datastore_exist
 
 # Retrieve all its Is_Member_Of roles.
-def get_datastore_owner_membership_roles(user, user_roles_service, get_known_entity, kwargs):
+def get_datastore_owner_membership_roles(user, user_roles_service, get_known_entity, kwargs, dart_client_name):
     _logger.info("Authorization: kwargs={0}".format(kwargs))
 
     # Not authorizing post for DATASTORE (create datastore)
@@ -78,22 +89,34 @@ def get_datastore_owner_membership_roles(user, user_roles_service, get_known_ent
         datastore_data = kwargs.get("datastore").data
 
     elif does_key_exist(kwargs=kwargs, dart_type="workflow"):
-        tmp_ds = get_known_entity("datastore", kwargs["workflow"].data.datastore_id)
+        tmp_ds = get_known_entity("datastore", kwargs.get("workflow").data.datastore_id)
         if tmp_ds and tmp_ds.data:
             datastore_data = tmp_ds.data
 
     elif does_key_exist(kwargs=kwargs, dart_type="workflow_instance"):
-        tmp_ds = get_known_entity("datastore", kwargs["workflow_instance"].data.datastore_id)
+        tmp_ds = get_known_entity("datastore", kwargs.get("workflow_instance").data.datastore_id)
         if tmp_ds and tmp_ds.data:
             datastore_data = tmp_ds.data
 
     elif does_key_exist(kwargs=kwargs, dart_type="action"):
-        tmp_ds = get_known_entity("datastore", kwargs["action"].data.datastore_id)
+        tmp_ds = get_known_entity("datastore", kwargs.get("action").data.datastore_id)
         if tmp_ds and tmp_ds.data:
             datastore_data = tmp_ds.data
 
+    # In case of a Template Action there will be no datastore_id to use.
+    # So we will use the action's user_id as a substitute to datastore's user_id.
+    elif does_key_exist(kwargs=kwargs, dart_type='action', id_type='user_id'):
+        _logger.info("Authorization: Template Action has no datastore user. Using action's user {action_user} instead.".\
+                       format(action_user=kwargs.get("action").data.user_id))
+        FakeDatastoreData = namedtuple('FakeDatastoreData', 'user_id')
+        datastore_data = FakeDatastoreData(user_id=kwargs.get("action").data.user_id)
+
     datastore_user_id = datastore_data.user_id if hasattr(datastore_data, "user_id") else None
     actions, memberships, is_member_all = get_current_user_permssions(datastore_user_id, user_roles_service)
+    if is_member_all and user != dart_client_name:
+        # datastore_data.user_id = current_user.email
+        # TODO: Should we overwrite the user by whoever runs it?
+        pass
 
     return datastore_user_id, memberships, is_member_all
 
@@ -232,7 +255,8 @@ def prepare_inputs(current_user, kwargs, user_roles_service, get_known_entity, d
                 get_datastore_owner_membership_roles(user=user,
                                                      user_roles_service=user_roles_service,
                                                      get_known_entity=get_known_entity,
-                                                     kwargs=kwargs)
+                                                     kwargs=kwargs,
+                                                     dart_client_name=dart_client_name)
             inputs['datastore_user_id_'] = datastore_user_id
             inputs['ds_memberships_'] = ds_memberships
             inputs['is_ds_member_all_'] = is_member_all
