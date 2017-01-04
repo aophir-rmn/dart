@@ -235,4 +235,8 @@ RECURSIVE_SQL_ = """
     SELECT * FROM entity_graph
     LIMIT 1000;
     """
-RECURSIVE_SQL = ''.join(RECURSIVE_SQL_.split('\n'))
+
+### In order to avoid printing this sql statement across multiple line in the logs we remove
+### the comment lines (starts with --), and then join all the remaining lines to one long string.
+RECURSIVE_SQL = map(lambda s: ' '.join(s.split()), RECURSIVE_SQL_.split('\n'))
+RECURSIVE_SQL = ' '.join(list(filter(lambda s: not s.startswith('--'), RECURSIVE_SQL)))
