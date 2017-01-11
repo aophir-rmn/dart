@@ -8,6 +8,7 @@ flask:
     DEBUG: false
     # when this value is set, it will only expose a key for subsequent decryption, e.g.: !decrypt database-uri-stage
     SQLALCHEMY_DATABASE_URI: ...TBD...
+    SQLALCHEMY_DATABASE_REPLICA_URI: ...TBD...
     SQLALCHEMY_POOL_SIZE: 15
     SQLALCHEMY_ECHO: false
 

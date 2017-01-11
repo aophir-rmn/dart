@@ -4,7 +4,7 @@ import json
 
 from sqlalchemy import text
 
-from dart.context.database import db
+from dart.context.database import db_replica as db
 from dart.context.locator import injectable
 from dart.model.action import Action, ActionState
 from dart.model.dataset import Dataset
