@@ -16,8 +16,8 @@ class DartDbSession(object):
         self.session = session
 
 
-def init_dart_db():
-    engine = create_engine(config['flask']['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
+def init_dart_db(database_uri_alias='SQLALCHEMY_DATABASE_URI'):
+    engine = create_engine(config['flask'][database_uri_alias], convert_unicode=True)
     db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
     base = declarative_base(cls=Model, name='Model')
     base.query = db_session.query_property()
@@ -25,4 +25,5 @@ def init_dart_db():
 
 
 config = configuration(os.environ['DART_CONFIG'])
-db = SQLAlchemy() if os.environ.get('DART_ROLE') == 'web' else init_dart_db()
+db = SQLAlchemy() if os.environ.get('DART_ROLE') == 'web' else init_dart_db('SQLALCHEMY_DATABASE_URI')
+db_replica = SQLAlchemy() if os.environ.get('DART_ROLE') == 'web' else init_dart_db('SQLALCHEMY_DATABASE_REPLICA_URI')
