@@ -99,7 +99,7 @@ class ActionService(object):
         resultset = db.session\
             .query(func.distinct(ActionDao.data['workflow_id'].astext))\
             .filter(ActionDao.data['datastore_id'].astext == datastore_id)\
-            .filter(ActionDao.data['state'].astext.in_([ActionState.RUNNING, ActionState.QUEUED]))\
+            .filter(ActionDao.data['state'].astext.in_([ActionState.RUNNING, ActionState.PENDING, ActionState.QUEUED]))\
             .filter(ActionDao.data['workflow_id'] != 'null')\
             .all()
         return [r[0] for r in resultset]
@@ -108,7 +108,7 @@ class ActionService(object):
     def exists_running_or_queued_non_workflow_action(datastore_id):
         query = ActionDao.query\
             .filter(ActionDao.data['datastore_id'].astext == datastore_id)\
-            .filter(ActionDao.data['state'].astext.in_([ActionState.RUNNING, ActionState.QUEUED]))\
+            .filter(ActionDao.data['state'].astext.in_([ActionState.RUNNING, ActionState.PENDING, ActionState.QUEUED]))\
             .filter(ActionDao.data['workflow_id'] == 'null')\
             .limit(1)
         return len(list(query.all())) > 0
