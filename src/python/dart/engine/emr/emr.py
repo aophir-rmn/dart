@@ -23,9 +23,8 @@ _logger = logging.getLogger(__name__)
 
 
 class EmrEngine(object):
-    def __init__(self, ec2_keyname, instance_profile, service_role, region, core_node_limit,
-                 impala_docker_repo_base_url, impala_version, cluster_tags, cluster_availability_zone,
-                 dart_host, dart_port, dart_api_version=1):
+    def __init__(self, ec2_keyname, instance_profile, service_role, subnet_id, region, core_node_limit,
+                 impala_docker_repo_base_url, impala_version, cluster_tags, dart_host, dart_port, dart_api_version=1):
 
         self._action_handlers = {
             EmrActionTypes.start_datastore.name: start_datastore,
@@ -43,8 +42,8 @@ class EmrEngine(object):
         self.core_node_limit = core_node_limit
         self.instance_profile = instance_profile
         self.service_role = service_role
+        self.subnet_id = subnet_id
         self.cluster_tags = cluster_tags
-        self.cluster_availability_zone = cluster_availability_zone
         self.impala_docker_repo_base_url = impala_docker_repo_base_url
         self.impala_version = impala_version
         self.dart = Dart(dart_host, dart_port, dart_api_version)
