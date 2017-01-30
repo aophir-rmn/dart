@@ -12,6 +12,7 @@ from dart.engine.redshift.actions.load_dataset import load_dataset
 from dart.engine.redshift.actions.start_datastore import start_datastore
 from dart.engine.redshift.actions.stop_datastore import stop_datastore
 from dart.engine.redshift.actions.execute_sql import execute_sql
+from dart.engine.redshift.actions.cluster_maintenance import cluster_maintenance
 from dart.engine.redshift.metadata import RedshiftActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.service.secrets import Secrets
@@ -35,6 +36,7 @@ class RedshiftEngine(object):
             RedshiftActionTypes.copy_to_s3.name: copy_to_s3,
             RedshiftActionTypes.create_snapshot.name: create_snapshot,
             RedshiftActionTypes.data_check.name: data_check,
+            RedshiftActionTypes.cluster_maintenance.name: cluster_maintenance,
         }
         self.vpc_subnet = vpc_subnet
         self.availability_zones = availability_zones

@@ -169,3 +169,20 @@ class RedshiftActionTypes(object):
             'required': ['sql_script'],
         },
     )
+    cluster_maintenance = ActionType(
+        name='cluster_maintenance',
+        description='Maintains data retention policies, Vacuum/Analyzes tables, and ensures advantageous encoding',
+        params_json_schema={
+            'type':'object',
+            'properties':{
+                'Retention_Policy': {'type': 'boolean', 'default': True,
+                           'description': 'If True, will use dart.retention_policy table to clean out data older than the number of days listed'},
+                'Vacuum': {'type': 'boolean', 'default': True,
+                             'description': 'If True, will run Vacuum post load. Recommended True'},
+                'Analyze': {'type': 'boolean', 'default': True,
+                           'description': 'If True, will run Analyze post load. Recommended True'},
+            },
+            'additionalProperties': False,
+            'required': ['Retention_Policy'],
+        },
+    )
