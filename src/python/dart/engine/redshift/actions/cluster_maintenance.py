@@ -17,14 +17,12 @@ def cluster_maintenance (redshift_engine, datastore, action):
     try:
         action = redshift_engine.dart.patch_action(action, progress=.1)
         datastore_user_id = datastore.data.user_id if hasattr(datastore.data, 'user_id') else 'anonymous'
-        cursor = conn.cursor()
+
         sql_query = ''
         if(action.data.args['Retention_Policy']):
             rows = ''
             try:
-                cursor.execute(
-                    "Select schema_name, table_name, column_name, retention_days from dart.retention_policy;")
-                rows = cursor.fetchall()
+                rows = list(conn.execute("Select schema_name, table_name, column_name, retention_days from dart.retention_policy;"))[0]
 
             except:
                 raise Exception(
@@ -33,11 +31,13 @@ def cluster_maintenance (redshift_engine, datastore, action):
             for row in rows:
                 sql = 'Delete FROM {0}.{1} where DATEDIFF(day, {2}, current_date) > {3}'
                 args = row[0], row[1], row[2], row[3]
-                cursor.execute(sql.format(*args))
+                conn.execute(sql.format(*args))
 
+        action = redshift_engine.dart.patch_action(action, progress=.3)
         if(action.data.args['vacuum']):
             if(not check_if_vacuum_is_running(conn)):
                 run_vacuum(conn)
+        action = redshift_engine.dart.patch_action(action, progress=.6)
         if(action.data.args['analyze']):
             run_analyze(conn)
 
@@ -50,12 +50,8 @@ def cluster_maintenance (redshift_engine, datastore, action):
         conn.close()
 
 def run_analyze(conn):
-    cursor = conn.cursor()
     statements = []
-    query = """
-
-
-  SELECT DISTINCT 'analyze ' + feedback_tbl.schema_name + '."' + feedback_tbl.table_name + '" ; '
+    query = """SELECT DISTINCT 'analyze ' + feedback_tbl.schema_name + '."' + feedback_tbl.table_name + '" ; '
                                     + '/* '+ ' Table Name : ' + info_tbl."schema" + '.\"' + info_tbl."table"
                                         + '\", Stats_Off : ' + CAST(info_tbl."stats_off" AS VARCHAR(10)) + ' */ ;'
             FROM ((SELECT TRIM(n.nspname) schema_name,
@@ -105,8 +101,8 @@ def run_analyze(conn):
     WHERE info_tbl.stats_off::DECIMAL (32,4) > 10::DECIMAL (32,4)
 
     ORDER BY info_tbl.size ASC  ;"""
-    cursor.execute(query)
-    analyze_statements = cursor.fetchall()
+    analyze_statements = list(conn.execute(query))[0]
+
     print analyze_statements
     for analyze_statement in analyze_statements:
         print analyze_statement
@@ -116,21 +112,17 @@ def run_analyze(conn):
         return 'ERROR'
 
 def check_if_vacuum_is_running(conn):
-    cursor = conn.cursor()
     query = """Select count(1) from SVV_VACUUM_PROGRESS
                where time_remaining_estimate IS NOT NULL"""
-    cursor.execute(query)
-    rows = cursor.fetchall()
+    rows = list(conn.execute(query))[0]
     for row in rows:
-        if row[0] > 0:
-            return 'true'
-    return 'false'
+        if int(row[0]) > 0:
+            return True
+    return False
 
 def run_vacuum(conn):
-    cursor = conn.cursor()
     statements = []
-    query = """
-    Select Distinct query from
+    query = """Select Distinct query from
     (
     SELECT  DISTINCT \"schema_name\", 'vacuum ' + \"schema_name\" + '.' + \"table_name\" + ';' as query
     FROM   (SELECT TRIM(n.nspname)             schema_name,
@@ -169,8 +161,7 @@ def run_vacuum(conn):
       )
       where schema_name NOT IN ('metadata')
       """
-    cursor.execute(query)
-    vacuum_statements = cursor.fetchall()
+    vacuum_statements = list(conn.execute(query))[0]
     print vacuum_statements
     for vs in vacuum_statements:
         print vs
@@ -181,7 +172,6 @@ def run_vacuum(conn):
 
 
 def run_commands(conn, commands):
-    cursor = conn.cursor()
     old_isolation_level = conn.isolation_level
     conn.set_isolation_level(0)
     for idx, c in enumerate(commands, start=1):
@@ -190,7 +180,7 @@ def run_commands(conn, commands):
             print('Running %s out of %s commands: %s' % (idx, len(commands), c))
             try:
                 print(c)
-                cursor.execute(c)
+                conn.execute(c)
                 print('Success.')
             except Exception as e:
                 # cowardly bail on errors
