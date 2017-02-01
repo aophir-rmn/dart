@@ -59,7 +59,7 @@ install:
 
 before_script:
   # try to create the DB tables until you succeed.  
-  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; sh -c 'docker-compose logs web | tail -10'; docker-compose exec web curl -k -XPOST "https://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 15; done
+  - STOP=1; while [ $STOP -gt 0 ]; do docker-compose ps web; sh -c 'docker-compose logs web | tail -10'; docker-compose exec web curl -k -XPOST "http://127.0.0.1:5000/admin/create_all"; STOP=$?; sleep 15; done
 
   # try to populate the engine table until you succeed.  
   - STOP=1; while [ $STOP -gt 0 ]; do docker-compose exec web python /tmp/src/python/dart/engine/no_op/add_engine.py; STOP=$?; sleep 2; done
