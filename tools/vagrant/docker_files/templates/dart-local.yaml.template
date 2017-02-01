@@ -3,6 +3,7 @@ flask:
     dart_port: {{ webapp_port }}
     DEBUG: true
     SQLALCHEMY_DATABASE_URI: postgresql://dart:dartis4datamarts@postgres:{{ database_port }}/dart
+    SQLALCHEMY_DATABASE_REPLICA_URI: postgresql://dart:dartis4datamarts@postgres:{{ database_port }}/dart
     SQLALCHEMY_POOL_SIZE: 15
     SQLALCHEMY_ECHO: false
 
@@ -256,7 +257,7 @@ authorization:
     dart_client_name: dart@aaa.ccc
 
 auth:
-    use_auth: True
+    use_auth: False
     config_path: ./ui/onelogin
     module_source: ../auth/dummy_saml_auth.py
     module: dummy_saml_auth
@@ -272,12 +273,12 @@ auth:
     dart_client_secret: eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
     predefined_auth_services:
       - a_dart@rmn.com
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
+        aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+        aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
       - b_dart@rmn.com
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
+        bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
+        bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
       - c_dart@rmn.com
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
-        eeeeeeee-dddd-cccc-bbbb-aaaaaaaaaaaa
+        cccccccc-cccc-cccc-cccc-cccccccccccc
+        cccccccc-cccc-cccc-cccc-cccccccccccc
 
