@@ -42,6 +42,7 @@ def write_onelogin_settings():
 
     j2_env = Environment(loader=FileSystemLoader(THIS_DIR + "/ui/onelogin/"),
                          trim_blocks=True)
+
     file_str = j2_env.get_template('settings.json.tmpl').render(
         appid=app.config.get('auth').get('appid'),
         onelogin_server=config.get('auth').get('onelogin_server'),
@@ -50,9 +51,9 @@ def write_onelogin_settings():
         dart_server=config.get('auth').get('dart_server')
     )
 
-    f = open('./ui/onelogin' + '/settings.json', 'w')
-    f.write(file_str)
-    f.close()
+    with open(THIS_DIR + '/ui/onelogin/settings.json', 'w') as f:
+        f.write(file_str)
+
 
 
 
@@ -84,7 +85,6 @@ write_onelogin_settings()
 
 if (app.config['auth'] and app.config['auth'].get('use_auth') == False):
   app.config['LOGIN_DISABLED'] = True
-
 
 app.auth_module = imp.load_source(config['auth']['module'], config['auth'].get('module_source'))
 app.auth_class = getattr(app.auth_module, config['auth']['class'])
