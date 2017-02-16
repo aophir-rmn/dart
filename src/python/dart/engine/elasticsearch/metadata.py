@@ -124,29 +124,6 @@ class ElasticsearchActionTypes(object):
         },
     )
 
-    delete_mapping = ActionType(
-        name='delete_mapping',
-        description='Deletes an Elasticsearch mapping',
-        params_json_schema={
-            'type': 'object',
-            'properties': {
-                'index': {
-                    'type': 'string',
-                    'description': 'The Elasticsearch index to create the mapping for. '
-                                   + 'Explicitly set to "_all" to delete the mapping for all indices.'
-                },
-                'document_type': {
-                    'type': 'string',
-                    'description': 'The Elasticsearch document type to delete the mapping for. '
-                                   + 'Explicitly set to "_all" to delete the mapping for all document types.'
-
-                }
-            },
-            'additionalProperties': False,
-            'required': ['index', 'document_type'],
-        },
-    )
-
     delete_template = ActionType(
         name='delete_template',
         description='Deletes an Elasticsearch template',

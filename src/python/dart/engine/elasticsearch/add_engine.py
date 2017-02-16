@@ -91,7 +91,6 @@ def add_elasticsearch_engine(config):
             ElasticsearchActionTypes.create_mapping,
             ElasticsearchActionTypes.create_template,
             ElasticsearchActionTypes.delete_index,
-            ElasticsearchActionTypes.delete_mapping,
             ElasticsearchActionTypes.delete_template,
             ElasticsearchActionTypes.force_merge_index,
         ],

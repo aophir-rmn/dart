@@ -30,7 +30,6 @@ class ElasticsearchEngine(object):
             ElasticsearchActionTypes.create_mapping.name: create_mapping,
             ElasticsearchActionTypes.delete_index.name: delete_index,
             ElasticsearchActionTypes.delete_template.name: delete_template,
-            ElasticsearchActionTypes.delete_mapping.name: delete_mapping,
             ElasticsearchActionTypes.force_merge_index.name: force_merge_index,
         }
         self.secrets = Secrets(kms_key_arn, secrets_s3_path)
