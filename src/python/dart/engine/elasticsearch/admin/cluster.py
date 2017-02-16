@@ -12,7 +12,7 @@ class ElasticsearchCluster(object):
     def __init__(self, elasticsearch_engine, datastore):
         self.elasticsearch_engine = elasticsearch_engine
         self.datastore = datastore
-        self.access_key_id = self.datastore.data.args['access_key_id']
+        self.access_key_id = self.datastore.data.args.get('access_key_id')
         self.endpoint = self.datastore.data.args['endpoint']
         self.region = self.get_es_cluster_region()
 

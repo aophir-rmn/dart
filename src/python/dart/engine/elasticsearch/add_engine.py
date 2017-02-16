@@ -59,17 +59,34 @@ def add_elasticsearch_engine(config):
             'type': 'object',
             'properties': {
                 'access_key_id': {
-                    'type': ['string', 'null'],
-                    'minLength': 20,
-                    'maxLength': 20,
-                    'pattern': '^[A-Z0-9]{20}$',
+                    'default': None,
+                    'oneOf': [
+                        {
+                            'type': 'string',
+                            'minLength': 20,
+                            'maxLength': 20,
+                            'pattern': '^[A-Z0-9]{20}$'
+                        },
+                        {
+                            'type': 'null'
+                        }
+                    ],
                     'description': 'the access_key_id for accessing this elasticsearch cluster. '
                                    + 'Leave blank to use Dart\'s instance profile credentials'
                 },
                 'secret_access_key': {
-                    'type': ['string', 'null'],
-                    'minLength': 40,
-                    'maxLength': 40,
+                    'type': 'string',
+                    'default': '',
+                    'oneOf': [
+                        {
+                            'minLength': 0,
+                            'maxLength': 0
+                        },
+                        {
+                            'minLength': 40,
+                            'maxLength': 40
+                        }
+                    ],
                     'x-dart-secret': True,
                     'description': 'the secret_access_key for accessing this elasticsearch cluster. '
                                    + 'Leave blank to use Dart\'s instance profile credentials'
@@ -77,9 +94,9 @@ def add_elasticsearch_engine(config):
                 'endpoint': {
                     'type': 'string',
                     'minLength': 1,
-                    'maxLength': 128,
+                    'maxLength': 256,
                     'pattern': '^[a-zA-Z0-9]+[a-zA-Z0-9\-\.]*\.es\.amazonaws\.com$',
-                    'description': 'The Elasticsearch domain endpoint that you use to submit index and search requests.'
+                    'description': 'The AWS Elasticsearch domain endpoint that you use to submit index and search requests.'
                 },
             },
             'additionalProperties': False,
