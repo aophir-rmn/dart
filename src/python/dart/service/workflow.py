@@ -12,6 +12,9 @@ from dart.schema.base import default_and_validate
 from dart.schema.workflow import workflow_schema, workflow_instance_schema
 from dart.service.patcher import patch_difference, retry_stale_data
 from dart.util.rand import random_id
+from dart.util.aws_batch import AWS_Batch_Dag
+from dart.util.config_metadata import get_key
+import boto3
 
 
 _logger = logging.getLogger(__name__)
@@ -316,5 +319,11 @@ class WorkflowService(object):
             workflow_id=wf.id,
             workflow_instance_id=wf_instance.id,
         )
+
+        try:
+            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'))
+            batch_dag.generate_dag(ordered_actions=actions, workflow_id=wf.id)
+        except Exception as err:
+            _logger.error("Error building AWS DAG. err={0}".format(err))
 
         self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info':workflow_msg.get('log_info')})

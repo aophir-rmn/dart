@@ -167,11 +167,12 @@ def trigger_workflow(workflow):
         return {'results': 'ERROR', 'error_message': 'Max concurrency reached: %s' % wf.data.concurrency}, 400, None
 
     wf_uuid = uuid.uuid4().hex # to avoid uuid serialization issues
+    current_user_id = current_user.email if hasattr(current_user, 'email') else 'anonymous'
     _logger.info("Launching Workflow {workflow_id} for user={user_id} with uuid={wf_uuid}".
-                 format(workflow_id=workflow.id, user_id=current_user.id, wf_uuid=wf_uuid))
+                format(workflow_id=workflow.id, user_id=current_user_id, wf_uuid=wf_uuid))
 
     trigger_service().trigger_workflow_async({'workflow_id': workflow.id,
-                                              'log_info':{'user_id': current_user.email, 'wf_uuid': wf_uuid}})
+                                              'log_info':{'user_id': current_user_id, 'wf_uuid': wf_uuid}})
     return {'results': 'OK'}
 
 
