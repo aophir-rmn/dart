@@ -93,7 +93,7 @@ class TestStartDatastoreAction(unittest.TestCase):
                 'Function': 'a-b',
                 'Accounting': '222-1111111'
             },
-            #cluster_availability_zone='regionb',
+            subnet_id='regionb',
             dart_host='somehost',
             dart_port=5000
         )
