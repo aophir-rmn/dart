@@ -3,10 +3,7 @@ from dart.model.accounting import ActivityEntity, Accounting
 
 
 def generate_accounting_event(return_code, req):
-    user_id = current_user.email
-    if not user_id:
-        user_id = 'anonymous'
-
+    user_id = current_user.email if hasattr(current_user, 'email') else 'anonymous'
     state = req.method  # GET/POST/PUT/PATCH/DELETE
 
     # E.g. /api/1/engine
