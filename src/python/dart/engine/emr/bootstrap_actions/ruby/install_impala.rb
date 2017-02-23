@@ -110,8 +110,8 @@ def configureInstanceControllerLogs
 end
 
 
-def runDockerContainers(isMaster, version, dockerRepoBaseUrl)
-    sudo "$(aws ecr get-login)"
+def runDockerContainers(isMaster, version, dockerRepoBaseUrl, repoAccountId)
+    sudo "$(aws ecr get-login --registry-ids #{repoAccountId})"
     if isMaster == true
         sudo "docker run --name impala-state-store --net=host -d --restart=always --privileged -v /mnt:/mnt -v /mnt1:/mnt1 -p 25010:25010 -p 24000:24000 #{dockerRepoBaseUrl}/impala-state-store:#{version}"
         sudo "docker run --name impala-catalog     --net=host -d --restart=always --privileged -v /mnt:/mnt -v /mnt1:/mnt1 -p 23020:23020 -p 25020:25020 -p 26000:26000  #{dockerRepoBaseUrl}/impala-catalog:#{version}"
@@ -134,12 +134,13 @@ clusterMetaData = getClusterMetaData
 isMaster = clusterMetaData['isMaster']
 version = @options[:version]
 dockerRepoBaseUrl = @options[:docker_repo_base_url]
+repoAccountId = dockerRepoBaseUrl.split('.')[0]
 
 puts "installing impala #{version}"
 installDocker
 configureImpala(isMaster, clusterMetaData['masterPrivateDnsName'])
 configureInstanceControllerLogs
-runDockerContainers(isMaster, version, dockerRepoBaseUrl)
+runDockerContainers(isMaster, version, dockerRepoBaseUrl, repoAccountId)
 installImpalaShell
 puts "impala install finished"
 exit 0
