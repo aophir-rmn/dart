@@ -13,8 +13,10 @@ class AWS_Batch_Dag(object):
         self.client = client
 
     def generate_job_name(self, workflow_id, order_idx, action_name):
+        """ Names should not exceed 50 characters or else cloudwatch logs will fail. """
         job_name = "{0}_{1}_{2}".format(workflow_id, order_idx, action_name.replace("-", "_"))
-        return re.sub('[^a-zA-Z0-9_]', '', job_name) # job name valid pattern is: [^a-zA-Z0-9_]
+        valid_characters_name = re.sub('[^a-zA-Z0-9_]', '', job_name) # job name valid pattern is: [^a-zA-Z0-9_]
+        return valid_characters_name[0:50]
 
     def cancel_previous_jobs(self, previous_jobs, reason="Failed to create all jobs in a dag"):
         for idx, job_id in enumerate(previous_jobs):
@@ -44,10 +46,7 @@ class AWS_Batch_Dag(object):
                 job_name = self.generate_job_name(workflow_id, oaction.data.order_idx, oaction.data.name)
                 _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
 
-                response = self.client.submit_job(jobName=self.generate_job_name(workflow_id,
-                                                                                 oaction.data.order_idx,
-                                                                                 oaction.data.name),
-                                                  dependsOn=dependency,
+                response = self.client.submit_job(jobName=job_name,
                                                   jobDefinition=self.job_definition,
                                                   jobQueue=self.job_queue,
                                                   containerOverrides={'command': cmd})
