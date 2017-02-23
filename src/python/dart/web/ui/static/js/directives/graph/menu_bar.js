@@ -335,11 +335,11 @@ angular
                             $scope.options.queryGraph().then(function(response) {
                                 if (!response) { return }
                                 $scope.$root.$broadcast('dt-graph-merge-graph', response.results);
-                                timer = $timeout(poll, 5000)
+                                timer = $timeout(poll, 30000);
                             });
                         }
                     }
-                    timer = $timeout(poll, 5000);
+                    timer = $timeout(poll, 30000);
 
                     $scope.$on('$destroy', function() { $timeout.cancel(timer) });
 
