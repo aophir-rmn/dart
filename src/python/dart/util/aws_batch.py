@@ -8,6 +8,7 @@ _logger = logging.getLogger(__name__)
 class AWS_Batch_Dag(object):
     def __init__(self, config_metadata, client):
         self.job_definition = config_metadata(['aws_batch', 'job_definition']) # TODO: remove - we should use the action.data.engine_name value
+        self.job_definition_suffix = config_metadata(['aws_batch', 'job_definition_suffix']) # to discern between prd/stg images
         self.job_queue = config_metadata(['aws_batch', 'job_queue'])
         _logger.info("AWS_Batch: using job_definition={0} and job_queue={1}".format(self.job_definition, self.job_queue))
         self.client = client
@@ -33,10 +34,13 @@ class AWS_Batch_Dag(object):
                   This will allow us to update the version used without changing the yaml files.
             Note: It is implicitly assumed that the AWS Batch job definitions are named the same as the engine names in dart.
         """
-        _logger.info("AWS_batch: searching latest active job definition for name={0}".format(job_def_name))
-        response = self.client.describe_job_definitions(jobDefinitionName=job_def_name, status='ACTIVE')
+        job_name = "{0}_{1}".format(job_def_name, self.job_definition_suffix) # e.g. s3_engine_prd, or redshift_engine_stg
+        _logger.info("AWS_batch: searching latest active job definition for name={0}".format(job_name))
+        response = self.client.describe_job_definitions(jobDefinitionName=job_name, status='ACTIVE')
         _logger.info("AWS_batch: len(response['jobDefinitions'])={0}".format(len(response['jobDefinitions'])))
-        return response['jobDefinitions'][-1]['jobDefinitionArn']
+        arr = sorted(response['jobDefinitions'],
+                     key=lambda x: int(x['revision']))  # the last item will be the highest (last) revision
+        return arr[-1]['jobDefinitionArn']
 
     def generate_dag(self, ordered_actions, workflow_id):
         if not ordered_actions or not all(isinstance(x, Action) for x in ordered_actions):
