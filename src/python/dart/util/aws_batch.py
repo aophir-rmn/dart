@@ -7,7 +7,7 @@ _logger = logging.getLogger(__name__)
 
 class AWS_Batch_Dag(object):
     def __init__(self, config_metadata, client):
-        self.job_definition = config_metadata(['aws_batch', 'job_definition'])
+        self.job_definition = config_metadata(['aws_batch', 'job_definition']) # TODO: remove - we should use the action.data.engine_name value
         self.job_queue = config_metadata(['aws_batch', 'job_queue'])
         _logger.info("AWS_Batch: using job_definition={0} and job_queue={1}".format(self.job_definition, self.job_queue))
         self.client = client
@@ -28,6 +28,16 @@ class AWS_Batch_Dag(object):
 
             _logger.info("Canceling job #{0}={1}. metadata={2}".format(idx, job_id, response))
 
+    def get_latest_active_job_definition(self, job_def_name):
+        """ E.g.  job_def_name='redshift_engine' ==> we will get redshift_engine:3 (if 3 is the latest active version).
+                  This will allow us to update the version used without changing the yaml files.
+            Note: It is implicitly assumed that the AWS Batch job definitions are named the same as the engine names in dart.
+        """
+        _logger.info("AWS_batch: searching latest active job definition for name={0}".format(job_def_name))
+        response = self.client.describe_job_definitions(jobDefinitionName=job_def_name, status='ACTIVE')
+        _logger.info("AWS_batch: len(response['jobDefinitions'])={0}".format(len(response['jobDefinitions'])))
+        return response['jobDefinitions'][-1]['jobDefinitionArn']
+
     def generate_dag(self, ordered_actions, workflow_id):
         if not ordered_actions or not all(isinstance(x, Action) for x in ordered_actions):
             raise ValueError('Must receive actions in order to build a DAG. action={0}'.format(ordered_actions))
@@ -47,7 +57,7 @@ class AWS_Batch_Dag(object):
                 _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
 
                 response = self.client.submit_job(jobName=job_name,
-                                                  jobDefinition=self.job_definition,
+                                                  jobDefinition=self.get_latest_active_job_definition('awscli'), # TODO: replace with oaction.data.engine_name
                                                   jobQueue=self.job_queue,
                                                   containerOverrides={'command': cmd})
                 _logger.info("AWS_Batch: response={0}".format(response))
