@@ -4,6 +4,7 @@ import logging.config
 import os
 from pydoc import locate
 import time
+import traceback
 from datetime import datetime
 from itertools import islice
 from multiprocessing import Process
@@ -111,7 +112,8 @@ class EngineWorker(Tool):
                 continue
 
             except Exception as e:
-                _logger.error('error transitioning action (id=%s) to PENDING: %s' % (action.id, e.message))
+                error_message = e.message + '\n\n\n' + traceback.format_exc()
+                _logger.error('error transitioning action (id=%s) to PENDING: %s' % (action.id, error_message))
 
             finally:
                 db.session.rollback()

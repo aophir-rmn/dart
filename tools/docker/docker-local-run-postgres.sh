@@ -6,7 +6,6 @@ source ./docker-local-init.sh
 
 pushd ../../ > /dev/null
 
-
 echo "reading configuration: ${DART_CONFIG}"
 OLD_IFS=${IFS}
 IFS=

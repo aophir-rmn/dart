@@ -16,6 +16,7 @@ DOCKER_IMAGE_ENGINE_EMR=$(dart_conf_value "${CONFIG}" "$.engines.emr_engine.dock
 DOCKER_IMAGE_ENGINE_DYNAMODB=$(dart_conf_value "${CONFIG}" "$.engines.dynamodb_engine.docker_image")
 DOCKER_IMAGE_ENGINE_REDSHIFT=$(dart_conf_value "${CONFIG}" "$.engines.redshift_engine.docker_image")
 DOCKER_IMAGE_ENGINE_S3=$(dart_conf_value "${CONFIG}" "$.engines.s3_engine.docker_image")
+DOCKER_IMAGE_ENGINE_ELASTICSEARCH=$(dart_conf_value "${CONFIG}" "$.engines.elasticsearch_engine.docker_image")
 IFS=${OLD_IFS}
 
 $(aws ecr get-login)
@@ -25,6 +26,7 @@ docker push ${DOCKER_IMAGE_ENGINE_EMR}
 docker push ${DOCKER_IMAGE_ENGINE_DYNAMODB}
 docker push ${DOCKER_IMAGE_ENGINE_REDSHIFT}
 docker push ${DOCKER_IMAGE_ENGINE_S3}
+docker push ${DOCKER_IMAGE_ENGINE_ELASTICSEARCH}
 set +x
 
 
