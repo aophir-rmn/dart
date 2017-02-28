@@ -320,10 +320,11 @@ class WorkflowService(object):
             workflow_instance_id=wf_instance.id,
         )
 
-        try:
-            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'))
-            batch_dag.generate_dag(ordered_actions=actions, workflow_id=wf.id)
-        except Exception as err:
-            _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
+# TODO: replace with step functions
+#        try:
+#            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'))
+#            batch_dag.generate_dag(ordered_actions=actions, workflow_id=wf.id)
+#        except Exception as err:
+#            _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
 
         self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info':workflow_msg.get('log_info')})
