@@ -9,6 +9,7 @@ from datetime import datetime
 from itertools import islice
 from multiprocessing import Process
 
+import re
 import boto3
 from dateutil.tz import tzutc
 
@@ -39,6 +40,9 @@ class EngineWorker(Tool):
         self._sleep_seconds = 0.7
         self._counter = Counter(transition_queued=1, transition_stale=1, transition_orphaned=60, scale_down=120)
 
+        self.batch_queue = self.dart_config['aws_batch'].get('job_queue') # The AWS batch queue we place the jobs in
+        self.batch_job_suffix = self.dart_config['aws_batch'].get('job_definition_suffix') # e.g. stg/prd
+
     def run(self):
         time.sleep(self._sleep_seconds)
         self._counter.increment()
@@ -49,8 +53,8 @@ class EngineWorker(Tool):
         if self._counter.is_ready('transition_stale'):
             self._transition_stale_pending_actions_to_queued()
 
-        if self._counter.is_ready('transition_orphaned'):
-            self._transition_orphaned_actions_to_failed()
+#        if self._counter.is_ready('transition_orphaned'):
+#            self._transition_orphaned_actions_to_failed()
 
         if self._counter.is_ready('scale_down') and self._engine_taskrunner_ecs_cluster:
             self._scale_down_unused_ecs_container_instances()
@@ -88,7 +92,7 @@ class EngineWorker(Tool):
 
                 # our best granualrity of a user_id to identifu who is running this workflow's action.
                 datastore_user_id = datastore.data.user_id if hasattr(datastore.data, 'user_id') else 'anonymous'
-                if self.dart_config['dart'].get('use_local_engines'):
+                if False: #self.dart_config['dart'].get('use_local_engines'):
                     config = self.dart_config['engines'][engine.data.name]
                     engine_instance = locate(config['path'])(**config.get('options', {}))
                     self._launch_in_memory_engine(engine, engine_instance, action, datastore_user_id)
@@ -118,32 +122,67 @@ class EngineWorker(Tool):
             finally:
                 db.session.rollback()
 
+    def _get_latest_active_job_definition(self, job_def_name):
+        """ E.g.  job_def_name='redshift_engine_prd' ==> we will get redshift_engine_prd:3 (if 3 is the latest active version).
+                  This will allow us to update the version used without changing the yaml files.
+            Note: It is implicitly assumed that the AWS Batch job definitions are named the same as the engine names in dart.
+        """
+        def_name = "{0}_{1}".format(job_def_name, self.batch_job_suffix) # e.g. s3_engine_prd, or redshift_engine_stg
+        _logger.info("AWS_batch: searching latest active job definition for name={0}".format(def_name))
+        response = boto3.client('batch').describe_job_definitions(jobDefinitionName=def_name, status='ACTIVE')
+        _logger.info("AWS_batch: len(response['jobDefinitions'])={0}".format(len(response['jobDefinitions'])))
+        arr = sorted(response['jobDefinitions'],
+                     key=lambda x: int(x['revision']))  # the last item will be the highest (last) revision
+        return arr[-1]['jobDefinitionArn']
+
+    def _generate_job_name(self, workflow_id, order_idx, action_name):
+        """ Names should not exceed 50 characters or else cloudwatch logs will fail. """
+        job_name = "{0}_{1}_{2}_{3}".format(workflow_id, order_idx, action_name.replace("-", "_"), self.batch_job_suffix)
+        valid_characters_name = re.sub('[^a-zA-Z0-9_]', '', job_name) # job name valid pattern is: [^a-zA-Z0-9_]
+        return valid_characters_name[0:50]
+
     @db_mutex(Mutexes.START_ENGINE_TASK)
     def _try_run_task(self, engine, action, datastore_user_id):
-        _logger.info('trying to run ecs task')
+        msg = 'AWS_Batch: trying to run Batch job workflow_id={0}, order_idx={1}, action_name={2}'
+        _logger.info(msg.format(action.data.workflow_id, action.data.order_idx, action.data.name))
 
-        response = boto3.client('ecs').run_task(
-            cluster=self._engine_taskrunner_ecs_cluster,
-            taskDefinition=engine.data.ecs_task_definition_arn,
-            overrides={
-                'containerOverrides': [
-                    {
-                        'name': containerDefinition['name'],
-                        'environment': [{'name': 'DART_ACTION_ID', 'value': action.id},
-                                        {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
-                    }
-                    for containerDefinition in engine.data.ecs_task_definition['containerDefinitions']
-                ]
-            },
-            count=1,
-            startedBy='dart-engine-worker'
-        )
-        if len(response['failures']) > 0:
-            for failure in response['failures']:
-                if failure['reason'].startswith('RESOURCE'):
-                    return None
-            raise Exception('failed to run ecs task, reasons: %s' % json.dumps(response['failures']))
-        return response['tasks'][0]['taskArn']
+        job_name = self._generate_job_name(action.data.workflow_id, action.data.order_idx, action.data.name)
+        job_definition_name = action.data.engine_name
+        _logger.info("AWS_Batch: job-name={0}, job_definition_name={1}".format(job_name, job_definition_name))
+
+        response = boto3.client('batch').submit_job(jobName=job_name,
+                                                    jobDefinition=self._get_latest_active_job_definition(job_definition_name),
+                                                    jobQueue=self.batch_queue,
+                                                    containerOverrides={
+                                                        'environment':
+                                                            [{'name': 'DART_ACTION_ID', 'value': action.id},
+                                                             {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
+                                                    })
+
+#        response = boto3.client('ecs').run_task(
+#            cluster=self._engine_taskrunner_ecs_cluster,
+#            taskDefinition=engine.data.ecs_task_definition_arn,
+#            overrides={
+#                'containerOverrides': [
+#                    {
+#                        'name': containerDefinition['name'],
+#                        'environment': [{'name': 'DART_ACTION_ID', 'value': action.id},
+#                                        {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
+#                    }
+#                    for containerDefinition in engine.data.ecs_task_definition['containerDefinitions']
+#                ]
+#            },
+#            count=1,
+#            startedBy='dart-engine-worker'
+#        )
+#
+#        if len(response['failures']) > 0:
+#            for failure in response['failures']:
+#                if failure['reason'].startswith('RESOURCE'):
+#                    return None
+#            raise Exception('failed to run ecs task, reasons: %s' % json.dumps(response['failures']))
+        _logger.info("AWS_Batch: job_id = {0} for job_name={1}".format(response['jobId'], job_name))
+        return response['jobId']
 
     def _transition_stale_pending_actions_to_queued(self):
         _logger.info('transitioning stale actions to queued')
@@ -160,29 +199,29 @@ class EngineWorker(Tool):
                 conditional=lambda a: a.data.state == ActionState.PENDING
             )
 
-    def _transition_orphaned_actions_to_failed(self):
-        _logger.info('transitioning orphaned actions to failed')
-
-        action_service = self._action_service
-        assert isinstance(action_service, ActionService)
-        actions = action_service.find_actions(states=[ActionState.PENDING, ActionState.RUNNING])
-        actions_by_ecs_task_arn = {a.data.ecs_task_arn: a for a in actions if a.data.ecs_task_arn}
-
-        batch_size = 50
-        task_arns = iter(actions_by_ecs_task_arn.keys())
-        while True:
-            task_arn_batch = list(islice(task_arns, batch_size))
-            if not task_arn_batch:
-                break
-            response = boto3.client('ecs').describe_tasks(
-                cluster=self._engine_taskrunner_ecs_cluster,
-                tasks=task_arn_batch
-            )
-            for task in response['tasks']:
-                if task['desiredStatus'] == 'STOPPED':
-                    action = actions_by_ecs_task_arn[task['taskArn']]
-                    error_message = 'the ECS task STOPPED unexpectedly'
-                    self._trigger_proxy.complete_action(action.id, ActionState.FAILED, error_message)
+#    def _transition_orphaned_actions_to_failed(self):
+#        _logger.info('transitioning orphaned actions to failed')
+#
+#        action_service = self._action_service
+#        assert isinstance(action_service, ActionService)
+#        actions = action_service.find_actions(states=[ActionState.PENDING, ActionState.RUNNING])
+#        actions_by_ecs_task_arn = {a.data.ecs_task_arn: a for a in actions if a.data.ecs_task_arn}
+#
+#        batch_size = 50
+#        task_arns = iter(actions_by_ecs_task_arn.keys())
+#        while True:
+#            task_arn_batch = list(islice(task_arns, batch_size))
+#            if not task_arn_batch:
+#                break
+#            response = boto3.client('ecs').describe_tasks(
+#                cluster=self._engine_taskrunner_ecs_cluster,
+#                tasks=task_arn_batch
+#            )
+#            for task in response['tasks']:
+#                if task['desiredStatus'] == 'STOPPED':
+#                    action = actions_by_ecs_task_arn[task['taskArn']]
+#                    error_message = 'the ECS task STOPPED unexpectedly'
+#                    self._trigger_proxy.complete_action(action.id, ActionState.FAILED, error_message)
 
     @db_mutex(Mutexes.START_ENGINE_TASK)
     def _scale_down_unused_ecs_container_instances(self):
