@@ -12,7 +12,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  this is just to coerce column names/types
                     -- ===============================================
-                    SELECT ''::text AS type, ''::text AS id, ''::text AS name, ''::text AS state, ''::text AS sub_type, ''::text AS related_type, ''::text AS related_id, ''::text AS related_is_a, , 0::int as dart_depth
+                    SELECT ''::text AS type, ''::text AS id, ''::text AS name, ''::text AS state, ''::text AS sub_type, ''::text AS related_type, ''::text AS related_id, ''::text AS related_is_a, 0::int as dart_depth
                      WHERE 0 = 1
 
                     UNION ALL
