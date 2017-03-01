@@ -59,16 +59,18 @@ def add_elasticsearch_engine(config):
             'type': 'object',
             'properties': {
                 'access_key_id': {
-                    'default': None,
+                    'type': 'string',
+                    'default': '',
                     'oneOf': [
                         {
-                            'type': 'string',
                             'minLength': 20,
                             'maxLength': 20,
+                            # 20 character alpha numerical, all uppercase
                             'pattern': '^[A-Z0-9]{20}$'
                         },
                         {
-                            'type': 'null'
+                            'minLength': 0,
+                            'maxLength': 0
                         }
                     ],
                     'description': 'the access_key_id for accessing this elasticsearch cluster. '
@@ -84,7 +86,9 @@ def add_elasticsearch_engine(config):
                         },
                         {
                             'minLength': 40,
-                            'maxLength': 40
+                            'maxLength': 40,
+                            # from AWS Security Blog on how to match secret access keys. 40 characters
+                            'pattern': '(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])'
                         }
                     ],
                     'x-dart-secret': True,
