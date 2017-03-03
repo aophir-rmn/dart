@@ -31,6 +31,26 @@ class ElasticsearchActionTypes(object):
                                    + '("hits" in Elasticsearch terminology") for the data check to pass. '
                                    + 'https://www.elastic.co/guide/en/elasticsearch/reference/5.1/query-dsl.html'
                 },
+                'expected_count': {
+                    'type': 'integer',
+                    'default': 0,
+                    'description': 'The expected count to of documents to be returned by the query. '
+                                   + ' Use this and the operator to return a truthy value for the data check to pass.'
+                },
+                'operator': {
+                    'type': 'string',
+                    'default': '>',
+                    'description': 'The operator to apply to the query and expected count. '
+                                  + 'i.e. result count > expected count ',
+                    'enum': [
+                        '>',
+                        '>=',
+                        '<',
+                        '<=',
+                        '==',
+                        '!='
+                    ]
+                }
             },
             'additionalProperties': False,
             'required': ['query_body'],
