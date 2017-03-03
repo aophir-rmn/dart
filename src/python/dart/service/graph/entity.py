@@ -159,19 +159,21 @@ class GraphEntityService(object):
         """ :type entity: dart.model.graph.GraphEntity
             :rtype: dart.model.graph.Graph """
 
-        statement = text(RECURSIVE_SQL).bindparams(
-            entity_type=entity.entity_type,
-            entity_id=entity.entity_id,
-            name=entity.name,
-            state=entity.state,
-            sub_type=entity.sub_type
-        )
+        entities = [
+            GraphEntity(*r[:-1])  # remove depth parameter
+            for r in db.session.execute(text(RECURSIVE_SQL).bindparams(
+                entity_type=entity.entity_type,
+                entity_id=entity.entity_id,
+                name=entity.name,
+                state=entity.state,
+                sub_type=entity.sub_type
+            ))
+        ]
 
-        visited_nodes = set()
-        visited_edges = set()
-        nodes = []
-        edges = []
-        for e in [GraphEntity(*r) for r in db.session.execute(statement)]:
+        nodes, visited_nodes = [], set()
+        edges, visited_edges = [], set()
+
+        for e in entities:
             self._add_node(nodes, visited_nodes, e.entity_type, e.entity_id, e.name, e.state, e.sub_type)
 
             if e.related_id:
