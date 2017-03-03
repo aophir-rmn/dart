@@ -3,7 +3,7 @@ RECURSIVE_SQL_ = """
 
         VALUES (:entity_type, :entity_id, :name, :state, :sub_type, NULL, NULL, NULL, 0)
 
-      UNION
+        UNION
 
         SELECT t.*
           FROM entity_graph g
@@ -20,7 +20,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle dataset relationships
                     -- ===============================================
-                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'dataset', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'dataset', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM action e
                      WHERE g.type = 'dataset'
                        AND e.data ->> 'state' = 'TEMPLATE'
@@ -28,7 +28,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'dataset', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'dataset', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM action e
                       JOIN dataset d
                         ON d.id = g.id
@@ -38,7 +38,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'dataset', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'dataset', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM subscription e
                      WHERE g.type = 'dataset'
                        AND e.data ->> 'dataset_id' = g.id
@@ -48,7 +48,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle action relationships
                     -- ===============================================
-                    SELECT 'dataset', e.id, e.data ->> 'name', NULL, NULL, 'action', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'dataset', e.id, e.data ->> 'name', NULL, NULL, 'action', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM dataset e
                       JOIN action a
                         ON a.id = g.id
@@ -58,7 +58,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'dataset', e.id, e.data ->> 'name', NULL, NULL, 'action', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'dataset', e.id, e.data ->> 'name', NULL, NULL, 'action', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM dataset e
                       JOIN action a
                         ON a.id = g.id
@@ -68,7 +68,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'action', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'action', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM subscription e
                       JOIN action a
                         ON a.id = g.id
@@ -78,7 +78,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    (SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'action', g.id, 'CHILD', (g.dart_depth+1)
+                    (SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'action', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM workflow e
                       JOIN action a
                         ON a.id = g.id
@@ -92,7 +92,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle workflow relationships
                     -- ===============================================
-                    (SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'workflow', g.id, 'PARENT', (g.dart_depth+1)
+                    (SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'workflow', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM action e
                      WHERE g.type = 'workflow'
                        AND e.data ->> 'state' = 'TEMPLATE'
@@ -101,7 +101,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'datastore', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'engine_name', 'workflow', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'datastore', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'engine_name', 'workflow', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM datastore e
                       JOIN workflow w
                         ON w.id = g.id
@@ -110,14 +110,14 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'workflow', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'workflow', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                      WHERE g.type = 'workflow'
                        AND g.id IN (SELECT value FROM jsonb_array_elements_text(e.data -> 'workflow_ids'))
 
                     UNION ALL
 
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'workflow', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'workflow', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                      WHERE g.type = 'workflow'
                        AND e.data #>> '{args,completed_workflow_id}' = g.id
@@ -127,7 +127,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle trigger relationships
                     -- ===============================================
-                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM workflow e
                       JOIN trigger t
                         ON t.id = g.id
@@ -136,7 +136,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM workflow e
                       JOIN trigger t
                         ON t.id = g.id
@@ -145,7 +145,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'subscription', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM subscription e
                       JOIN trigger t
                         ON t.id = g.id
@@ -154,7 +154,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'event', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'event', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'trigger', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM event e
                       JOIN trigger t
                         ON t.id = g.id
@@ -163,7 +163,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'trigger', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'trigger', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                       JOIN trigger t
                         ON t.id = g.id
@@ -172,7 +172,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'trigger', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'trigger', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                       JOIN trigger t
                         ON t.id = g.id
@@ -184,7 +184,7 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle subscription relationships
                     -- ===============================================
-                    SELECT 'dataset', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'subscription', g.id, 'CHILD', (g.dart_depth+1)
+                    SELECT 'dataset', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'subscription', g.id, 'CHILD', LEAST(2,(g.dart_depth+1))
                       FROM dataset e
                       JOIN subscription s
                         ON s.id = g.id
@@ -193,7 +193,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'subscription', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'action', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'action_type_name', 'subscription', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM action e
                      WHERE g.type = 'subscription'
                        AND e.data ->> 'state' = 'TEMPLATE'
@@ -201,7 +201,7 @@ RECURSIVE_SQL_ = """
 
                     UNION ALL
 
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'subscription', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'subscription', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                      WHERE g.type = 'subscription'
                        AND e.data #>> '{args,subscription_id}' = g.id
@@ -211,19 +211,20 @@ RECURSIVE_SQL_ = """
                     -- ===============================================
                     --  handle datastore relationships
                     -- ===============================================
-                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'datastore', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'workflow', e.id, e.data ->> 'name', e.data ->> 'state', NULL, 'datastore', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM workflow e
                       JOIN datastore d
                         ON d.id = g.id
                        AND d.id = e.data ->> 'datastore_id'
                      WHERE g.type = 'datastore'
+                     AND g.dart_depth < 1
 
                     UNION ALL
 
                     -- ===============================================
                     --  handle event relationships
                     -- ===============================================
-                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'event', g.id, 'PARENT', (g.dart_depth+1)
+                    SELECT 'trigger', e.id, e.data ->> 'name', e.data ->> 'state', e.data ->> 'trigger_type_name', 'event', g.id, 'PARENT', LEAST(2,(g.dart_depth+1))
                       FROM trigger e
                      WHERE g.type = 'event'
                        AND e.data #>> '{args,event_id}' = g.id
@@ -231,20 +232,13 @@ RECURSIVE_SQL_ = """
                ) t
             ON t.related_type = g.type
             AND t.related_id = g.id
-            -- g.dart_depth 3 means we will have the datastore, triggers and actions of a workflow (distance 1)
-            -- distance 2: will be the datasets and workflows the actions belong to (including the source workflow)
-            -- distance 3: e.g. actions and datastores belonging to datasets and workflows found in step 2
-            -- workflow instances are found (another query) in dart.service.graph.entity.GraphEntityService#get_entity_graph
-            AND g.dart_depth < 3
     )
     SELECT * FROM entity_graph
-    -- The limit and depth should be controlled via the UI (start low and let the user zoom in or out as needed), this
-    -- fix is limited in scope and intended as stop gap.
-    -- A reasonable upper limit for how many actions/triggers a workflow should have (distance 1)
-    LIMIT 250;
+    LIMIT 1000;
     """
 
 ### In order to avoid printing this sql statement across multiple line in the logs we remove
 ### the comment lines (starts with --), and then join all the remaining lines to one long string.
 RECURSIVE_SQL = map(lambda s: ' '.join(s.split()), RECURSIVE_SQL_.split('\n'))
 RECURSIVE_SQL = ' '.join(list(filter(lambda s: not s.startswith('--'), RECURSIVE_SQL)))
+
