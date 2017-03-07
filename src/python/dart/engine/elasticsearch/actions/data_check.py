@@ -50,7 +50,10 @@ def data_check(elasticsearch_engine, datastore, action):
         if op(response['count'], expected_count):
             elasticsearch_engine.dart.patch_action(action, progress=1)
         else:
-            raise Exception('Elasticsearch data check failed.')
+            raise Exception('Elasticsearch data_check[name=%s] failed. Expected: %d %s %d' % (action.data.name,
+                                                                                              response['count'],
+                                                                                              action.data.args['operator'],
+                                                                                              expected_count))
     except Exception as e:
         error_message = e.message + '\n\n\n' + traceback.format_exc()
         raise Exception('Elasticsearch data check failed to execute: %s' % error_message)

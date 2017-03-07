@@ -9,7 +9,6 @@ from dart.engine.elasticsearch.actions.create_template import create_template
 from dart.engine.elasticsearch.actions.create_mapping import create_mapping
 from dart.engine.elasticsearch.actions.delete_index import delete_index
 from dart.engine.elasticsearch.actions.delete_template import delete_template
-from dart.engine.elasticsearch.actions.delete_mapping import delete_mapping
 from dart.engine.elasticsearch.actions.force_merge_index import force_merge_index
 from dart.engine.elasticsearch.metadata import ElasticsearchActionTypes
 from dart.model.engine import ActionResultState, ActionResult
