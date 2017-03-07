@@ -6,7 +6,7 @@ from psycopg2._psycopg import IntegrityError as PostgresIntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
 from dart.context.locator import injectable
-from dart.model.exception import DartValidationException
+from dart.model.exception import DartValidationException, DartRequestException
 from dart.model.orm import EngineDao, SubGraphDefinitionDao
 from dart.context.database import db
 from dart.schema.action import action_schema
@@ -66,7 +66,12 @@ class EngineService(object):
             containerDefinitions=engine.data.ecs_task_definition.get('containerDefinitions'),
             volumes=engine.data.ecs_task_definition.get('volumes')
         )
-        return response['taskDefinition']['taskDefinitionArn']
+
+        taskdef_arn = response['taskDefinition']['taskDefinitionArn']
+        if taskdef_arn is None:
+            raise DartRequestException('No change to task definition')
+
+        return taskdef_arn
 
     def _deregister_task_definition(self, ecs_task_definition_arn):
         if self._engine_taskrunner_ecs_cluster and ecs_task_definition_arn:
