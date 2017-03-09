@@ -1,6 +1,8 @@
 # coding=utf-8
 from collections import defaultdict
 import json
+import redis
+import logging
 
 from sqlalchemy import text
 
@@ -22,13 +24,29 @@ from dart.service.graph.sub_graph import get_static_subgraphs_by_engine_name, \
     get_static_subgraphs_by_engine_name_all_engines_related_none
 from dart.util.rand import random_id
 
+_logger = logging.getLogger(__name__)
 
 @injectable
 class GraphEntityService(object):
-    def __init__(self, engine_service, datastore_service, action_service):
+    def __init__(self, engine_service, datastore_service, action_service, dart_config):
         self._engine_service = engine_service
         self._datastore_service = datastore_service
         self._action_service = action_service
+
+        self._dart_config = dart_config
+
+        self.redis_expiration_ttl = 0
+        self.redis_client = None
+        if ('redis' in dart_config):
+            redis_host = dart_config['redis']['host']
+            redis_port = int(dart_config['redis']['port'])
+            self.redis_expiration_ttl = int(dart_config['redis']['expire_seconds'])
+
+            try:
+                self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=0)
+            except Exception as err:
+                _logger.error("Redis: failed to create a redis client. err={0}".format(err))
+
 
     def get_sub_graphs(self, related_type, related_engine_name):
         engine = None
@@ -159,16 +177,38 @@ class GraphEntityService(object):
         """ :type entity: dart.model.graph.GraphEntity
             :rtype: dart.model.graph.Graph """
 
-        entities = [
-            GraphEntity(*r[:-1])  # remove depth parameter
-            for r in db.session.execute(text(RECURSIVE_SQL).bindparams(
-                entity_type=entity.entity_type,
-                entity_id=entity.entity_id,
-                name=entity.name,
-                state=entity.state,
-                sub_type=entity.sub_type
-            ))
-        ]
+        key = "graph:{0}".format(entity.entity_id)
+        cached_graph = self.redis_client.get(key) if self.redis_client else None  # String representation of each Graph record
+
+        if cached_graph:
+            json_records = json.loads(cached_graph)
+            ### read state from database:
+            # we need to update the current state of object in the graph
+            get_state_sql = ["select '{0}' as type, '{1}' as id,'{2}' as name, data->>'state' as state, '{4}' as sub_type, '{5}' as related_type, '{6}' as related_id, '{7}' as related_is_a FROM {0} where id = '{1}'".format(*rec) for rec in json_records]
+
+            # add union all between sql statements
+            state_sql = " union all ".join(get_state_sql)
+
+            # execute sql: (dart_depth was already removed, so we use r instead of r[0:-1])
+            records = [(r) for r in db.session.execute(text(state_sql))]
+        else:
+            records = [
+                (r[:-1])  # remove depth parameter
+                for r in db.session.execute(text(RECURSIVE_SQL).bindparams(
+                    entity_type=entity.entity_type,
+                    entity_id=entity.entity_id,
+                    name=entity.name,
+                    state=entity.state,
+                    sub_type=entity.sub_type
+                ))
+            ]
+            string_records = json.dumps(records)
+            if self.redis_client:
+                self.redis_client.setex(key, self.redis_expiration_ttl, string_records)  # Keep this graph cached for 10 minutes
+
+
+        # rebuilding graph from string
+        entities = [GraphEntity(*r) for r in records]
 
         nodes, visited_nodes = [], set()
         edges, visited_edges = [], set()
