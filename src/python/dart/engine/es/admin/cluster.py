@@ -2,8 +2,8 @@ import logging
 
 import boto3
 from requests_aws4auth import AWS4Auth
-from elasticsearch import Elasticsearch, RequestsHttpConnection
 from dart.model.datastore import Datastore
+from elasticsearch import Elasticsearch, RequestsHttpConnection
 
 _logger = logging.getLogger(__name__)
 

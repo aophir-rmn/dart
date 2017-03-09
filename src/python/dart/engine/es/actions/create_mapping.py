@@ -2,14 +2,14 @@ import logging
 import traceback
 import json
 
-from dart.engine.elasticsearch.admin.cluster import ElasticsearchCluster
+from dart.engine.es.admin.cluster import ElasticsearchCluster
 
 _logger = logging.getLogger(__name__)
 
 
 def create_mapping(elasticsearch_engine, datastore, action):
     """
-    :type elasitcsearch_engine: dart.engine.elasticsearch.elasticsearch.ElasticsearchEngine
+    :type elasticsearch_engine: dart.engine.es.es.ElasticsearchEngine
     :type datastore: dart.model.datastore.Datastore
     :type action: dart.model.action.Action
     """

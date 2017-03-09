@@ -23,5 +23,9 @@ SQLAlchemy==1.0.15
 sqlalchemy-redshift==0.4.0
 uwsgi==2.0.11.2
 
+#elasticsearch_engine dependencies
+elasticsearch>=5.0.0,<6.0.0
+requests-aws4auth==0.9
+
 # Development dependencies
 mock==2.0.0

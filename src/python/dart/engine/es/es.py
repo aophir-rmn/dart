@@ -3,14 +3,14 @@ import os
 import traceback
 
 from dart.client.python.dart_client import Dart
-from dart.engine.elasticsearch.actions.data_check import data_check
-from dart.engine.elasticsearch.actions.create_index import create_index
-from dart.engine.elasticsearch.actions.create_template import create_template
-from dart.engine.elasticsearch.actions.create_mapping import create_mapping
-from dart.engine.elasticsearch.actions.delete_index import delete_index
-from dart.engine.elasticsearch.actions.delete_template import delete_template
-from dart.engine.elasticsearch.actions.force_merge_index import force_merge_index
-from dart.engine.elasticsearch.metadata import ElasticsearchActionTypes
+from dart.engine.es.actions.data_check import data_check
+from dart.engine.es.actions.create_index import create_index
+from dart.engine.es.actions.create_template import create_template
+from dart.engine.es.actions.create_mapping import create_mapping
+from dart.engine.es.actions.delete_index import delete_index
+from dart.engine.es.actions.delete_template import delete_template
+from dart.engine.es.actions.force_merge_index import force_merge_index
+from dart.engine.es.metadata import ElasticsearchActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.service.secrets import Secrets
 from dart.tool.tool_runner import Tool
@@ -55,13 +55,13 @@ class ElasticsearchEngine(object):
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
 
 
-class ElasticsearchEngineEngineTaskRunner(Tool):
+class ElasticsearchEngineTaskRunner(Tool):
     def __init__(self):
-        super(ElasticsearchEngineEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
+        super(ElasticsearchEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 
     def run(self):
         ElasticsearchEngine(**(self.dart_config['engines']['elasticsearch_engine']['options'])).run()
 
 
 if __name__ == '__main__':
-    ElasticsearchEngineEngineTaskRunner().run()
+    ElasticsearchEngineTaskRunner().run()

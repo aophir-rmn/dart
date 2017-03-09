@@ -19,8 +19,6 @@ RUN apt-get install -y libmagic-dev \
     libxslt1-dev
 
 ADD /src/python/requirements.txt /src/python/requirements.txt
-ADD /src/python/dart/engine/elasticsearch/requirements.txt /src/python/requirements-elasticsearch.txt
-RUN cat /src/python/requirements-elasticsearch.txt >> /src/python/requirements.txt
 
 RUN pip install -r /src/python/requirements.txt
 
@@ -31,8 +29,8 @@ RUN pip install dm.xmlsec.binding
 
 ADD src/python /src/python
 
-WORKDIR /src/python/dart/engine/elasticsearch
+WORKDIR /src/python/dart/engine/es/
 
 ENV PYTHONPATH=/src/python:${PYTHONPATH}
 
-CMD ["python", "elasticsearch.py"]
+CMD ["python", "es.py"]
