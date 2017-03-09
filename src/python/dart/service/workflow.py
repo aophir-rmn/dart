@@ -320,10 +320,10 @@ class WorkflowService(object):
             workflow_instance_id=wf_instance.id,
         )
 
-# TODO: replace with step functions
 #        try:
-#            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'))
-#            batch_dag.generate_dag(ordered_actions=actions, workflow_id=wf.id)
+#            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'), client=boto3.client('s3')))
+#            retries_on_failures = wf.data.retries_on_failures if hasattr(wf.data, 'retries_on_failures') else 0
+#            batch_dag.generate_dag(ordered_actions=actions, retries_on_failure)
 #        except Exception as err:
 #            _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
 
