@@ -18,17 +18,19 @@ RUN apt-get install -y libmagic-dev \
     swig \
     libxslt1-dev
 
-ADD src/python /src/python
+ADD /src/python/requirements.txt /src/python/requirements.txt
+
 RUN pip install -r /src/python/requirements.txt
-RUN pip install -r /src/python/dart/engine/elasticsearch/requirements.txt
 
 # see https://github.com/onelogin/python-saml/issues/30 \
 RUN if [ -f /usr/bin/xmlsec1-config ]; then sed -i 's/LIBLTDL=1 -I/LIBLTDL=1 -DXMLSEC_NO_SIZE_T -I/' /usr/bin/xmlsec1-config  ; fi
 RUN pip uninstall -y dm.xmlsec.binding
 RUN pip install dm.xmlsec.binding
 
-WORKDIR /src/python/dart/engine/elasticsearch
+ADD src/python /src/python
+
+WORKDIR /src/python/dart/engine/es/
 
 ENV PYTHONPATH=/src/python:${PYTHONPATH}
 
-CMD ["python", "elasticsearch.py"]
+CMD ["python", "es.py"]

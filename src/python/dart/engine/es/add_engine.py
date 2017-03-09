@@ -2,7 +2,7 @@ import logging
 import os
 from dart.client.python.dart_client import Dart
 from dart.config.config import configuration
-from dart.engine.elasticsearch.metadata import ElasticsearchActionTypes
+from dart.engine.es.metadata import ElasticsearchActionTypes
 from dart.model.engine import Engine, EngineData
 
 _logger = logging.getLogger(__name__)
