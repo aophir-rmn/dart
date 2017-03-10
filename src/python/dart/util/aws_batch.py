@@ -12,7 +12,7 @@ class AWS_Batch_Dag(object):
         self.job_queue = config_metadata(['aws_batch', 'job_queue'])
 
         # Where to place inputs/outputs to action from/to actions.  We will use the workflow_instance as "sub-bucket"
-        self.s3_input_output = config_metadata(['aws_batch', 's3_input_output'])
+        #self.s3_input_output = config_metadata(['aws_batch', 's3_input_output'])
         self.sns_arn = config_metadata(['aws_batch', 'sns_arn'])  # SNS to notify workflow completion and action completion
 
         _logger.info("AWS_Batch: using job_definition={0} and job_queue={1}".format(self.job_definition, self.job_queue))
@@ -86,26 +86,26 @@ class AWS_Batch_Dag(object):
 
     # The bucket is self.s3_input_output/workflow_instance_id and the first file is named <wf_instance-id>.dat
     # and its content is filled with json_input (if any)
-    def create_s3_bucket_for_workflow_io(self, workflow_instance_id, json_input=''):
-        try:
-            response_bucket = self.s3_client.create_bucket(
-                ACL='public-read-write',
-                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
-                CreateBucketConfiguration={'LocationConstraint': 'us-east-1'} # to ensure read after write files need to be in same region
-            )
-            _logger.info("AWS_Batch: created bucket for workflow {0}, {1}".format(workflow_instance_id, response_bucket))
-
-            # first input to first action. Rest of read/write to s3 is handled from within the actions.
-            response_key = self.s3_client.put_object(
-                ACL='public-read-write',
-                Body=json_input,
-                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
-                Key=workflow_instance_id
-            )
-            _logger.info("AWS_Batch: created input 'file' for workflow {0}, {1}, with input={2}".
-                         format(workflow_instance_id, response_key, json_input))
-        except Exception as err:
-            _logger.error("AWS_Batch: S3 failed for workflow. base={0} , workflow_instance_id={1}, err: {2}".format(
+#    def create_s3_bucket_for_workflow_io(self, workflow_instance_id, json_input=''):
+#        try:
+#            response_bucket = self.s3_client.create_bucket(
+#                ACL='public-read-write',
+#                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
+#                CreateBucketConfiguration={'LocationConstraint': 'us-east-1'} # to ensure read after write files need to be in same region
+#            )
+#            _logger.info("AWS_Batch: created bucket for workflow {0}, {1}".format(workflow_instance_id, response_bucket))
+#
+#            # first input to first action. Rest of read/write to s3 is handled from within the actions.
+#            response_key = self.s3_client.put_object(
+#                ACL='public-read-write',
+#                Body=json_input,
+#                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
+#                Key=workflow_instance_id
+#            )
+#            _logger.info("AWS_Batch: created input 'file' for workflow {0}, {1}, with input={2}".
+#                         format(workflow_instance_id, response_key, json_input))
+#        except Exception as err:
+#            _logger.error("AWS_Batch: S3 failed for workflow. base={0} , workflow_instance_id={1}, err: {2}".format(
                 self.s3_input_output, workflow_instance_id, err))
 
 
@@ -122,24 +122,25 @@ class AWS_Batch_Dag(object):
         _logger.info("AWS_Batch: generate_dag, #actions={0}, datastore={1}, workflow={2}, workflow_instance={3}".
                      format(len(ordered_actions), wf_attribs['datastore_id'], workflow_id, wf_attribs['workflow_instance_id']))
 
-        self.create_s3_bucket_for_workflow_io(wf_attribs['workflow_instance_id'])
+#        self.create_s3_bucket_for_workflow_io(wf_attribs['workflow_instance_id'])
 
         previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch
         last_action_index = len(ordered_actions)-1
         for idx, oaction in enumerate(ordered_actions):
-
-            action_env = {
-                "current_step_id": oaction.data.workflow_action_id,  # the action template this action was created of
-                "is_continue_on_failure": (oaction.data.on_failure == "CONTINUE"),
-                "ACTION_ID": oaction.id,
-                "s3_input_key": wf_attribs['workflow_instance_id']
-            }
 
             cmd = ["echo", str(oaction.data.order_idx)]
 
             dependency = []
             if previous_jobs:
                 dependency = [{'jobId': previous_jobs[-1]}]
+
+            action_env = {
+                "current_step_id": oaction.data.workflow_action_id,  # the action template this action was created of
+                "is_continue_on_failure": (oaction.data.on_failure == "CONTINUE"),
+                "ACTION_ID": oaction.id,
+                "input_key": "{0}_{1}.dat".format(wf_attribs['workflow_instance_id'], idx),
+                "output_key": "{0}_{1}.dat".format(wf_attribs['workflow_instance_id'], idx+1)
+            }
 
             response = {'jobId': None}
             try:
@@ -149,6 +150,7 @@ class AWS_Batch_Dag(object):
                 response = self.client.submit_job(jobName=job_name,
                                                   jobDefinition=self.get_latest_active_job_definition('awscli'), # TODO: replace with oaction.data.engine_name
                                                   jobQueue=self.job_queue,
+                                                  dependsOn = dependency,
                                                   containerOverrides={
                                                       'command': cmd,
                                                       'environment': self.generate_env_vars(wf_attribs,
