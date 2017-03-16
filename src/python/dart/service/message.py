@@ -1,5 +1,5 @@
 import os
-import boto3
+from boto.ec2containerservice.layer1 import EC2ContainerServiceConnection
 from boto.regioninfo import RegionInfo
 from sqlalchemy import text
 from dart.model.orm import MessageDao
@@ -36,29 +36,15 @@ class MessageService(object):
                 return 'RUNNING' if message.state == 'RUNNING' else 'STOPPED'
             return self._ecs_task_status_override
 
-        return self.get_ecs_task_status_direct(message.ecs_task_arn)
+        return self.get_ecs_task_status_direct(message.ecs_task_arn, message.ecs_cluster)
 
     # http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_life_cycle.html
-    # http://boto3.readthedocs.io/en/latest/reference/services/batch.html#Batch.Client.describe_jobs
-    def get_ecs_task_status_direct(self, ecs_task_arn):
-        result = self.conn.describe_jobs([ecs_task_arn])
-        jobs = result['jobs']
-        if len(jobs) == 0:
+    def get_ecs_task_status_direct(self, ecs_task_arn, ecs_cluster):
+        result = self.conn.describe_tasks([ecs_task_arn], ecs_cluster)
+        tasks = result['DescribeTasksResponse']['DescribeTasksResult']['tasks']
+        if len(tasks) == 0:
             return None
-
-        # batch possible statuses: 'SUBMITTED'|'PENDING'|'RUNNABLE'|'STARTING'|'RUNNING'|'SUCCEEDED'|'FAILED'
-        batch_status = jobs[0]['status']
-
-        # we translate the batch status to RUNNING|COMPLETED|FAILED
-        # see dart.model.message.MessageState and dart.message.broker
-        if batch_status in ('SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING'):
-            return 'RUNNING'
-        elif batch_status == 'SUCCEEDED':
-            return 'COMPLETED'
-        else:
-            return 'FAILED'
-
-        return None
+        return tasks[0]['desiredStatus']
 
     @staticmethod
     def get_message(message_id, raise_when_missing=True):
@@ -83,5 +69,5 @@ class MessageService(object):
     def conn(self):
         if self._conn:
             return self._conn
-        self._conn = boto3.client('batch')
+        self._conn = EC2ContainerServiceConnection(region=self._region)
         return self._conn
