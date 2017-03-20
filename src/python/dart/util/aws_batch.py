@@ -62,6 +62,7 @@ class AWS_Batch_Dag(object):
         job_name = self.generate_job_name(wf_attribs['workflow_id'], oaction.data.order_idx, oaction.data.name)
         _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
 
+        # submit_job is sensitive to None value in env variables so we wrap them with str(..)
         input_env = json.dumps(self.generate_env_vars(wf_attribs, action_env, idx == 0, idx == last_action_index))
         response = self.client.submit_job(jobName=job_name,
                                           # SNS to notify workflow completion and action completion
@@ -72,11 +73,11 @@ class AWS_Batch_Dag(object):
                                               'command': cmd,
                                               'environment': [
                                                   {'name': 'input_env', 'value': input_env}, # passing execution info to job
-                                                  {'name': 'ACTION_ID', 'value': oaction.id},
-                                                  {'name': 'DART_CONFIG', 'value': self.dart_config},
+                                                  {'name': 'ACTION_ID', 'value': str(oaction.id)},
+                                                  {'name': 'DART_CONFIG', 'value': str(self.dart_config)},
                                                   {'name': 'DART_ROLE', 'value': "worker:{0}".format(oaction.data.engine_name)},  # An implicit convention
-                                                  {'name': 'DART_URL', 'value': self.dart_url}, # Used by abacus to access data lineage
-                                                  {'name': 'AWS_DEFAULT_REGION', 'value': self.aws_default_region}
+                                                  {'name': 'DART_URL', 'value': str(self.dart_url)}, # Used by abacus to access data lineage
+                                                  {'name': 'AWS_DEFAULT_REGION', 'value': str(self.aws_default_region)}
                                               ]
                                           })
         _logger.info("AWS_Batch: response={0}".format(response))
