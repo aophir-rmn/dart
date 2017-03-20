@@ -18,7 +18,7 @@ DOCKER_IMAGE_WORKER_TRIGGER=$(dart_conf_value "${CONFIG}" "$.cloudformation_stac
 DOCKER_IMAGE_WORKER_SUBSCRIPTION=$(dart_conf_value "${CONFIG}" "$.cloudformation_stacks.'subscription-worker'.boto_args.Parameters[@.ParameterKey is 'SubscriptionWorkerDockerImage'][0].ParameterValue")
 IFS=${OLD_IFS}
 
-$(aws ecr get-login --registry-ids ECR_ID)
+$(aws ecr get-login --registry-ids $ECR_ID)
 set -x
 docker push ${DOCKER_IMAGE_FLASK}
 docker push ${DOCKER_IMAGE_WORKER_ENGINE}
