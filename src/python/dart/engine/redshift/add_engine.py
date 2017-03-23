@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 def add_redshift_engine(config):
     engine_config = config['engines']['redshift_engine']
     opts = engine_config['options']
-    dart = Dart("dart-stage.reporting.rmn.io", opts['dart_port'], opts['dart_api_version'])
+    dart = Dart(opts['dart_host'], opts['dart_port'], opts['dart_api_version'])
     assert isinstance(dart, Dart)
 
     _logger.info('saving redshift_engine')
@@ -130,7 +130,6 @@ def add_redshift_engine(config):
             RedshiftActionTypes.copy_to_s3,
             RedshiftActionTypes.create_snapshot,
             RedshiftActionTypes.data_check,
-            RedshiftActionTypes.cluster_maintenance,
         ],
         ecs_task_definition=ecs_task_definition
     )))
