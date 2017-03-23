@@ -17,11 +17,16 @@ python-saml==2.1.9
 python-magic==0.4.10
 pytz==2015.7
 PyYAML==3.11
+redis==2.10.5
 requests==2.7.0
 retrying==1.3.3
 SQLAlchemy==1.0.15
 sqlalchemy-redshift==0.4.0
 uwsgi==2.0.11.2
+
+#elasticsearch_engine dependencies
+elasticsearch>=5.0.0,<6.0.0
+requests-aws4auth==0.9
 
 # Development dependencies
 mock==2.0.0

@@ -72,7 +72,7 @@ def start_datastore(emr_engine, datastore, action):
 
 def create_cluster(bootstrap_actions_args, cluster_name, datastore, emr_engine, instance_groups_args,
                    steps=None, auto_terminate=False, configuration_overrides=None):
-    keyname = emr_engine.ec2_keyname
+    keyname = datastore.data.args['ec2_keyname'] if datastore.data.args.get('ec2_keyname') else emr_engine.ec2_keyname
     instance_profile = emr_engine.instance_profile
     subnet_id = emr_engine.subnet_id
     cmd = 'aws emr create-cluster' \

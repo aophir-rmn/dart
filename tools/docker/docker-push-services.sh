@@ -6,6 +6,7 @@ source ./docker-local-init.sh
 
 pushd ../../ > /dev/null
 
+ECR_ID=${ECR_ID:-249030517958} # by default use eng account ecr id -249030517958. Can provide ECR_ID=XXX in commandline to override
 
 echo "reading configuration: ${DART_CONFIG}"
 OLD_IFS=${IFS}
@@ -17,7 +18,7 @@ DOCKER_IMAGE_WORKER_TRIGGER=$(dart_conf_value "${CONFIG}" "$.cloudformation_stac
 DOCKER_IMAGE_WORKER_SUBSCRIPTION=$(dart_conf_value "${CONFIG}" "$.cloudformation_stacks.'subscription-worker'.boto_args.Parameters[@.ParameterKey is 'SubscriptionWorkerDockerImage'][0].ParameterValue")
 IFS=${OLD_IFS}
 
-$(aws ecr get-login)
+$(aws ecr get-login --registry-ids $ECR_ID)
 set -x
 docker push ${DOCKER_IMAGE_FLASK}
 docker push ${DOCKER_IMAGE_WORKER_ENGINE}

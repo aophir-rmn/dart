@@ -146,6 +146,8 @@ angular
                             })
                             .selector(':selected')
                             .css({
+                                'height': 200,
+                                'width': 200,
                                 'border-color': 'purple',
                                 'border-width': 20
                             })
