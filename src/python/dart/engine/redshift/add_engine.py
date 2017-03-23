@@ -130,6 +130,7 @@ def add_redshift_engine(config):
             RedshiftActionTypes.copy_to_s3,
             RedshiftActionTypes.create_snapshot,
             RedshiftActionTypes.data_check,
+	    RedshiftActionTypes.cluster_maintenance
         ],
         ecs_task_definition=ecs_task_definition
     )))
