@@ -1,4 +1,5 @@
 import json
+import logging
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
@@ -11,13 +12,15 @@ from dart.message.trigger_proxy import TriggerProxy
 from dart.model.action import Action, ActionState
 from dart.model.query import Filter, Operator
 from dart.service.action import ActionService
+from dart.service.workflow import WorkflowService
+from dart.model.workflow import WorkflowInstanceState
 from dart.service.datastore import DatastoreService
 from dart.service.filter import FilterService
 from dart.service.order_by import OrderByService
 from dart.web.api.entity_lookup import fetch_model, accounting_track
 
 api_action_bp = Blueprint('api_action', __name__)
-
+_logger = logging.getLogger()
 
 @api_action_bp.route('/datastore/<datastore>/action', methods=['POST'])
 @login_required
@@ -111,6 +114,28 @@ def put_action(action):
     """ :type action: dart.model.action.Action """
     return update_action(action, Action.from_dict(request.get_json()))
 
+@api_action_bp.route('/action/state', methods=['PUT'])
+@login_required
+@required_roles(['Edit']) # TODO - add a lambda user 
+@accounting_track
+@jsonapi
+def update_action_state():
+    """ :type action: dart.model.action.Action """
+    action_status_updates = request.get_json()
+    for action_status in action_status_updates:
+        # updating the action state
+        current_action = action_service().get_action(action_status['action_id'])
+        if should_update(action_status['status'], current_action.data.state):
+            _logger.info("Updating action={0} from {1} to state {2}".format(current_action.id, current_action.data.state, action_status['status']))
+            action_service().update_action_state(current_action, action_status['status'], "")
+
+        # if we have a workflow_instance_id (not empty) then we are in the last action of the workflow.
+        # if failed => WFI failed, if SUCCEEDED => workflow instance succeeded (==COMPLETED)
+        if action_status['workflow_instance_id']:
+            wf_instance = workflow_service().get_workflow_instance(action_status['workflow_instance_id'])
+            workflow_service().update_workflow_instance_state(wf_instance, WorkflowInstanceState.COMPLETED)
+
+    return {'result': "OK"}
 
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
 @login_required
@@ -122,6 +147,25 @@ def patch_action(action):
     """ :type action: dart.model.action.Action """
     p = JsonPatch(request.get_json())
     return update_action(action, Action.from_dict(p.apply(action.to_dict())))
+
+def should_update(new_state, current_state):
+    ''' A new state of action should only be updated if it is a more 'advanced' state.
+        The order is PENDING < RUNNABLE < STARTING < RUNNING < COMPLETED < {FAILED|SUCCEEDED}.
+
+        E.g. if current_state is PENDING and new_state is RUNNING then we should update.
+             if current_state is SUCCEEDED and new_state is RUNNING then we should NOT update.
+    '''
+    ORDERED_STATES = {'PENDING': 0, 'RUNNABLE': 1, 'STARTING': 2,
+                      'RUNNING': 3, 'COMPLETED': 4, 'FAILED': 5, 'SUCCEEDED': 5}
+
+    _logger.info("new_state={0}, current_state={1}".format(new_state, current_user))
+    if not (new_state in list(ORDERED_STATES.keys())):
+        return True
+
+    if not (current_state in list(ORDERED_STATES.keys())):
+        return True
+
+    return ORDERED_STATES[current_state] < ORDERED_STATES[new_state]
 
 
 def update_action(action, updated_action):
@@ -172,6 +216,11 @@ def trigger_proxy():
 def action_service():
     """ :rtype: dart.service.action.ActionService """
     return current_app.dart_context.get(ActionService)
+
+
+def workflow_service():
+    """ :rtype: dart.service.action.WorkflowService """
+    return current_app.dart_context.get(WorkflowService)
 
 
 def datastore_service():

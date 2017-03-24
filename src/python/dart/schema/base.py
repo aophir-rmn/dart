@@ -25,7 +25,7 @@ def default_and_validate(model, schema):
         raise DartValidationException(str(best_match(errors)))
 
     user_id = "anonymous"
-    if current_user and current_user.email:
+    if current_user and hasattr(current_user, 'email'):
         user_id = current_user.email
     else:
         _logger.debug("No current_user found. using anonymous user id instead.")
