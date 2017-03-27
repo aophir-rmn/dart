@@ -51,6 +51,7 @@ class Emailer(object):
                       datastore_name=datastore.data.name,
                       entity_link='',
                       action_err_msg=action.data.error_message,
+                      action_batch_job_id=action.data.batch_job_id,
                       action_ecs_task_arn=action.data.ecs_task_arn,
                       workflow_id=action.data.workflow_id,
                       workflow_instance_id=action.data.workflow_instance_id,
@@ -65,7 +66,7 @@ class Emailer(object):
                      action_err_msg={action_err_msg}
 
                      workflow_id={workflow_id}, workflow_instance_id={workflow_instance_id}
-                     task-arn={action_ecs_task_arn}, engine={engine_name}"""
+                     batch_job_id={action_batch_job_id}, action_ecs_task_arn={action_ecs_task_arn}, engine={engine_name}"""
 
         return (values, subject, message)
 

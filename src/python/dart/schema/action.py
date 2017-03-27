@@ -34,6 +34,7 @@ def action_schema(supported_action_type_params_schema):
             'first_in_workflow': {'type': ['boolean', 'null'], 'default': False, 'readonly': True},
             'last_in_workflow': {'type': ['boolean', 'null'], 'default': False, 'readonly': True},
             'ecs_task_arn': {'type': ['string', 'null'], 'default': None, 'readonly': True},
+            'batch_job_id': {'type': ['string', 'null'], 'default': None, 'readonly': True},
             'extra_data': {'type': ['object', 'null'], 'default': None, 'readonly': True},
             'avg_runtime': {'type': ['string', 'null'], 'readonly': True},
             'completed_runs': {'type': 'integer', 'default': 0, 'readonly': True}

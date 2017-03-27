@@ -127,6 +127,7 @@ class MessageDao(db.Model, VersionedAuditableSerializable):
     container_id = Column(String(length=256), nullable=False)
     ecs_cluster = Column(String(length=70), nullable=False)
     ecs_container_instance_arn = Column(String(length=256), nullable=False)
+    batch_job_id = Column(String(length=256), nullable=False)
     ecs_task_arn = Column(String(length=256), nullable=False)
     state = Column(String(length=50), index=True, nullable=False)
 
