@@ -1672,6 +1672,9 @@ definitions:
       avg_runtime:
         type: string
         x-nullable: true
+      batch_job_id:
+        type: string
+        x-nullable: true
       completed_runs:
         default: 0
         type: integer

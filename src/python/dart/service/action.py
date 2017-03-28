@@ -90,7 +90,7 @@ class ActionService(object):
     def find_stale_pending_actions():
         query = ActionDao.query\
             .filter(ActionDao.data['state'].astext == ActionState.PENDING)\
-            .filter(ActionDao.data['ecs_task_arn'] == 'null')\
+            .filter(ActionDao.data['batch_job_id'] == 'null')\
             .filter(ActionDao.updated < (datetime.utcnow() - timedelta(minutes=2)))
         return [r.to_model() for r in query.all()]
 
@@ -237,10 +237,12 @@ class ActionService(object):
         return patch_difference(ActionDao, source_action, action, True, conditional)
 
     @staticmethod
-    def update_action_ecs_task_arn(action, ecs_task_arn):
-        """ :type action: dart.model.action.Action """
+    def update_action_batch_job_id(action, batch_job_id):
+        """ :type action: dart.model.action.Action
+            :type batch_job_id: dart.model.action.ActionData
+        """
         source_action = action.copy()
-        action.data.ecs_task_arn = ecs_task_arn
+        action.data.batch_job_id = batch_job_id
         return patch_difference(ActionDao, source_action, action)
 
     @staticmethod

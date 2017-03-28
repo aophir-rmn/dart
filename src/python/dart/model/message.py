@@ -10,7 +10,7 @@ class MessageState(object):
 @dictable
 class Message(BaseModel):
     def __init__(self, id, version_id, created, updated, message_body, instance_id, container_id, ecs_cluster,
-                 ecs_container_instance_arn, ecs_family, ecs_task_arn, state=MessageState.RUNNING):
+                 ecs_container_instance_arn, ecs_family, batch_job_id, state=MessageState.RUNNING, ecs_task_arn='Batch_place_holder'):
         """
         :type id: str
         :type version_id: int
@@ -23,6 +23,7 @@ class Message(BaseModel):
         :type ecs_container_instance_arn: str
         :type ecs_family: str
         :type ecs_task_arn: str
+        :type batch_job_id: str
         :type state: str
         """
         self.id = id
@@ -36,4 +37,5 @@ class Message(BaseModel):
         self.ecs_container_instance_arn = ecs_container_instance_arn
         self.ecs_family = ecs_family
         self.ecs_task_arn = ecs_task_arn
+        self.batch_job_id = batch_job_id
         self.state = state

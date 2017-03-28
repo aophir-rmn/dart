@@ -85,11 +85,11 @@ class SqsJsonMessageBroker(MessageBroker):
 
             if message.state in [MessageState.RUNNING]:
                 # the DB says its running, but is it REALLY running?
-                ecs_task_status = self._message_service.get_ecs_task_status(message)
-                if ecs_task_status == 'RUNNING':
+                batch_job_status = self._message_service.get_batch_job_status(message)
+                if batch_job_status == 'RUNNING':
                     # ok, it was really running.  return and let the visibility timeout resend the message later
                     return
-                if not ecs_task_status or ecs_task_status == 'STOPPED':
+                if not batch_job_status or batch_job_status == 'STOPPED':
                     # it seems the container was lost, so mark this message as failed
                     previous_handler_failed = True
                     result_state = MessageState.FAILED

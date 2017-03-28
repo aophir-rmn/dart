@@ -59,7 +59,7 @@ class AWS_Batch_Dag(object):
                      format(wf_attribs['workflow_id'], previous_jobs))
 
     def submit_job(self, wf_attribs, idx, oaction, last_action_index, dependency, cmd, action_env):
-        job_name = self.generate_job_name(wf_attribs['workflow_id'], oaction.data.order_idx, oaction.data.name)
+        job_name = self.generate_job_name(wf_attribs['workflow_id'], oaction.data.order_idx, oaction.data.name, self.job_definition_suffix)
         _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
 
         # submit_job is sensitive to None value in env variables so we wrap them with str(..)
@@ -113,7 +113,7 @@ class AWS_Batch_Dag(object):
             raise ValueError("No job matching {0}".format(job_name))
 
     @staticmethod
-    def generate_job_name(workflow_id, order_idx, action_name):
+    def generate_job_name(workflow_id, order_idx, action_name, job_definition_suffix=''):
         """ Names should not exceed 50 characters or else cloudwatch logs creation will fail.
 
             :param workflow_id: the first part of the name is the workflow_id (which is not unique per job run).
@@ -121,14 +121,14 @@ class AWS_Batch_Dag(object):
             :param action_name: action name may be truncate if total name exceed 50 characters. Also not unique.
 
             # no trimming
-            >>> cls.generate_job_name('workflowid', 120, 'actionname')
-            'workflowid_120_actionname'
+            >>> cls.generate_job_name('workflowid', 120, 'actionname', 'stg')
+            'workflowid_120_actionname_stg'
 
             # trimmed action name
-            >>> cls.generate_job_name('27_characters_long_workflow', 120, '25_characters_long_action')
+            >>> cls.generate_job_name('27_characters_long_workflow', 120, '25_characters_long_action', '')
             '27_characters_long_workflow_120_25_characters_long'
         """
-        job_name = "{0}_{1}_{2}".format(workflow_id, order_idx, action_name.replace("-", "_"))
+        job_name = "{0}_{1}_{2}_{3}".format(workflow_id, order_idx, action_name.replace("-", "_"),job_definition_suffix)
         valid_characters_name = re.sub('[^a-zA-Z0-9_]', '', job_name) # job name valid pattern is: [^a-zA-Z0-9_]
         return valid_characters_name[0:50]
 

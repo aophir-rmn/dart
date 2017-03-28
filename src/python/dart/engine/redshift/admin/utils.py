@@ -6,7 +6,7 @@ import requests
 
 def lookup_credentials(action):
     """ :type action: dart.model.action.Action """
-    if not action.data.ecs_task_arn:
+    if not action.data.batch_job_id:
         # we are running locally and they should be set on the ENV
         return os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'], None
 
