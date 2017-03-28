@@ -180,7 +180,6 @@ class EngineWorker(Tool):
                 conditional=lambda a: a.data.state == ActionState.PENDING
             )
 
-    @db_mutex(Mutexes.START_ENGINE_TASK)
     @staticmethod
     def _launch_in_memory_engine(engine, engine_instance, action, datastore_user_id):
         def target():
