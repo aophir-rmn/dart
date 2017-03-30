@@ -34,6 +34,8 @@ def yield_s3_keys(bucket, s3_path_root_prefix, s3_path_start_prefix_inclusive=No
         s3_path = get_s3_path(key_obj)
         if s3_path.rstrip('/') == s3_path_root_prefix.rstrip('/'):
             continue
+        if s3_path_start_prefix_inclusive and s3_path < s3_path_start_prefix_inclusive:
+            continue
         if s3_path_end_prefix_exclusive and s3_path >= s3_path_end_prefix_exclusive:
             return
         if s3_path_regex_filter and not re.search(s3_path_regex_filter, s3_path):
