@@ -5,8 +5,15 @@ first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 
-timedelta_re = re.compile(r'((?P<days>[0-9]) days?, )?(?P<hours>[0-9]{1,2}):(?P<minutes>[0-9]{2}):(?P<seconds>[0-9]{2})')
-
+# values = ["09:59:59", "1 days, 11:54:33", "-12 days, 00:02:11"]
+# for value in values:
+#      match = timedelta_re.match(value).groupdict()
+#      print (match)
+# Returns:
+# {'hours': '09', 'seconds': '59', 'minutes': '59', 'days': None}
+# {'hours': '11', 'seconds': '33', 'minutes': '54', 'days': '1'}
+# {'hours': '00', 'seconds': '11', 'minutes': '02', 'days': '-12'}
+timedelta_re = re.compile(r'((?P<days>[\-]?[0-9]{1,3}) days?, )?(?P<hours>[0-9]{1,2}):(?P<minutes>[0-9]{2}):(?P<seconds>[0-9]{2})')
 
 # http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
 def to_snake_case(name):
