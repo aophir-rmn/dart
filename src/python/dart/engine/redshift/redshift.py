@@ -16,7 +16,7 @@ from dart.engine.redshift.actions.cluster_maintenance import cluster_maintenance
 from dart.engine.redshift.metadata import RedshiftActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.service.secrets import Secrets
-from dart.tool.tool_runner import Tool
+from dart.tool.action_runner import ActionRunner
 
 _logger = logging.getLogger(__name__)
 
@@ -69,9 +69,9 @@ class RedshiftEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
+            self.notify_sns(action.id, error_message, state)
 
-
-class RedshiftEngineTaskRunner(Tool):
+class RedshiftEngineTaskRunner(ActionRunner):
     def __init__(self):
         super(RedshiftEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 

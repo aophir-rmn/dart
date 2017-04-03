@@ -54,7 +54,7 @@ class DynamoDBEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message, consume_subscription_state))
-
+            self.notify_sns(action.id, error_message, state)
 
 class DynamoDBEngineTaskRunner(Tool):
     def __init__(self):

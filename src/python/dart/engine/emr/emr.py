@@ -17,7 +17,7 @@ from dart.engine.emr.actions.terminate_datastore import terminate_datastore
 from dart.engine.emr.exception.exception import ActionFailedButConsumeSuccessfulException
 from dart.engine.emr.metadata import EmrActionTypes
 from dart.model.engine import ActionResult, ActionResultState, ConsumeSubscriptionResultState
-from dart.tool.tool_runner import Tool
+from dart.tool.action_runner import ActionRunner
 
 _logger = logging.getLogger(__name__)
 
@@ -80,9 +80,9 @@ class EmrEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message, consume_subscription_state))
+            self.notify_sns(action.id, error_message, state)
 
-
-class EmrEngineTaskRunner(Tool):
+class EmrEngineTaskRunner(ActionRunner):
     def __init__(self):
         super(EmrEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 
