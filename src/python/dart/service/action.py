@@ -90,7 +90,6 @@ class ActionService(object):
     def find_stale_pending_actions():
         query = ActionDao.query\
             .filter(ActionDao.data['state'].astext == ActionState.PENDING)\
-            .filter(ActionDao.data['batch_job_id'] == 'null')\
             .filter(ActionDao.updated < (datetime.utcnow() - timedelta(minutes=2)))
         return [r.to_model() for r in query.all()]
 
