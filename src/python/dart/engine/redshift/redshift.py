@@ -16,15 +16,17 @@ from dart.engine.redshift.actions.cluster_maintenance import cluster_maintenance
 from dart.engine.redshift.metadata import RedshiftActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.service.secrets import Secrets
+from dart.tool.action_runner import ActionRunner
 from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class RedshiftEngine(object):
+class RedshiftEngine(ActionRunner):
     def __init__(self, kms_key_arn, secrets_s3_path, vpc_subnet, security_group_ids,
                  region, availability_zones, publicly_accessible, cluster_tags,
                  dart_host, dart_port, dart_api_version=1):
+        super(RedshiftEngine, self).__init__()
 
         self.dart = Dart(dart_host, dart_port, dart_api_version)
         self._action_handlers = {
@@ -69,7 +71,7 @@ class RedshiftEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
-
+            self.publish_sns_message(action, error_message, state)
 
 class RedshiftEngineTaskRunner(Tool):
     def __init__(self):

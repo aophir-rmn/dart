@@ -9,16 +9,18 @@ from dart.engine.dynamodb.actions.create_table import create_table
 from dart.engine.dynamodb.actions.delete_table import delete_table
 from dart.engine.emr.emr import EmrEngine
 from dart.model.engine import ActionResult, ActionResultState
+from dart.tool.action_runner import ActionRunner
 from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class DynamoDBEngine(object):
+class DynamoDBEngine(ActionRunner):
     def __init__(self, emr_ec2_keyname, emr_instance_profile, emr_service_role, emr_region, emr_core_node_limit,
                  emr_impala_docker_repo_base_url, emr_impala_version, emr_cluster_tags, emr_cluster_availability_zone,
                  dart_host, dart_port, dart_api_version=1, emr_release_label='emr-4.2.0',
                  emr_instance_type='m3.2xlarge'):
+        super(DynamoDBEngine, self).__init__()
 
         self.emr_release_label = emr_release_label
         self.emr_instance_type = emr_instance_type
@@ -54,6 +56,7 @@ class DynamoDBEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message, consume_subscription_state))
+            self.publish_sns_message(action, error_message, state)
 
 
 class DynamoDBEngineTaskRunner(Tool):

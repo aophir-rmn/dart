@@ -6,13 +6,15 @@ import traceback
 from dart.client.python.dart_client import Dart
 from dart.engine.no_op.metadata import NoOpActionTypes
 from dart.model.engine import ActionResult, ActionResultState
+from dart.tool.action_runner import ActionRunner
 from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class NoOpEngine(object):
+class NoOpEngine(ActionRunner):
     def __init__(self, region, dart_host='localhost', dart_port=5000, dart_api_version=1):
+        super(NoOpEngine, self).__init__()
         self.region = region
         self.dart = Dart(dart_host, dart_port, dart_api_version)
 
@@ -42,6 +44,7 @@ class NoOpEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
+            self.publish_sns_message(action, error_message, state)
 
 
 class NoOpEngineTaskRunner(Tool):
