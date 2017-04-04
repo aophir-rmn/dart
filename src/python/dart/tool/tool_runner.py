@@ -18,6 +18,7 @@ class Tool(object):
                 self.app_context = AppContext(self.dart_config, ['dart.web'])
         else:
             logger.error("missing DART_CONFIG env variable")
+            raise ValueError("missing DART_CONFIG env variable")
 
     @abstractmethod
     def run(self):

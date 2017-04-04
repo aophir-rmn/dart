@@ -6,7 +6,7 @@ source ./docker-local-init.sh
 
 pushd ../../ > /dev/null
 
-
+ECR_ID=${ECR_ID:-249030517958} # by default use eng account ecr id -249030517958. Can provide ECR_ID=XXX in commandline to override
 echo "reading configuration: ${DART_CONFIG}"
 OLD_IFS=${IFS}
 IFS=
@@ -19,7 +19,7 @@ DOCKER_IMAGE_ENGINE_S3=$(dart_conf_value "${CONFIG}" "$.engines.s3_engine.docker
 DOCKER_IMAGE_ENGINE_ELASTICSEARCH=$(dart_conf_value "${CONFIG}" "$.engines.elasticsearch_engine.docker_image")
 IFS=${OLD_IFS}
 
-$(aws ecr get-login)
+$(aws ecr get-login --registry-ids $ECR_ID)
 set -x
 docker push ${DOCKER_IMAGE_ENGINE_NO_OP}
 docker push ${DOCKER_IMAGE_ENGINE_EMR}

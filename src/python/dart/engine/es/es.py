@@ -14,12 +14,14 @@ from dart.engine.es.metadata import ElasticsearchActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.service.secrets import Secrets
 from dart.tool.action_runner import ActionRunner
+from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class ElasticsearchEngine(object):
+class ElasticsearchEngine(ActionRunner):
     def __init__(self, kms_key_arn, secrets_s3_path, dart_host, dart_port, dart_api_version=1):
+        super(ElasticsearchEngine, self).__init__()
 
         self.dart = Dart(dart_host, dart_port, dart_api_version)
         self._action_handlers = {
@@ -53,10 +55,10 @@ class ElasticsearchEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
-            self.notify_sns(action.id, error_message, state)
+            self.publish_sns_message(action, error_message, state)
 
 
-class ElasticsearchEngineTaskRunner(ActionRunner):
+class ElasticsearchEngineTaskRunner(Tool):
     def __init__(self):
         super(ElasticsearchEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 

@@ -8,12 +8,14 @@ from dart.engine.s3.actions.data_check import data_check
 from dart.engine.s3.metadata import S3ActionTypes
 from dart.model.engine import ActionResultState, ActionResult
 from dart.tool.action_runner import ActionRunner
+from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class S3Engine(object):
+class S3Engine(ActionRunner):
     def __init__(self, region, dart_host, dart_port, dart_api_version):
+        super(S3Engine, self).__init__()
         self.region = region
         self.dart = Dart(dart_host, dart_port, dart_api_version)
         self._action_handlers = {
@@ -41,9 +43,9 @@ class S3Engine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
-            self.notify_sns(action.id, error_message, state)
+            self.publish_sns_message(action, error_message, state)
 
-class S3EngineTaskRunner(ActionRunner):
+class S3EngineTaskRunner(Tool):
     def __init__(self):
         super(S3EngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 

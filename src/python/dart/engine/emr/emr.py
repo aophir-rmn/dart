@@ -18,13 +18,15 @@ from dart.engine.emr.exception.exception import ActionFailedButConsumeSuccessful
 from dart.engine.emr.metadata import EmrActionTypes
 from dart.model.engine import ActionResult, ActionResultState, ConsumeSubscriptionResultState
 from dart.tool.action_runner import ActionRunner
+from dart.tool.tool_runner import Tool
 
 _logger = logging.getLogger(__name__)
 
 
-class EmrEngine(object):
+class EmrEngine(ActionRunner):
     def __init__(self, ec2_keyname, instance_profile, service_role, subnet_id, region, core_node_limit,
                  impala_docker_repo_base_url, impala_version, cluster_tags, dart_host, dart_port, dart_api_version=1):
+        super(EmrEngine, self).__init__()
 
         self._action_handlers = {
             EmrActionTypes.start_datastore.name: start_datastore,
@@ -80,9 +82,9 @@ class EmrEngine(object):
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message, consume_subscription_state))
-            self.notify_sns(action.id, error_message, state)
+            self.publish_sns_message(action, error_message, state)
 
-class EmrEngineTaskRunner(ActionRunner):
+class EmrEngineTaskRunner(Tool):
     def __init__(self):
         super(EmrEngineTaskRunner, self).__init__(_logger, configure_app_context=False)
 
