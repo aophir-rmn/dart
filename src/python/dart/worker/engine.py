@@ -173,12 +173,22 @@ class EngineWorker(Tool):
         actions = action_service.find_stale_pending_actions()
         for action in actions:
             _logger.error('found stale action with id: %s' % action.id)
-            action_service.update_action_state(
-                action=action,
-                state=ActionState.QUEUED,
-                error_message=action.data.error_message,
-                conditional=lambda a: a.data.state == ActionState.PENDING
-            )
+            if action.data.batch_job_id:
+                # If action already has a batch_job_id, it has already tried creating the container on batch and failed.
+                action_service.update_action_state(
+                    action=action,
+                    state=ActionState.FAILED,
+                    error_message=action.data.error_message,
+                    conditional=lambda a: a.data.state == ActionState.PENDING
+                )
+                self._trigger_proxy.complete_action(action.id, ActionState.FAILED, action.data.error_message)
+            else:
+                action_service.update_action_state(
+                    action=action,
+                    state=ActionState.QUEUED,
+                    error_message=action.data.error_message,
+                    conditional=lambda a: a.data.state == ActionState.PENDING
+                )
 
     @staticmethod
     def _launch_in_memory_engine(engine, engine_instance, action, datastore_user_id):
