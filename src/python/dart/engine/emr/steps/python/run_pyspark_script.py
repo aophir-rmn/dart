@@ -20,4 +20,4 @@ file_name = s3_key.split('/')[-1]
 pyspark_script = '/tmp/%s' % file_name
 
 call('aws s3 cp %s %s' % (s3_key, pyspark_script))
-call('pyspark %s' % pyspark_script)
+call('spark-submit %s' % pyspark_script)
