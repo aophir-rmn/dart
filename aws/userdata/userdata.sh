@@ -10,8 +10,14 @@ exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&
 echo -e "\$MaxMessageSize 32k\n$(cat /etc/rsyslog.conf)" > /etc/rsyslog.conf
 service rsyslog restart
 
-# install the aws cli
-yum install -y aws-cli
+n=0
+until [ $n -ge 5 ]
+do
+  # install the aws cli
+  yum install -y aws-cli && break
+  n=$[$n+1]
+  sleep 15
+done
 
 # discover instance metadata
 INSTANCE_ID="$(curl -s 'http://169.254.169.254/latest/meta-data/instance-id')"
