@@ -41,11 +41,15 @@ class ElasticsearchCluster(object):
         secret_access_key = self.get_secret_access_key()
 
         if self.access_key_id and secret_access_key:
+            _logger.info("Auth through datastore credentials.")
+
             auth = AWS4Auth(self.access_key_id,
                             self.get_secret_access_key(),
                             self.region,
                             'es')
         else:
+            _logger.info("Auth through DART instance credentials.")
+
             credentials = boto3.Session().get_credentials()
 
             auth = AWS4Auth(credentials.access_key,

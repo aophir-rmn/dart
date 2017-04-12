@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ElasticsearchEngine(ActionRunner):
-    def __init__(self, kms_key_arn, secrets_s3_path, dart_host, dart_port, dart_api_version=1):
+    def __init__(self, kms_key_arn, secrets_s3_path, dart_host, dart_port, dart_api_version=1, **kwargs):
         super(ElasticsearchEngine, self).__init__()
 
         self.dart = Dart(dart_host, dart_port, dart_api_version)

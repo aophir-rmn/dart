@@ -61,36 +61,16 @@ def add_elasticsearch_engine(config):
                 'access_key_id': {
                     'type': 'string',
                     'default': '',
-                    'oneOf': [
-                        {
-                            'minLength': 20,
-                            'maxLength': 20,
-                            # 20 character alpha numerical, all uppercase
-                            'pattern': '^[A-Z0-9]{20}$'
-                        },
-                        {
-                            'minLength': 0,
-                            'maxLength': 0
-                        }
-                    ],
+                    'minLength': 0,
+                    'maxLength': 20,
                     'description': 'the access_key_id for accessing this elasticsearch cluster. '
                                    + 'Leave blank to use Dart\'s instance profile credentials'
                 },
                 'secret_access_key': {
                     'type': 'string',
                     'default': '',
-                    'oneOf': [
-                        {
-                            'minLength': 0,
-                            'maxLength': 0
-                        },
-                        {
-                            'minLength': 40,
-                            'maxLength': 40,
-                            # from AWS Security Blog on how to match secret access keys. 40 characters
-                            'pattern': '(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])'
-                        }
-                    ],
+                    'minLength': 0,
+                    'maxLength': 40,
                     'x-dart-secret': True,
                     'description': 'the secret_access_key for accessing this elasticsearch cluster. '
                                    + 'Leave blank to use Dart\'s instance profile credentials'
