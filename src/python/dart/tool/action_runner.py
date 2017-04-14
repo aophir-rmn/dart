@@ -167,9 +167,8 @@ class ActionRunner(object):
 
         try:
             sns_client_publish(
-                TargetArn=sns_arn,
-                Message=json.dumps(json.dumps(sns_message)),
-                MessageStructure='json'
+                TopicArn=sns_arn,
+                Message=json.dumps(json.dumps(sns_message))
             )
         except Exception as err:
             _logger.error("Could not notify sns {0} with message {1}. err={2}".format(sns_arn, error_message, err))
