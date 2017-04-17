@@ -127,8 +127,15 @@ def installImpalaShell
 end
 
 
+def isLocalInstanceSuccessful()
+    text = File.read("/emr/instance-controller/lib/info/job-flow-state.txt")
+    return text =~ /(localInstance)(.*)(status:)(\s)(SUCCESSFUL)(.*)(remoteInstances)/xm
+end
 
 
+until isLocalInstanceSuccesful()
+    sleep(30)
+end
 @options = parseOptions
 clusterMetaData = getClusterMetaData
 isMaster = clusterMetaData['isMaster']
