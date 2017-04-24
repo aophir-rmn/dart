@@ -9,10 +9,12 @@ from jsonpatch import JsonPatch
 from flask_login import current_user
 
 from dart.message.trigger_proxy import TriggerProxy
-from dart.model.action import Action, ActionState
+from dart.model.action import Action, ActionState, OnFailure as ActionOnFailure
 from dart.model.query import Filter, Operator
 from dart.service.action import ActionService
 from dart.service.workflow import WorkflowService
+from dart.model.workflow import WorkflowInstanceState, WorkflowState, OnFailure as WorkflowOnFailure
+from dart.model.datastore import DatastoreState
 from dart.model.workflow import WorkflowInstanceState
 from dart.service.datastore import DatastoreService
 from dart.service.filter import FilterService
@@ -121,20 +123,44 @@ def put_action(action):
 @jsonapi
 def update_action_state():
     """ :type action: dart.model.action.Action """
+
+    # we receive a list of {action_id, action_status, workflow_instance_id/status}
+    # We will update the database for each such entry
     action_status_updates = request.get_json()
     for action_status in action_status_updates:
         # updating the action state
         current_action = action_service().get_action(action_status['action_id'])
-        if should_update(action_status['status'], current_action.data.state):
-            _logger.info("Updating action={0} from {1} to state {2}".format(current_action.id, current_action.data.state, action_status['status']))
+        if should_update(action_status['action_status'], current_action.data.state):
+            _logger.info("AWS_Batch: Updating action={0} from {1} to state {2}".format(current_action.id, current_action.data.state, action_status['action_status']))
             action_service().update_action_state(current_action, action_status['status'], "")
 
-        # if we have a workflow_instance_id (not empty) then we are in the last action of the workflow.
-        # if failed => WFI failed, if SUCCEEDED => workflow instance succeeded (==COMPLETED)
+        # if we receive a workflow_instance_id (not empty) then we need to set workflow_instance status.
+        # we may need to set workflow and datastore status if they need to be deactivated on failure.
         if action_status['workflow_instance_id']:
-            wf_instance = workflow_service().get_workflow_instance(action_status['workflow_instance_id'])
-            workflow_service().update_workflow_instance_state(wf_instance, WorkflowInstanceState.COMPLETED)
+            wfs = action_status.get('workflow_instance_status')
+            wf_instance_status = WorkflowInstanceState.FAILED if (wfs == 'FAILED') else WorkflowInstanceState.COMPLETED
+            _logger.info("AWS_Batch: Updating workflow_instance={0} to state {2}".format(action_status['workflow_instance_id'], wf_instance_status))
 
+            # Updating workflow_instance with the status sent (success or failure).
+            wf_instance = workflow_service().get_workflow_instance(action_status['workflow_instance_id'])
+            workflow_service().update_workflow_instance_state(wf_instance, wf_instance_status)
+
+            # check if need to deactivate workflow and datastore.
+            if wf_instance_status == WorkflowInstanceState.FAILED:
+                workflow_id = wf_instance.data.worklow_id
+                master_workflow = workflow_service().get_workflow(workflow_id)
+
+                # Failed action with deactivate on_failure should deactivate the current workflow.
+                if current_action.data.on_failure == ActionOnFailure.DEACTIVATE:
+                    _logger.info("AWS_Batch: Updating workflow={0} to state {2}".format(master_workflow.id, WorkflowState.INACTIVE))
+                    workflow_service().update_workflow_state(master_workflow, WorkflowState.INACTIVE)
+                    if master_workflow.data.on_failure == WorkflowOnFailure.DEACTIVATE:
+                        datastore_id = master_workflow.data.datastore_id
+                        _logger.info("AWS_Batch: Updating datastore={0} to state {2}".format(datastore_id, DatastoreState.INACTIVE))
+                        datastore = datastore_service().get_datastore(datastore_id)
+                        datastore_service().update_datastore_state(datastore, DatastoreState.INACTIVE)
+
+    # if all pass we send success status (200) otherwise we will try again later.
     return {'result': "OK"}
 
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
@@ -158,7 +184,7 @@ def should_update(new_state, current_state):
     ORDERED_STATES = {'PENDING': 0, 'RUNNABLE': 1, 'STARTING': 2,
                       'RUNNING': 3, 'COMPLETED': 4, 'FAILED': 5, 'SUCCEEDED': 5}
 
-    _logger.info("new_state={0}, current_state={1}".format(new_state, current_user))
+    _logger.info("new_state={0}, current_state={1}".format(new_state, current_state))
     if not (new_state in list(ORDERED_STATES.keys())):
         return True
 
