@@ -320,21 +320,22 @@ class WorkflowService(object):
             workflow_instance_id=wf_instance.id,
         )
 
-        try:
-            ordered_wf_instance_actions = self._action_service.find_actions(workflow_instance_id=wf_instance.id)
-            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'), s3_client=boto3.client('s3'))
-            retries_on_failures = wf.data.retries_on_failures if hasattr(wf.data, 'retries_on_failures') else 0
-            wf_attribs = self.get_worflow_attributes(user_id=wf.data.user_id,
-                                                     workflow_id=wf.id,
-                                                     wf_instance_id=wf_instance.id,
-                                                     datastore_id=datastore.id)
-
-            batch_dag.generate_dag(ordered_actions=ordered_wf_instance_actions,
-                                   retries_on_failures=retries_on_failures,
-                                   wf_attributes=wf_attribs)
-        except Exception as err:
-            _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
-
+        # Disabling for now so we can test
+#        try:
+#            ordered_wf_instance_actions = self._action_service.find_actions(workflow_instance_id=wf_instance.id)
+#            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'), s3_client=boto3.client('s3'))
+#            retries_on_failures = wf.data.retries_on_failures if hasattr(wf.data, 'retries_on_failures') else 0
+#            wf_attribs = self.get_worflow_attributes(user_id=wf.data.user_id,
+#                                                     workflow_id=wf.id,
+#                                                     wf_instance_id=wf_instance.id,
+#                                                     datastore_id=datastore.id)
+#
+#            batch_dag.generate_dag(ordered_actions=ordered_wf_instance_actions,
+#                                   retries_on_failures=retries_on_failures,
+#                                   wf_attributes=wf_attribs)
+#        except Exception as err:
+#            _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
+#
         self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info':workflow_msg.get('log_info')})
 
 

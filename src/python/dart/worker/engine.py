@@ -150,13 +150,19 @@ class EngineWorker(Tool):
         _logger.info("AWS_Batch: job-name={0}, job_definition_name={1}".format(job_name, job_definition_name))
 
         try:
+            is_continue_on_failure = True if action.data.on_failure == "CONTINUE" else False
+            is_last_action = True if action.data.last_in_workflow else False
+            workflow_instance_id = action.data.workflow_instance_id
+            in_val = [{'name': 'is_continue_on_failure', 'value': str(is_continue_on_failure)}, {'name': 'is_last_action', 'value': str(is_last_action)}, {'name': 'workflow_instance_id', "value": workflow_instance_id}]
+
             response = boto3.client('batch').submit_job(jobName=job_name,
                                                         jobDefinition=self._get_latest_active_job_definition(job_definition_name),
                                                         jobQueue=self.batch_queue,
                                                         containerOverrides={
                                                             'environment':
                                                                 [{'name': 'DART_ACTION_ID', 'value': action.id},
-                                                                 {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
+                                                                 {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id},
+                                                                 {'name': 'input_env', 'value': json.dumps(in_val)}]
                                                         })
         except Exception as err:
             _logger.error('AWS_Batch: failed to run batch job-def-name={0}, reasons: {1}'.format(job_definition_name, err))
