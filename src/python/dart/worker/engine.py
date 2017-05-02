@@ -40,7 +40,8 @@ class EngineWorker(Tool):
         self._counter = Counter(transition_queued=1, transition_stale=85, transition_orphaned=60, scale_down=120)
 
         self.batch_queue = self.dart_config['aws_batch'].get('job_queue') # The AWS batch queue we place the jobs in
-        self.batch_job_suffix = self.dart_config['aws_batch'].get('job_definition_suffix') # e.g. stg/prd
+        self.batch_job_suffix = self.dart_config['aws_batch'].get('job_definition_suffix')  # e.g. stg/prd
+        self.sns_arn = self.dart_config['aws_batch'].get('sns_arn')  # different arn for stg/prd
 
     def run(self):
         time.sleep(self._sleep_seconds)
@@ -153,7 +154,10 @@ class EngineWorker(Tool):
             is_continue_on_failure = True if action.data.on_failure == "CONTINUE" else False
             is_last_action = True if action.data.last_in_workflow else False
             workflow_instance_id = action.data.workflow_instance_id
-            in_val = [{'name': 'is_continue_on_failure', 'value': str(is_continue_on_failure)}, {'name': 'is_last_action', 'value': str(is_last_action)}, {'name': 'workflow_instance_id', "value": workflow_instance_id}]
+            in_val = [{'name': 'is_continue_on_failure', 'value': str(is_continue_on_failure)},
+                      {'name': 'is_last_action', 'value': str(is_last_action)},
+                      {'name': 'sns_arn', 'value': str(self.sns_arn)},
+                      {'name': 'workflow_instance_id', "value": workflow_instance_id}]
 
             response = boto3.client('batch').submit_job(jobName=job_name,
                                                         jobDefinition=self._get_latest_active_job_definition(job_definition_name),
