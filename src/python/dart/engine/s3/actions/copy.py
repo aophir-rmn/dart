@@ -1,7 +1,9 @@
 import logging
 import boto3
 
+from datetime import datetime
 from dart.util.s3 import get_bucket_name, get_key_name
+from dart.util.s3 import substitute_date_tokens
 
 _logger = logging.getLogger(__name__)
 
@@ -66,6 +68,9 @@ def s3_copy(from_path, to_path, recursive):
     :return:
     """
     client = boto3.client('s3')
+    now = datetime.utcnow()
+    from_path = substitute_date_tokens(from_path, now)
+    to_path = substitute_date_tokens(to_path, now)
     if recursive:
         perform_s3_copy_recursive(client, from_path, to_path)
     else:

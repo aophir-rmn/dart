@@ -37,10 +37,11 @@ class EngineWorker(Tool):
         self._datastore_service = self.app_context.get(DatastoreService)
         self._trigger_proxy = self.app_context.get(TriggerProxy)
         self._sleep_seconds = 0.7
-        self._counter = Counter(transition_queued=1, transition_stale=1, transition_orphaned=60, scale_down=120)
+        self._counter = Counter(transition_queued=1, transition_stale=85, transition_orphaned=60, scale_down=120)
 
         self.batch_queue = self.dart_config['aws_batch'].get('job_queue') # The AWS batch queue we place the jobs in
-        self.batch_job_suffix = self.dart_config['aws_batch'].get('job_definition_suffix') # e.g. stg/prd
+        self.batch_job_suffix = self.dart_config['aws_batch'].get('job_definition_suffix')  # e.g. stg/prd
+        self.sns_arn = self.dart_config['aws_batch'].get('sns_arn')  # different arn for stg/prd
 
     def run(self):
         time.sleep(self._sleep_seconds)
@@ -150,13 +151,22 @@ class EngineWorker(Tool):
         _logger.info("AWS_Batch: job-name={0}, job_definition_name={1}".format(job_name, job_definition_name))
 
         try:
+            is_continue_on_failure = True if action.data.on_failure == "CONTINUE" else False
+            is_last_action = True if action.data.last_in_workflow else False
+            workflow_instance_id = action.data.workflow_instance_id
+            in_val = [{'name': 'is_continue_on_failure', 'value': str(is_continue_on_failure)},
+                      {'name': 'is_last_action', 'value': str(is_last_action)},
+                      {'name': 'sns_arn', 'value': str(self.sns_arn)},
+                      {'name': 'workflow_instance_id', "value": workflow_instance_id}]
+
             response = boto3.client('batch').submit_job(jobName=job_name,
                                                         jobDefinition=self._get_latest_active_job_definition(job_definition_name),
                                                         jobQueue=self.batch_queue,
                                                         containerOverrides={
                                                             'environment':
                                                                 [{'name': 'DART_ACTION_ID', 'value': action.id},
-                                                                 {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id}]
+                                                                 {'name': 'DART_ACTION_USER_ID', 'value': datastore_user_id},
+                                                                 {'name': 'input_env', 'value': json.dumps(in_val)}]
                                                         })
         except Exception as err:
             _logger.error('AWS_Batch: failed to run batch job-def-name={0}, reasons: {1}'.format(job_definition_name, err))
@@ -165,15 +175,24 @@ class EngineWorker(Tool):
         _logger.info("AWS_Batch: job_id = {0} for job_name={1}".format(response['jobId'], job_name))
         return response['jobId']
 
+    @staticmethod
+    def _batch_job_failed(client, batch_job_id):
+        jobs = client.describe_jobs(jobs=[batch_job_id])
+        try:
+            return jobs['jobs'][0]['status'] == 'FAILED'
+        except:
+            return False
+
+
     def _transition_stale_pending_actions_to_queued(self):
         _logger.info('transitioning stale actions to queued')
-
+        client = boto3.client('batch')
         action_service = self._action_service
         assert isinstance(action_service, ActionService)
         actions = action_service.find_stale_pending_actions()
         for action in actions:
             _logger.error('found stale action with id: %s' % action.id)
-            if action.data.batch_job_id:
+            if action.data.batch_job_id and self._batch_job_failed(client, action.data.batch_job_id):
                 # If action already has a batch_job_id, it has already tried creating the container on batch and failed.
                 action_service.update_action_state(
                     action=action,
@@ -182,13 +201,7 @@ class EngineWorker(Tool):
                     conditional=lambda a: a.data.state == ActionState.PENDING
                 )
                 self._trigger_proxy.complete_action(action.id, ActionState.FAILED, action.data.error_message)
-            else:
-                action_service.update_action_state(
-                    action=action,
-                    state=ActionState.QUEUED,
-                    error_message=action.data.error_message,
-                    conditional=lambda a: a.data.state == ActionState.PENDING
-                )
+
 
     @staticmethod
     def _launch_in_memory_engine(engine, engine_instance, action, datastore_user_id):

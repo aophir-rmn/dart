@@ -21,7 +21,8 @@ class ActionRunner(object):
             try:
                 input_env = self.parse_input_env(input_env_str)
 
-                self.is_continue_on_failure = self.extract_input_value(input_env, 'is_continue_on_failure')
+                self.is_continue_on_failure = self.extract_input_value(input_env, 'is_continue_on_failure', True)
+                self.is_last_action = self.extract_input_value(input_env, 'is_last_action', True)
                 self.workflow_instance_id = self.extract_input_value(input_env, 'workflow_instance_id')
                 self.sns_arn = self.extract_input_value(input_env, 'sns_arn')
                 _logger.info("is_continue_on_failure={0},  wf_instance_id={1}, sns_arn={2}".
