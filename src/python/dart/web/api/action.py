@@ -136,13 +136,13 @@ def update_action_state():
 
         # if we receive a workflow_instance_id (not empty) then we need to set workflow_instance status.
         # we may need to set workflow and datastore status if they need to be deactivated on failure.
-        if action_status['workflow_instance_id']:
+        if action_status.get('workflow_instance_id'):
             wfs = action_status.get('workflow_instance_status')
             wf_instance_status = WorkflowInstanceState.FAILED if (wfs == 'FAILED') else WorkflowInstanceState.COMPLETED
-            _logger.info("AWS_Batch: Updating workflow_instance={0} to state {2}".format(action_status['workflow_instance_id'], wf_instance_status))
+            _logger.info("AWS_Batch: Updating workflow_instance={0} to state {1}".format(action_status.get('workflow_instance_id'), wf_instance_status))
 
             # Updating workflow_instance with the status sent (success or failure).
-            wf_instance = workflow_service().get_workflow_instance(action_status['workflow_instance_id'])
+            wf_instance = workflow_service().get_workflow_instance(action_status.get('workflow_instance_id'))
             workflow_service().update_workflow_instance_state(wf_instance, wf_instance_status)
 
             # check if need to deactivate workflow and datastore.
