@@ -154,7 +154,7 @@ def update_action_state():
 
                 # check if need to deactivate workflow and datastore.
                 if wf_instance_status == WorkflowInstanceState.FAILED:
-                    workflow_id = wf_instance.data.worklow_id
+                    workflow_id = wf_instance.data.workflow_id
                     master_workflow = workflow_service().get_workflow(workflow_id)
 
                     # Failed action with deactivate on_failure should deactivate the current workflow.
