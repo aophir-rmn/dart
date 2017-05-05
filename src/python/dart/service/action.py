@@ -228,6 +228,8 @@ class ActionService(object):
             action.data.start_time = datetime.now()
         elif state == ActionState.FAILED:
             action.data.end_time = datetime.now()
+        elif state == ActionState.ENDED:
+            action.data.end_time = datetime.now()
         elif state == ActionState.COMPLETED:
             action.data.end_time = datetime.now()
             action.data.progress = 1
