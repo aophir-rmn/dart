@@ -25,12 +25,12 @@ class ActionRunner(object):
                 self.is_last_action = self.extract_input_value(input_env, 'is_last_action', True)
                 self.workflow_instance_id = self.extract_input_value(input_env, 'workflow_instance_id')
                 self.sns_arn = self.extract_input_value(input_env, 'sns_arn')
+                self.retries_on_failures = int(self.extract_input_value(input_env, 'retries_on_failures'))
                 _logger.info("is_continue_on_failure={0},  wf_instance_id={1}, sns_arn={2}".
                              format(self.is_continue_on_failure, self.workflow_instance_id, self.sns_arn))
             except Exception as err:
                 _logger.error("input_env {0} could not be parsed. err={1}".format(input_env_str, err))
-                # for now the additional input_env_var is not added to engines so we do not support raissing an error yet.
-                ### TODO -- raise ValueError(str(err))
+                raise ValueError(str(err))
         else:
             _logger.warn("no 'input_env' env variable provided.")
 
@@ -166,7 +166,7 @@ class ActionRunner(object):
         # 1. Report the correct action status to DART.
         # The only time we report the state of this action as SUCCEEDED when it is actually FAILED is when
         # is_continue_on_failure == True, so this is the only time we need to update The action state against DART
-        if (sns_message['action_status'] == 'FAILED') and is_continue_on_failure:
+        if (sns_message['action_status'] == 'SUCCEEDED') or ((sns_message['action_status'] == 'FAILED') and is_continue_on_failure):
             # The workflow is not failed on a failed action when is_continue_on_failure == True
             # Even a last action does not effect the workflow_instance status if is_continue_on_failure==True
             try:
