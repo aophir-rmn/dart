@@ -192,7 +192,7 @@ def should_update(new_state, current_state):
              if current_state is SUCCEEDED and new_state is RUNNING then we should NOT update.
     '''
     ORDERED_STATES = {'PENDING': 0, 'RUNNABLE': 1, 'STARTING': 2,
-                      'RUNNING': 3, 'ENDED': 40, 'COMPLETED': 5, 'FAILED': 6, 'SUCCEEDED': 6}
+                      'RUNNING': 3, 'ENDED': 4, 'COMPLETED': 5, 'FAILED': 6, 'SUCCEEDED': 6}
 
     _logger.info("new_state={0}, current_state={1}".format(new_state, current_state))
     if not (new_state in list(ORDERED_STATES.keys())):
