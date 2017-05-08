@@ -324,11 +324,11 @@ class WorkflowService(object):
 #        try:
 #            ordered_wf_instance_actions = self._action_service.find_actions(workflow_instance_id=wf_instance.id)
 #            batch_dag = AWS_Batch_Dag(config_metadata=get_key, client=boto3.client('batch'), s3_client=boto3.client('s3'))
-#            retries_on_failures = wf.data.retries_on_failures if hasattr(wf.data, 'retries_on_failures') else 0
-#            wf_attribs = self.get_worflow_attributes(user_id=wf.data.user_id,
-#                                                     workflow_id=wf.id,
-#                                                     wf_instance_id=wf_instance.id,
-#                                                     datastore_id=datastore.id)
+#            retries_on_failures = str(wf.data.retries_on_failures) if hasattr(wf.data, 'retries_on_failures') else '0'
+#            wf_attribs = self.get_workflow_attributes(user_id=wf.data.user_id,
+#                                                      workflow_id=wf.id,
+#                                                      wf_instance_id=wf_instance.id,
+#                                                      datastore_id=datastore.id)
 #
 #            batch_dag.generate_dag(ordered_actions=ordered_wf_instance_actions,
 #                                   retries_on_failures=retries_on_failures,
@@ -339,7 +339,7 @@ class WorkflowService(object):
         self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info':workflow_msg.get('log_info')})
 
 
-    def get_worflow_attributes(self, user_id, workflow_id, wf_instance_id, datastore_id):
+    def get_workflow_attributes(self, user_id, workflow_id, wf_instance_id, datastore_id):
         wf_attribs = {
             "user_id": user_id,
             "workflow_id": workflow_id,

@@ -157,7 +157,8 @@ class EngineWorker(Tool):
             in_val = [{'name': 'is_continue_on_failure', 'value': str(is_continue_on_failure)},
                       {'name': 'is_last_action', 'value': str(is_last_action)},
                       {'name': 'sns_arn', 'value': str(self.sns_arn)},
-                      {'name': 'workflow_instance_id', "value": workflow_instance_id}]
+                      {'name': 'workflow_instance_id', "value": workflow_instance_id},
+                      {'name': 'retries_on_failures', "value": "3"}]
 
             response = boto3.client('batch').submit_job(jobName=job_name,
                                                         jobDefinition=self._get_latest_active_job_definition(job_definition_name),
