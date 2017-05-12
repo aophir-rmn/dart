@@ -38,14 +38,13 @@ class AWS_Batch_Dag(object):
         previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch
         for idx, oaction in enumerate(ordered_actions):
 
-            cmd = ["printenv"] # TODO - cmd should not exist with real actions. We use the default cmd.
             dependency = []
             if previous_jobs:
                 dependency = [{'jobId': previous_jobs[-1]}]
 
             action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
             try:
-                job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, cmd, action_env)
+                job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
                 previous_jobs.append(job_id)
                 _logger.info("AWS_Batch: launched job={0}, wf_id={1}, wf_insatnce_id={2}".
@@ -58,22 +57,22 @@ class AWS_Batch_Dag(object):
         _logger.info("AWS_Batch: Done building workflow {0} with jobs: {1}".
                      format(wf_attribs['workflow_id'], previous_jobs))
 
-    def submit_job(self, wf_attribs, idx, oaction, last_action_index, dependency, cmd, action_env):
+    def submit_job(self, wf_attribs, idx, oaction, last_action_index, dependency, action_env):
         job_name = self.generate_job_name(wf_attribs['workflow_id'], oaction.data.order_idx, oaction.data.name, self.job_definition_suffix)
-        _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
+        _logger.info("AWS_Batch: job-name={0}, dependsOn={1}".format(job_name, dependency))
 
         # submit_job is sensitive to None value in env variables so we wrap them with str(..)
         input_env = json.dumps(self.generate_env_vars(wf_attribs, action_env, idx == 0, idx == last_action_index))
         response = self.client.submit_job(jobName=job_name,
                                           # SNS to notify workflow completion and action completion
-                                          jobDefinition=self.get_latest_active_job_definition('test_unix', self.job_definition_suffix, self.client.describe_job_definitions),
+                                          jobDefinition=self.get_latest_active_job_definition(oaction.data.engine_name, self.job_definition_suffix, self.client.describe_job_definitions),
                                           jobQueue=self.job_queue,
                                           dependsOn=dependency,
                                           containerOverrides={
-                                              'command': cmd,
                                               'environment': [
                                                   {'name': 'input_env', 'value': input_env}, # passing execution info to job
-                                                  {'name': 'ACTION_ID', 'value': str(oaction.id)},
+                                                  {'name': 'DART_ACTION_ID', 'value': str(oaction.id)},
+                                                  {'name': 'DART_ACTION_USER_ID', 'value': str(oaction.data.user_id)},
                                                   {'name': 'DART_CONFIG', 'value': str(self.dart_config)},
                                                   {'name': 'DART_ROLE', 'value': "worker:{0}".format(oaction.data.engine_name)},  # An implicit convention
                                                   {'name': 'DART_URL', 'value': str(self.dart_url)}, # Used by abacus to access data lineage
