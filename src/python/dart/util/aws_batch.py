@@ -7,9 +7,14 @@ _logger = logging.getLogger(__name__)
 
 
 class AWS_Batch_Dag(object):
-    def __init__(self, config_metadata, client, s3_client):
-        # TODO: remove - we should use the action.data.engine_name value
-        self.job_definition = config_metadata(['aws_batch', 'job_definition'])
+    def __init__(self, config_metadata, client, s3_client, action_batch_job_id_updater):
+        """
+        :param confiog_metadata: the dart.yaml config file as dictionary
+        :param client: the batch voto3 client
+        :param s3_client: the s3 boto3 client
+        :param action_batch_job_id_updater: action_service.update_action_batch_job_id function
+        """
+        self.action_batch_job_id_updater = action_batch_job_id_updater
 
         # to discern between prd/stg images
         self.job_definition_suffix = config_metadata(['aws_batch', 'job_definition_suffix'])
@@ -26,8 +31,8 @@ class AWS_Batch_Dag(object):
 
         self.client = client
         self.s3_client = s3_client  # TODO: for input/output
-        _logger.info("AWS_Batch: using job_definition={0} and job_queue={1}".
-                     format(self.job_definition, self.job_queue))
+        _logger.info("AWS_Batch: using job_definition_suffix={0} and job_queue={1}".
+                     format(self.job_definition_suffix, self.job_queue))
 
     def generate_dag(self, ordered_actions, retries_on_failures, wf_attributes):
         if not ordered_actions or not all(isinstance(x, Action) for x in ordered_actions):
@@ -46,6 +51,8 @@ class AWS_Batch_Dag(object):
             try:
                 job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
+                #  job_id in action is needed so lookup_credentials(action) in action_runner.py would work correctly.
+                self.action_batch_job_id_updater(oaction, job_id)
                 previous_jobs.append(job_id)
                 _logger.info("AWS_Batch: launched job={0}, wf_id={1}, wf_insatnce_id={2}".
                              format(job_id, wf_attribs['workflow_id'], wf_attribs['workflow_instance_id']))

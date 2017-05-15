@@ -83,17 +83,6 @@ class SqsJsonMessageBroker(MessageBroker):
                 self.queue.delete_message(sqs_message)
                 return
 
-            if message.state in [MessageState.RUNNING]:
-                # the DB says its running, but is it REALLY running?
-                batch_job_status = self._message_service.get_batch_job_status(message)
-                if batch_job_status == 'RUNNING':
-                    # ok, it was really running.  return and let the visibility timeout resend the message later
-                    return
-                if not batch_job_status or batch_job_status == 'STOPPED':
-                    # it seems the container was lost, so mark this message as failed
-                    previous_handler_failed = True
-                    result_state = MessageState.FAILED
-
         handler(sqs_message.id, sqs_message_body, previous_handler_failed)
         self._message_service.update_message_state(message, result_state)
         self.queue.delete_message(sqs_message)
