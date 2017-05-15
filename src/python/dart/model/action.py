@@ -39,7 +39,6 @@ class ActionState(object):
     FINISHING = 'FINISHING'
     COMPLETED = 'COMPLETED'
     FAILED = 'FAILED'
-    ENDED = 'ENDED' # means the action finished but we do not know whether it FAILED or COMPLETED successfully
     SKIPPED = 'SKIPPED'
     TEMPLATE = 'TEMPLATE'
 

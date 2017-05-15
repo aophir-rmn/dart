@@ -228,8 +228,6 @@ class ActionService(object):
             action.data.start_time = datetime.now()
         elif state == ActionState.FAILED:
             action.data.end_time = datetime.now()
-        elif state == ActionState.ENDED:
-            action.data.end_time = datetime.now()
         elif state == ActionState.COMPLETED:
             action.data.end_time = datetime.now()
             action.data.progress = 1
@@ -297,7 +295,7 @@ class ActionService(object):
         action = source_action.copy()
         assert isinstance(action, Action)
         action.data.workflow_action_id = source_action.id
-        action.data.state = ActionState.HAS_NEVER_RUN
+        action.data.state = ActionState.PENDING
         action.data.progress = None
         action.data.queued_time = None
         action.data.start_time = None

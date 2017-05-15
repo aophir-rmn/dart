@@ -7,9 +7,14 @@ _logger = logging.getLogger(__name__)
 
 
 class AWS_Batch_Dag(object):
-    def __init__(self, config_metadata, client, s3_client):
-        # TODO: remove - we should use the action.data.engine_name value
-        self.job_definition = config_metadata(['aws_batch', 'job_definition'])
+    def __init__(self, config_metadata, client, s3_client, action_batch_job_id_updater):
+        """
+        :param confiog_metadata: the dart.yaml config file as dictionary
+        :param client: the batch voto3 client
+        :param s3_client: the s3 boto3 client
+        :param action_batch_job_id_updater: action_service.update_action_batch_job_id function
+        """
+        self.action_batch_job_id_updater = action_batch_job_id_updater
 
         # to discern between prd/stg images
         self.job_definition_suffix = config_metadata(['aws_batch', 'job_definition_suffix'])
@@ -26,8 +31,8 @@ class AWS_Batch_Dag(object):
 
         self.client = client
         self.s3_client = s3_client  # TODO: for input/output
-        _logger.info("AWS_Batch: using job_definition={0} and job_queue={1}".
-                     format(self.job_definition, self.job_queue))
+        _logger.info("AWS_Batch: using job_definition_suffix={0} and job_queue={1}".
+                     format(self.job_definition_suffix, self.job_queue))
 
     def generate_dag(self, ordered_actions, retries_on_failures, wf_attributes):
         if not ordered_actions or not all(isinstance(x, Action) for x in ordered_actions):
@@ -38,15 +43,16 @@ class AWS_Batch_Dag(object):
         previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch
         for idx, oaction in enumerate(ordered_actions):
 
-            cmd = ["printenv"] # TODO - cmd should not exist with real actions. We use the default cmd.
             dependency = []
             if previous_jobs:
                 dependency = [{'jobId': previous_jobs[-1]}]
 
             action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
             try:
-                job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, cmd, action_env)
+                job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
+                #  job_id in action is needed so lookup_credentials(action) in action_runner.py would work correctly.
+                self.action_batch_job_id_updater(oaction, job_id)
                 previous_jobs.append(job_id)
                 _logger.info("AWS_Batch: launched job={0}, wf_id={1}, wf_insatnce_id={2}".
                              format(job_id, wf_attribs['workflow_id'], wf_attribs['workflow_instance_id']))
@@ -58,22 +64,22 @@ class AWS_Batch_Dag(object):
         _logger.info("AWS_Batch: Done building workflow {0} with jobs: {1}".
                      format(wf_attribs['workflow_id'], previous_jobs))
 
-    def submit_job(self, wf_attribs, idx, oaction, last_action_index, dependency, cmd, action_env):
+    def submit_job(self, wf_attribs, idx, oaction, last_action_index, dependency, action_env):
         job_name = self.generate_job_name(wf_attribs['workflow_id'], oaction.data.order_idx, oaction.data.name, self.job_definition_suffix)
-        _logger.info("AWS_Batch: job-name={0}, dependsOn={1}, cmd={2}".format(job_name, dependency, cmd))
+        _logger.info("AWS_Batch: job-name={0}, dependsOn={1}".format(job_name, dependency))
 
         # submit_job is sensitive to None value in env variables so we wrap them with str(..)
         input_env = json.dumps(self.generate_env_vars(wf_attribs, action_env, idx == 0, idx == last_action_index))
         response = self.client.submit_job(jobName=job_name,
                                           # SNS to notify workflow completion and action completion
-                                          jobDefinition=self.get_latest_active_job_definition('test_unix', self.job_definition_suffix, self.client.describe_job_definitions),
+                                          jobDefinition=self.get_latest_active_job_definition(oaction.data.engine_name, self.job_definition_suffix, self.client.describe_job_definitions),
                                           jobQueue=self.job_queue,
                                           dependsOn=dependency,
                                           containerOverrides={
-                                              'command': cmd,
                                               'environment': [
                                                   {'name': 'input_env', 'value': input_env}, # passing execution info to job
-                                                  {'name': 'ACTION_ID', 'value': str(oaction.id)},
+                                                  {'name': 'DART_ACTION_ID', 'value': str(oaction.id)},
+                                                  {'name': 'DART_ACTION_USER_ID', 'value': str(oaction.data.user_id)},
                                                   {'name': 'DART_CONFIG', 'value': str(self.dart_config)},
                                                   {'name': 'DART_ROLE', 'value': "worker:{0}".format(oaction.data.engine_name)},  # An implicit convention
                                                   {'name': 'DART_URL', 'value': str(self.dart_url)}, # Used by abacus to access data lineage

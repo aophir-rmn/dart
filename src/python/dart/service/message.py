@@ -40,7 +40,10 @@ class MessageService(object):
 
     # http://boto3.readthedocs.io/en/latest/reference/services/batch.html#Batch.Client.describe_jobs
     def get_batch_job_status_direct(self, job_id):
-        result = self.conn.describe_jobs([job_id])
+        if not job_id:
+            return None  # we commented out the call to this flow from broker.py:receive_message().
+
+        result = self.conn.describe_jobs(jobs=[job_id])
         jobs = result['jobs']
         if len(jobs) == 0:
             return None
