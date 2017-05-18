@@ -2,6 +2,7 @@ import re
 import json
 from dart.model.action import Action
 import logging
+from itertools import groupby
 
 _logger = logging.getLogger(__name__)
 
@@ -34,32 +35,35 @@ class AWS_Batch_Dag(object):
         _logger.info("AWS_Batch: using job_definition_suffix={0} and job_queue={1}".
                      format(self.job_definition_suffix, self.job_queue))
 
-    def generate_dag(self, ordered_actions, retries_on_failures, wf_attributes):
-        if not ordered_actions or not all(isinstance(x, Action) for x in ordered_actions):
-            raise ValueError('Must receive actions in order to build a DAG. action={0}'.format(ordered_actions))
+    def generate_dag(self, single_ordered_wf_instance_actions, retries_on_failures, wf_attributes):
+        if not single_ordered_wf_instance_actions:
+            raise ValueError('Must receive actions in order to build a DAG. action={0}'.format(single_ordered_wf_instance_actions))
         #        self.create_s3_bucket_for_workflow_io(wf_attribs['workflow_instance_id'])
 
+        ordered_actions = self.group_actions_for_parallelization(single_ordered_wf_instance_actions)
         wf_attribs = self.create_workflow_attributes_dict(wf_attributes, retries_on_failures, ordered_actions, self.sns_arn)
-        previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch
-        for idx, oaction in enumerate(ordered_actions):
-
+        all_previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch, so we can cancel if needed
+        previous_jobs = []  # will hold an array of jobIds, one per each action group so we can build dependency
+        for idx, grouped_actions in enumerate(ordered_actions):
             dependency = []
             if previous_jobs:
-                dependency = [{'jobId': previous_jobs[-1]}]
+                dependency = [{'jobId': job} for job in previous_jobs]
+            previous_jobs = []
+            for oaction in grouped_actions:
+                action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
+                try:
+                    job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
-            action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
-            try:
-                job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
-
-                #  job_id in action is needed so lookup_credentials(action) in action_runner.py would work correctly.
-                self.action_batch_job_id_updater(oaction, job_id)
-                previous_jobs.append(job_id)
-                _logger.info("AWS_Batch: launched job={0}, wf_id={1}, wf_insatnce_id={2}".
-                             format(job_id, wf_attribs['workflow_id'], wf_attribs['workflow_instance_id']))
-            except Exception as err:
-                _logger.error("AWS_Batch: DAG-err={0}".format(err))
-                self.cancel_previous_jobs(previous_jobs)
-                raise
+                    #  job_id in action is needed so lookup_credentials(action) in action_runner.py would work correctly.
+                    self.action_batch_job_id_updater(oaction, job_id)
+                    previous_jobs.append(job_id)
+                    all_previous_jobs.append(job_id)
+                    _logger.info("AWS_Batch: launched job={0}, wf_id={1}, wf_insatnce_id={2}".
+                                 format(job_id, wf_attribs['workflow_id'], wf_attribs['workflow_instance_id']))
+                except Exception as err:
+                    _logger.error("AWS_Batch: DAG-err={0}".format(err))
+                    self.cancel_previous_jobs(all_previous_jobs)
+                    raise
 
         _logger.info("AWS_Batch: Done building workflow {0} with jobs: {1}".
                      format(wf_attribs['workflow_id'], previous_jobs))
@@ -88,6 +92,76 @@ class AWS_Batch_Dag(object):
                                           })
         _logger.info("AWS_Batch: response={0}".format(response))
         return response['jobId']
+
+    @staticmethod
+    def group_actions_for_parallelization(single_ordered_wf_instance_actions):
+        ''' We use the parallelization_idx attribute to group action for parallel execution.
+            Reverting to order_idx if parallelization_idx do not exist in all actions.
+
+            # ordering all actions together (parallelization_idx same for all actions)
+            >>> fake_actions = [FakeAction() for i in range(3)]
+            >>> fake_actions[2].data.order_idx=20
+            >>> assert(len(fake_actions) == 3)
+            >>> ordered_groups = cls.group_actions_for_parallelization(fake_actions)
+            >>> len(ordered_groups)
+            2
+            >>> len(ordered_groups[0])
+            2
+            >>> ordered_groups[0][1].data.order_idx
+            1
+
+            # ordering actions in three groups (2,2,1) - using parallelization_idx
+            >>> fake_actions = [FakeAction() for i in range(5)]
+            >>> assert(len(fake_actions) == 5)
+            >>> p_idx = [10,10,20,20,30] # (a 2,1,2, grouping)
+            >>> for idx, fa in enumerate(fake_actions):
+            ...     fa.data.parallelization_idx = p_idx[idx]
+            >>> ordered_groups = cls.group_actions_for_parallelization(fake_actions)
+            >>> len(ordered_groups)
+            3
+            >>> len(ordered_groups[0])
+            2
+            >>> ordered_groups[0][1].data.parallelization_idx
+            10
+
+            # ordering actions in two groups (4,1) - using order_idx
+            >>> fake_actions = [FakeAction() for i in range(5)]
+            >>> fake_actions[0].data.parallelization_idx = None # if any parallelization_idx is missing we use order_idx
+            >>> assert(len(fake_actions) == 5)
+            >>> order_idx = [11, 11, 11, 11,33] # (a 4,1 grouping)
+            >>> for idx, fa in enumerate(fake_actions):
+            ...     fa.data.order_idx = order_idx[idx]
+            >>> ordered_groups = cls.group_actions_for_parallelization(fake_actions)
+            >>> len(ordered_groups)
+            2
+            >>> len(ordered_groups[0])
+            4
+            >>> ordered_groups[1][0].data.order_idx
+            33
+        '''
+        ordered_wf_instance_actions = []
+
+        # do all actions have parallelization_order_idx field?
+        parallelization_indexes = [(hasattr(action.data, 'parallelization_idx') and action.data.parallelization_idx != None) for action in single_ordered_wf_instance_actions]
+        if all(parallelization_indexes):
+            ordered_wf_instance_actions = [list(val) for key, val in groupby(single_ordered_wf_instance_actions,
+                                                                            lambda x: x.data.parallelization_idx)]
+        else:
+            if any(parallelization_indexes):
+                _logger.warning("AWS_Batch: Some actions are missing parallelization_idx, switching to use order_idx instead {0}".format(parallelization_indexes))
+
+            # when an action's parallelization_idx is missing we will use the order_idx for all actions
+            ordered_wf_instance_actions = [list(val) for key, val in groupby(single_ordered_wf_instance_actions,
+                                                                             lambda action: action.data.order_idx)]
+
+        # We require that any workflow with more than one action executing in parallel as the last "action", e.g. 1,1,2
+        # needs to have a mo-op sink node that will be used to mark the end of of the workflow, i.e. data.last_in_workflow = True
+        # we fail the workflow if it is not present. Event hough we can add such a 'sink' action ourselves it should be
+        # the user's responsibility so as not to change the WF she views in DART.
+        if ordered_wf_instance_actions and ordered_wf_instance_actions[-1] and len(ordered_wf_instance_actions[-1]) > 1:
+            raise ValueError('Workflow last step must be a single action. {0}'.format(ordered_wf_instance_actions))
+
+        return ordered_wf_instance_actions
 
     @staticmethod
     def get_latest_active_job_definition(job_def_name, job_definition_suffix, describe_job_definitions_func):
@@ -281,6 +355,21 @@ if __name__ == "__main__":
     def describe_job_definitions_func_success(jobDefinitionName, status):
         return {'jobDefinitions': [{'revision': 2, 'jobDefinitionArn': 'arn-2'}, {'revision': 3, 'jobDefinitionArn': 'arn-3'}, {'revision': 1, 'jobDefinitionArn': 'arn-1'}]}
 
-    doctest.testmod(extraglobs={'cls': AWS_Batch_Dag(fake_config, None, None),
+    class FakeData(object):
+        def __init__(self):
+            self.__dict__.update({'order_idx': 1, 'parallelization_idx': 0})
+
+        def str(self):
+            print self.order_idx
+
+    class FakeAction(object):
+        def __init__(self):
+            self.__dict__.update({'data': FakeData()})
+
+        def str(self):
+            print self.data
+
+    doctest.testmod(extraglobs={'cls': AWS_Batch_Dag(fake_config, None, None, None),
+                                'FakeAction': FakeAction,
                                 'describe_job_definitions_func_fail': describe_job_definitions_func_fail,
                                 'describe_job_definitions_func_success': describe_job_definitions_func_success})
