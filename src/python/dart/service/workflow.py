@@ -16,7 +16,6 @@ from dart.util.aws_batch import AWS_Batch_Dag
 from dart.util.config_metadata import get_key
 import boto3
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -320,9 +319,7 @@ class WorkflowService(object):
             workflow_instance_id=wf_instance.id,
         )
 
-        # Disabling for now so we can test
         try:
-            ordered_wf_instance_actions = self._action_service.find_actions(workflow_instance_id=wf_instance.id)
             batch_dag = AWS_Batch_Dag(config_metadata=get_key,
                                       client=boto3.client('batch'),
                                       s3_client=boto3.client('s3'),
@@ -334,14 +331,14 @@ class WorkflowService(object):
                                                       wf_instance_id=wf_instance.id,
                                                       datastore_id=datastore.id)
 
-            batch_dag.generate_dag(ordered_actions=ordered_wf_instance_actions,
+            single_ordered_wf_instance_actions = self._action_service.find_actions(workflow_instance_id=wf_instance.id)
+            batch_dag.generate_dag(single_ordered_wf_instance_actions=single_ordered_wf_instance_actions,
                                    retries_on_failures=retries_on_failures,
                                    wf_attributes=wf_attribs)
 
         except Exception as err:
             _logger.error("AWS_Batch: Error building AWS DAG. err={0}".format(err))
             self.update_workflow_instance_state(wf_instance, WorkflowInstanceState.FAILED, error_message=str(err))
-
 
     def get_workflow_attributes(self, user_id, workflow_id, wf_instance_id, datastore_id):
         wf_attribs = {
@@ -353,3 +350,6 @@ class WorkflowService(object):
 
         _logger.info("AWS_Batch: building workflow attributes {0}".format(wf_attribs))
         return wf_attribs
+
+
+
