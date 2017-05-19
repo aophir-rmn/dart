@@ -124,57 +124,54 @@ def put_action(action):
 def update_action_state():
     """ :type action: dart.model.action.Action """
 
-    # Temporary hiding out the code
-    return {'result': "OK"}, 200
+    # we receive a list of {action_id, action_status, workflow_instance_id/status}
+    # We will update the database for each such entry
+    try:
+        action_status_updates = request.get_json()
+        _logger.info("AWS_Batch: extracted json from request: {0}".format(action_status_updates))
+    except Exception as err:
+        _logger.error("AWS_Batch: Failed to extract json from request")
+        return {'result': str(err)}, 500
 
-###    # we receive a list of {action_id, action_status, workflow_instance_id/status}
-###    # We will update the database for each such entry
-###    try:
-###        action_status_updates = request.get_json()
-###        _logger.info("AWS_Batch: extracted json from request: {0}".format(action_status_updates))
-###    except Exception as err:
-###        _logger.error("AWS_Batch: Failed to extract json from request")
-###        return {'result': str(err)}, 500
-###
-###    try:
-###        for action_status in action_status_updates:
-###            # updating the action state
-###            current_action = action_service().get_action(action_status['action_id'])
-###            if should_update(action_status['action_status'], current_action.data.state):
-###                _logger.info("AWS_Batch: Updating action={0} from {1} to state {2}".format(current_action.id, current_action.data.state, action_status['action_status']))
-###                action_service().update_action_state(current_action, action_status['action_status'], "")
-###
-###            # if we receive a workflow_instance_id (not empty) then we need to set workflow_instance status.
-###            # we may need to set workflow and datastore status if they need to be deactivated on failure.
-###            if action_status.get('workflow_instance_id'):
-###                wfs = action_status.get('workflow_instance_status')
-###                wf_instance_status = WorkflowInstanceState.FAILED if (wfs == 'FAILED') else WorkflowInstanceState.COMPLETED
-###                _logger.info("AWS_Batch: Updating workflow_instance={0} to state {1}".format(action_status.get('workflow_instance_id'), wf_instance_status))
-###
-###                # Updating workflow_instance with the status sent (success or failure).
-###                wf_instance = workflow_service().get_workflow_instance(action_status.get('workflow_instance_id'))
-###                workflow_service().update_workflow_instance_state(wf_instance, wf_instance_status)
-###
-###                # check if need to deactivate workflow and datastore.
-###                if wf_instance_status == WorkflowInstanceState.FAILED:
-###                    workflow_id = wf_instance.data.workflow_id
-###                    master_workflow = workflow_service().get_workflow(workflow_id)
-###
-###                    # Failed action with deactivate on_failure should deactivate the current workflow.
-###                    if current_action.data.on_failure == ActionOnFailure.DEACTIVATE:
-###                        _logger.info("AWS_Batch: Updating workflow={0} to state {2}".format(master_workflow.id, WorkflowState.INACTIVE))
-###                        workflow_service().update_workflow_state(master_workflow, WorkflowState.INACTIVE)
-###                        if master_workflow.data.on_failure == WorkflowOnFailure.DEACTIVATE:
-###                            datastore_id = master_workflow.data.datastore_id
-###                            _logger.info("AWS_Batch: Updating datastore={0} to state {2}".format(datastore_id, DatastoreState.INACTIVE))
-###                            datastore = datastore_service().get_datastore(datastore_id)
-###                            datastore_service().update_datastore_state(datastore, DatastoreState.INACTIVE)
-###    except Exception as err:
-###        _logger.error("AWS_Batch: Failed to update action state. err= {0}".format(err))
-###        return {'result': str(err)}, 501
-###
-###    # if all pass we send success status (200) otherwise we will try again later.
-###    return {'result': "OK"}, 200
+    try:
+        for action_status in action_status_updates:
+            # updating the action state
+            current_action = action_service().get_action(action_status['action_id'])
+            if should_update(action_status['action_status'], current_action.data.state):
+                _logger.info("AWS_Batch: Updating action={0} from {1} to state {2}".format(current_action.id, current_action.data.state, action_status['action_status']))
+                action_service().update_action_state(current_action, action_status['action_status'], "")
+
+            # if we receive a workflow_instance_id (not empty) then we need to set workflow_instance status.
+            # we may need to set workflow and datastore status if they need to be deactivated on failure.
+            if action_status.get('workflow_instance_id'):
+                wfs = action_status.get('workflow_instance_status')
+                wf_instance_status = WorkflowInstanceState.FAILED if (wfs == 'FAILED') else WorkflowInstanceState.COMPLETED
+                _logger.info("AWS_Batch: Updating workflow_instance={0} to state {1}".format(action_status.get('workflow_instance_id'), wf_instance_status))
+
+                # Updating workflow_instance with the status sent (success or failure).
+                wf_instance = workflow_service().get_workflow_instance(action_status.get('workflow_instance_id'))
+                workflow_service().update_workflow_instance_state(wf_instance, wf_instance_status)
+
+                # check if need to deactivate workflow and datastore.
+                if wf_instance_status == WorkflowInstanceState.FAILED:
+                    workflow_id = wf_instance.data.workflow_id
+                    master_workflow = workflow_service().get_workflow(workflow_id)
+
+                    # Failed action with deactivate on_failure should deactivate the current workflow.
+                    if current_action.data.on_failure == ActionOnFailure.DEACTIVATE:
+                        _logger.info("AWS_Batch: Updating workflow={0} to state {2}".format(master_workflow.id, WorkflowState.INACTIVE))
+                        workflow_service().update_workflow_state(master_workflow, WorkflowState.INACTIVE)
+                        if master_workflow.data.on_failure == WorkflowOnFailure.DEACTIVATE:
+                            datastore_id = master_workflow.data.datastore_id
+                            _logger.info("AWS_Batch: Updating datastore={0} to state {2}".format(datastore_id, DatastoreState.INACTIVE))
+                            datastore = datastore_service().get_datastore(datastore_id)
+                            datastore_service().update_datastore_state(datastore, DatastoreState.INACTIVE)
+    except Exception as err:
+        _logger.error("AWS_Batch: Failed to update action state. err= {0}".format(err))
+        return {'result': str(err)}, 501
+
+    # if all pass we send success status (200) otherwise we will try again later.
+    return {'result': "OK"}, 200
 
 @api_action_bp.route('/action/<action>', methods=['PATCH'])
 @login_required
