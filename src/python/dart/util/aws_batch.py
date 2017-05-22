@@ -25,7 +25,8 @@ class AWS_Batch_Dag(object):
         self.dart_url = config_metadata(['aws_batch', 'dart_url'])
 
         # Where to place inputs/outputs to action from/to actions.  We will use the workflow_instance as "sub-bucket"
-        #self.s3_input_output = config_metadata(['aws_batch', 's3_input_output'])
+        self.s3_io_bucket = config_metadata(['aws_batch', 's3_io_bucket'])
+        self.s3_io_prefix = config_metadata(['aws_batch', 's3_io_prefix'])
 
         # SNS to notify workflow completion and action completion
         self.sns_arn = config_metadata(['aws_batch', 'sns_arn'])
@@ -38,8 +39,8 @@ class AWS_Batch_Dag(object):
     def generate_dag(self, single_ordered_wf_instance_actions, retries_on_failures, wf_attributes):
         if not single_ordered_wf_instance_actions:
             raise ValueError('Must receive actions in order to build a DAG. action={0}'.format(single_ordered_wf_instance_actions))
-        #        self.create_s3_bucket_for_workflow_io(wf_attribs['workflow_instance_id'])
 
+        self.create_s3_bucket_for_workflow_io(wf_attributes['workflow_instance_id'])
         ordered_actions = self.group_actions_for_parallelization(single_ordered_wf_instance_actions)
         wf_attribs = self.create_workflow_attributes_dict(wf_attributes, retries_on_failures, ordered_actions, self.sns_arn)
         all_previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch, so we can cancel if needed
@@ -320,29 +321,19 @@ class AWS_Batch_Dag(object):
 
             _logger.info("AWS_Batch: Canceling job #{0}={1}. metadata={2}".format(idx, job_id, response))
 
-        # The bucket is self.s3_input_output/workflow_instance_id and the first file is named <wf_instance-id>.dat
-        # and its content is filled with json_input (if any)
-#    def create_s3_bucket_for_workflow_io(self, workflow_instance_id, json_input=''):
-#        try:
-#            response_bucket = self.s3_client.create_bucket(
-#                ACL='public-read-write',
-#                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
-#                CreateBucketConfiguration={'LocationConstraint': 'us-east-1'} # to ensure read after write files need to be in same region
-#            )
-#            _logger.info("AWS_Batch: created bucket for workflow {0}, {1}".format(workflow_instance_id, response_bucket))
-#
-#            # first input to first action. Rest of read/write to s3 is handled from within the actions.
-#            response_key = self.s3_client.put_object(
-#                ACL='public-read-write',
-#                Body=json_input,
-#                Bucket="{0}/{1}".format(self.s3_input_output, workflow_instance_id),  # The bucket unique to this workflow
-#                Key=workflow_instance_id
-#            )
-#            _logger.info("AWS_Batch: created input 'file' for workflow {0}, {1}, with input={2}".
-#                         format(workflow_instance_id, response_key, json_input))
-#        except Exception as err:
-#            _logger.error("AWS_Batch: S3 failed for workflow. base={0} , workflow_instance_id={1}, err: {2}".format(
-#                self.s3_input_output, workflow_instance_id, err))
+    # The bucket is self.s3_input_output/workflow_instance_id (each workflow_instance gets its own input/output folder)
+    def create_s3_bucket_for_workflow_io(self, workflow_instance_id):
+        try:
+            response_key = self.s3_client.put_object(
+                ACL='public-read-write',
+                Bucket=self.s3_io_bucket,
+                Key="{0}/{1}/".format(self.s3_io_prefix, workflow_instance_id)  # The folder unique to this workflow instance
+            )
+            _logger.info("AWS_Batch: created o folder for workflow {0}, response={1}".
+                         format(workflow_instance_id, response_key))
+        except Exception as err:
+            _logger.error("AWS_Batch: S3 failed for workflow. base={0} , workflow_instance_id={1}, err: {2}".format(
+                          self.s3_input_output, workflow_instance_id, err))
 
 if __name__ == "__main__":
     import doctest
