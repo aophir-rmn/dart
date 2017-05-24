@@ -83,7 +83,10 @@ class SqsJsonMessageBroker(MessageBroker):
                 self.queue.delete_message(sqs_message)
                 return
 
+        _logger.info('Begin handling message {}\n{}'.format(sqs_message.id, json.dumps(sqs_message_body, indent=4, separators=(',', ': '))))
         handler(sqs_message.id, sqs_message_body, previous_handler_failed)
+        _logger.info('Finish handling message {}'.format(sqs_message.id))
+
         self._message_service.update_message_state(message, result_state)
         self.queue.delete_message(sqs_message)
 
