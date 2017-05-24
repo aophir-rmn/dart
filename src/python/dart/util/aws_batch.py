@@ -25,8 +25,8 @@ class AWS_Batch_Dag(object):
         self.dart_url = config_metadata(['aws_batch', 'dart_url'])
 
         # Where to place inputs/outputs to action from/to actions.  We will use the workflow_instance as "sub-bucket"
-        self.s3_io_bucket = config_metadata(['aws_batch', 's3_io_bucket'])
-        self.s3_io_prefix = config_metadata(['aws_batch', 's3_io_prefix'])
+        #self.s3_io_bucket = config_metadata(['aws_batch', 's3_io_bucket'])
+        #self.s3_io_prefix = config_metadata(['aws_batch', 's3_io_prefix'])
 
         # SNS to notify workflow completion and action completion
         self.sns_arn = config_metadata(['aws_batch', 'sns_arn'])
@@ -40,7 +40,7 @@ class AWS_Batch_Dag(object):
         if not single_ordered_wf_instance_actions:
             raise ValueError('Must receive actions in order to build a DAG. action={0}'.format(single_ordered_wf_instance_actions))
 
-        self.create_s3_bucket_for_workflow_io(wf_attributes['workflow_instance_id'])
+        #self.create_s3_bucket_for_workflow_io(wf_attributes['workflow_instance_id'])
         ordered_actions = self.group_actions_for_parallelization(single_ordered_wf_instance_actions)
         wf_attribs = self.create_workflow_attributes_dict(wf_attributes, retries_on_failures, ordered_actions, self.sns_arn)
         all_previous_jobs = []  # will hold an array of jobIds, one per each action placed in Batch, so we can cancel if needed
