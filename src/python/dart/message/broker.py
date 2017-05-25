@@ -60,8 +60,8 @@ class SqsJsonMessageBroker(MessageBroker):
 
     def receive_message(self, handler, wait_time_seconds=20):
         # randomly purge old messages
-        if random.randint(0, 100) < 1:
-            self._message_service.purge_old_messages()
+        #if random.randint(0, 100) < 1:
+        #    self._message_service.purge_old_messages()
 
         sqs_message = self.queue.read(wait_time_seconds=wait_time_seconds)
         if not sqs_message:

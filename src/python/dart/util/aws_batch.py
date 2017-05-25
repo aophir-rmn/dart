@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 class AWS_Batch_Dag(object):
-    def __init__(self, config_metadata, client, s3_client, action_batch_job_id_updater):
+    def __init__(self, config_metadata, client, s3_client, action_batch_job_id_updater, subscription_element_service):
         """
         :param confiog_metadata: the dart.yaml config file as dictionary
         :param client: the batch voto3 client
@@ -23,6 +23,7 @@ class AWS_Batch_Dag(object):
         self.aws_default_region = config_metadata(['aws_batch', 'aws_default_region'])
         self.dart_config = config_metadata(['aws_batch', 'dart_config'])
         self.dart_url = config_metadata(['aws_batch', 'dart_url'])
+        self.subscription_element_service = subscription_element_service
 
         # Where to place inputs/outputs to action from/to actions.  We will use the workflow_instance as "sub-bucket"
         #self.s3_io_bucket = config_metadata(['aws_batch', 's3_io_bucket'])
@@ -53,6 +54,8 @@ class AWS_Batch_Dag(object):
             for oaction in grouped_actions:
                 action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
                 try:
+                    if oaction.data.action_type_name == 'consume_subscription':
+                        self.subscription_element_service.assign_subscription_elements(oaction)
                     job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
                     #  job_id in action is needed so lookup_credentials(action) in action_runner.py would work correctly.
