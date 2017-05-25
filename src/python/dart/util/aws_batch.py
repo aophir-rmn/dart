@@ -51,7 +51,13 @@ class AWS_Batch_Dag(object):
                 dependency = [{'jobId': job} for job in previous_jobs]
             previous_jobs = []
             for oaction in grouped_actions:
-                action_env = self.create_action_env_vars(oaction.id, oaction.data.on_failure, oaction.data.workflow_action_id, wf_attribs['workflow_instance_id'], idx)
+                action_env = self.create_action_env_vars(action_id=oaction.id,
+                                                         on_failure=oaction.data.on_failure,
+                                                         step_id=oaction.data.workflow_action_id,
+                                                         workflow_instance_id=wf_attribs['workflow_instance_id'],
+                                                         idx=idx,
+                                                         s3_io_bucket=self.s3_io_bucket,
+                                                         s3_io_prefix=self.s3_io_prefix)
                 try:
                     job_id = self.submit_job(wf_attribs, idx, oaction, len(ordered_actions)-1, dependency, action_env)
 
@@ -278,7 +284,7 @@ class AWS_Batch_Dag(object):
 
 
     @staticmethod
-    def create_action_env_vars(action_id, on_failure, step_id, workflow_instance_id, idx):
+    def create_action_env_vars(action_id, on_failure, step_id, workflow_instance_id, idx, s3_io_bucket, s3_io_prefix):
         """ This info is unique to each action (the template action id it is associated with, the action_id, ...).
             An action will self regulate itself, thus it needs to know if to continue on failure and number of retries (a workflow attribute, not an action).
         :param action_id: The id of the action we will execute in the batch job.
@@ -305,7 +311,8 @@ class AWS_Batch_Dag(object):
             "is_continue_on_failure": (on_failure == "CONTINUE"),
             "ACTION_ID": action_id,
             "input_key": "{0}_{1}.dat".format(workflow_instance_id, idx),
-            "output_key": "{0}_{1}.dat".format(workflow_instance_id, idx+1)  # This is th input to action with idx+1
+            "output_key": "{0}_{1}.dat".format(workflow_instance_id, idx+1),  # This is the input to action with idx+1
+            "s3_path": "{0}/{1}".format(s3_io_bucket, s3_io_prefix)
         }
 
         return action_env
@@ -332,8 +339,8 @@ class AWS_Batch_Dag(object):
             _logger.info("AWS_Batch: created o folder for workflow {0}, response={1}".
                          format(workflow_instance_id, response_key))
         except Exception as err:
-            _logger.error("AWS_Batch: S3 failed for workflow. base={0} , workflow_instance_id={1}, err: {2}".format(
-                          self.s3_input_output, workflow_instance_id, err))
+            _logger.error("AWS_Batch: S3 failed for workflow. base={0}/{1} , workflow_instance_id={2}, err: {3}".format(
+                          self.s3_io_bucket, self.s3_io_prefix, workflow_instance_id, err))
 
 if __name__ == "__main__":
     import doctest
