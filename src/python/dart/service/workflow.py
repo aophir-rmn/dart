@@ -323,7 +323,8 @@ class WorkflowService(object):
             batch_dag = AWS_Batch_Dag(config_metadata=get_key,
                                       client=boto3.client('batch'),
                                       s3_client=boto3.client('s3'),
-                                      action_batch_job_id_updater=self._action_service.update_action_batch_job_id)
+                                      action_batch_job_id_updater=self._action_service.update_action_batch_job_id,
+                                      subscription_element_service=self._subscription_element_service)
 
             retries_on_failures = str(wf.data.retries_on_failures) if hasattr(wf.data, 'retries_on_failures') else '0'
             wf_attribs = self.get_workflow_attributes(user_id=wf.data.user_id,

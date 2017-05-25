@@ -157,8 +157,8 @@ class TriggerListener(object):
                 f()
 
         # All actions in a wf are kicked off in batch at once
-        if try_next_action:
-            self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info': message.get('log_info')})
+        # if try_next_action:
+        #     self._trigger_proxy.try_next_action({'datastore_id': datastore.id, 'log_info': message.get('log_info')})
 
     def _handle_complete_workflow(self, callbacks, wf, wfi, wfid):
         self._workflow_service.update_workflow_instance_state(wfi, WorkflowInstanceState.COMPLETED)
