@@ -1,4 +1,5 @@
 import json
+import requests
 
 from flask import Blueprint, request, current_app
 from flask.ext.jsontools import jsonapi
@@ -10,6 +11,7 @@ from dart.model.subscription import Subscription, SubscriptionState, Subscriptio
 from dart.service.filter import FilterService
 from dart.service.subscription import SubscriptionService, SubscriptionElementService
 from dart.web.api.entity_lookup import fetch_model, accounting_track
+from dart.util.s3 import get_bucket_name, get_key_name
 
 
 api_subscription_bp = Blueprint('api_subscription', __name__)
@@ -23,6 +25,7 @@ api_subscription_bp = Blueprint('api_subscription', __name__)
 def post_subscription(dataset):
     subscription = Subscription.from_dict(request.get_json())
     subscription.data.dataset_id = dataset.id
+    subscription.data.nudge_id = create_nudge_subscription(subscription, dataset)
     subscription = subscription_service().save_subscription(subscription)
     return {'results': subscription.to_dict()}
 
@@ -187,3 +190,21 @@ def subscription_service():
 def subscription_element_service():
     """ :rtype: dart.service.subscription.SubscriptionElementService """
     return current_app.dart_context.get(SubscriptionElementService)
+
+
+def create_nudge_subscription(subscription, dataset):
+    """ :type subscription: dart.model.subscription.Subscription
+        :type dataset: dart.model.dataset.Dataset
+        :rtype str
+    """
+    host_url = current_app.dart_context.config.get('nudge').get('url')
+    path = subscription.data.s3_path_start_prefix_inclusive if subscription.data.s3_path_start_prefix_inclusive else dataset.location
+    json_body = {
+        'Bucket': get_bucket_name(path),
+        'Prefix': get_key_name(path),
+        'Regex': subscription.data.s3_path_regex_filter,
+        'Backfill': True
+    }
+    response = requests.post(url='{host_url}/Subscribe'.format(host_url=host_url),
+                             json=json_body)
+    return response.json()['SubscriptionId']

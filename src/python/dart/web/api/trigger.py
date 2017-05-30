@@ -6,9 +6,9 @@ from flask.ext.login import login_required
 from flask_login import current_user
 
 from jsonpatch import JsonPatch
-
 from dart.model.trigger import Trigger
 from dart.service.filter import FilterService
+from dart.service.subscription import SubscriptionService
 from dart.service.trigger import TriggerService
 from dart.service.workflow import WorkflowService
 from dart.web.api.entity_lookup import fetch_model, accounting_track
@@ -126,3 +126,8 @@ def trigger_service():
 def workflow_service():
     """ :rtype: dart.service.workflow.WorkflowService """
     return current_app.dart_context.get(WorkflowService)
+
+
+def subscription_service():
+    """ :rtype dart.service.subscription.SubscriptionService """
+    return current_app.dart_context.get(SubscriptionService)

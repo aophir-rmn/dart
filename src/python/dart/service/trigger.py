@@ -1,8 +1,10 @@
 from sqlalchemy import cast, desc
 from sqlalchemy.dialects.postgresql import JSONB
 import uuid
+import requests
 
 from dart.context.locator import injectable
+from dart.message.call import TriggerCall
 from dart.model.exception import DartValidationException
 from dart.model.orm import TriggerDao
 from dart.context.database import db
@@ -18,7 +20,8 @@ from dart.util.rand import random_id
 class TriggerService(object):
     def __init__(self, action_service, datastore_service, workflow_service, manual_trigger_processor,
                  subscription_batch_trigger_processor, workflow_completion_trigger_processor, event_trigger_processor,
-                 scheduled_trigger_processor, super_trigger_processor, retry_trigger_processor, filter_service):
+                 scheduled_trigger_processor, super_trigger_processor, retry_trigger_processor, filter_service,
+                 subscription_service, dart_config):
         self._action_service = action_service
         self._datastore_service = datastore_service
         self._workflow_service = workflow_service
@@ -30,6 +33,8 @@ class TriggerService(object):
         self._super_trigger_processor = super_trigger_processor
         self._retry_trigger_processor = retry_trigger_processor
         self._filter_service = filter_service
+        self._subscription_service = subscription_service
+        self._nudge_config = dart_config['nudge']
 
         self._trigger_processors = {
             manual_trigger_processor.trigger_type().name: manual_trigger_processor,
@@ -73,7 +78,6 @@ class TriggerService(object):
         if user_id:
             trigger.data.user_id = user_id
 
-
         """ :type trigger: dart.model.trigger.Trigger """
         trigger_type_name = trigger.data.trigger_type_name
         if trigger_type_name == self._manual_trigger_processor.trigger_type().name:
@@ -88,6 +92,14 @@ class TriggerService(object):
 
         trigger_dao = TriggerDao()
         trigger_dao.id = random_id()
+        if trigger_type_name == self._subscription_batch_trigger_processor().name:
+            sub = self._subscription_service.get_subscription(trigger.data.args['subscription_id'])
+            if sub.data.nudge_id:
+                response = self.update_nudge_with_trigger(sub.data.nudge_id,
+                                                          trigger.data.args['unconsumed_data_in_bytes'],
+                                                          trigger_dao.id,
+                                                          trigger.data.trigger_type_name)
+                assert(response.status_code == 200)
         trigger_dao.data = trigger.data.to_dict()
         db.session.add(trigger_dao)
         if flush:
@@ -213,3 +225,27 @@ class TriggerService(object):
         arg = {'subscription_id': subscription.id}
         for trigger in self.find_triggers(self._subscription_batch_trigger_processor.trigger_type().name, arg):
             self._subscription_batch_trigger_processor.send_evaluation_message(trigger.id)
+
+    def update_nudge_with_trigger(self, nudge_id, threshold, trigger_id, trigger_type_name):
+        """ :type subscription_id: str
+            :type threshold: int
+            :rtype requests.Response
+        """
+        host_url = self._nudge_config.get('url')
+        endpoint = self._nudge_config.get('endpoint')
+        json_body = {
+            'SubscriptionId': nudge_id,
+            'Trigger': {
+                'Threshold': threshold,
+                'Endpoint': endpoint,
+                'Custom': {
+                    'call': TriggerCall.PROCESS_TRIGGER,
+                    'trigger_type_name': trigger_type_name,
+                    'message': {
+                        'trigger_id': trigger_id
+                    }
+                }
+            }
+        }
+        return requests.post(url='{host_url}/AttachTrigger'.format(host_url=host_url), json=json_body)
+

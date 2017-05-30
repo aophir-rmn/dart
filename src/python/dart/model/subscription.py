@@ -36,7 +36,7 @@ class SubscriptionData(BaseModel):
     def __init__(self, name, dataset_id, s3_path_start_prefix_inclusive=None, s3_path_end_prefix_exclusive=None,
                  s3_path_regex_filter=None, state=SubscriptionState.INACTIVE, queued_time=None, generating_time=None,
                  initial_active_time=None, failed_time=None, message_id=None, on_failure_email=None,
-                 on_success_email=None, tags=None, user_id='anonymous'):
+                 on_success_email=None, tags=None, user_id='anonymous', nudge_id=None):
         """
         :type name: str
         :type dataset_id: str
@@ -68,6 +68,7 @@ class SubscriptionData(BaseModel):
         self.on_success_email = on_success_email or []
         self.tags = tags or []
         self.user_id = user_id
+        self.nudge_id = nudge_id
 
 
 class SubscriptionElementState(object):

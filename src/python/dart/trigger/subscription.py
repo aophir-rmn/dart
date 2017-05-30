@@ -57,32 +57,34 @@ class SubscriptionBatchTriggerProcessor(TriggerProcessor):
             _logger.info('expected trigger (id=%s) to be in ACTIVE state' % trigger.id)
             return []
 
-        unconsumed_data_size_in_bytes = long(trigger.data.args['unconsumed_data_size_in_bytes'])
-        sid = trigger.data.args['subscription_id']
-        file_size_sum, file_size_avg =\
-            self._subscription_element_service.get_subscription_element_file_size_sum_and_avg(sid)
+        sub = self._subscription_service.get_subscription(trigger.data.args['subscription_id'])
+        if not sub.data.nudge_id:
+            unconsumed_data_size_in_bytes = long(trigger.data.args['unconsumed_data_size_in_bytes'])
+            sid = trigger.data.args['subscription_id']
+            file_size_sum, file_size_avg =\
+                self._subscription_element_service.get_subscription_element_file_size_sum_and_avg(sid)
 
-        if file_size_sum < unconsumed_data_size_in_bytes:
-            return []
+            if file_size_sum < unconsumed_data_size_in_bytes:
+                return []
 
-        # average = sum / count,  count = sum / avg,  adding 10% will help reduce more trips to the db
-        predict_limit = lambda fs_sum: int(math.ceil(float(fs_sum / file_size_avg) * 1.1))
-        element_ids = []
-        s3_path = None
-        current_unconsumed_bytes = 0
-        while current_unconsumed_bytes < unconsumed_data_size_in_bytes:
-            limit = predict_limit(unconsumed_data_size_in_bytes - current_unconsumed_bytes)
-            elements = self._subscription_element_service.find_subscription_elements(
-                sid, gt_s3_path=s3_path, limit=limit
-            )
-            for element in elements:
-                element_ids.append(element.id)
-                current_unconsumed_bytes += element.file_size
-                s3_path = element.s3_path
-                if current_unconsumed_bytes >= unconsumed_data_size_in_bytes:
-                    break
+            # average = sum / count,  count = sum / avg,  adding 10% will help reduce more trips to the db
+            predict_limit = lambda fs_sum: int(math.ceil(float(fs_sum / file_size_avg) * 1.1))
+            element_ids = []
+            s3_path = None
+            current_unconsumed_bytes = 0
+            while current_unconsumed_bytes < unconsumed_data_size_in_bytes:
+                limit = predict_limit(unconsumed_data_size_in_bytes - current_unconsumed_bytes)
+                elements = self._subscription_element_service.find_subscription_elements(
+                    sid, gt_s3_path=s3_path, limit=limit
+                )
+                for element in elements:
+                    element_ids.append(element.id)
+                    current_unconsumed_bytes += element.file_size
+                    s3_path = element.s3_path
+                    if current_unconsumed_bytes >= unconsumed_data_size_in_bytes:
+                        break
 
-        self._subscription_element_service.reserve_subscription_elements(element_ids)
+            self._subscription_element_service.reserve_subscription_elements(element_ids)
 
         execute_trigger(trigger, self._trigger_type, self._workflow_service, _logger)
 
