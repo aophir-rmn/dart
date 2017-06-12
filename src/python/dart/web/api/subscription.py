@@ -51,6 +51,15 @@ def find_subscriptions():
     }
 
 
+@api_subscription_bp.route('/action/<action>/subscription/assign')
+@login_required
+@fetch_model
+@jsonapi
+def assign_subscription_elements(action):
+    subscription_element_service().assign_subscription_elements(action)
+    return {'results': 'OK'}
+
+
 @api_subscription_bp.route('/subscription/<subscription>/element_stats', methods=['GET'])
 @login_required
 @fetch_model

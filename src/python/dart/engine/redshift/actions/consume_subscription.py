@@ -48,5 +48,6 @@ def _s3_path_and_updated_generator(dart, subscription_id, action_id, processed_a
                                                  processed_after_s3_path):
             yield e.s3_path, e.updated
 
+    dart.assign_subscription_elements(action_id)
     for e in dart.get_subscription_elements(action_id):
         yield e.s3_path, e.updated
