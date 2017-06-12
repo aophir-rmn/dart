@@ -150,8 +150,9 @@ class SubscriptionService(object):
 
 @injectable
 class SubscriptionElementService(object):
-    def __init__(self, dataset_service):
+    def __init__(self, dataset_service, workflow_service):
         self._dataset_service = dataset_service
+        self._workflow_service = workflow_service
 
     def generate_subscription_elements(self, subscription):
         """ :type subscription: dart.model.subscription.Subscription """
@@ -328,9 +329,12 @@ class SubscriptionElementService(object):
         err_msg = 'unexpected action name: %s' % action.data.action_type_name
         assert action.data.action_type_name == 'consume_subscription', err_msg
 
+        wf_instance_id = action.data.args['workflow_instance_id']
+        wf_instance = self._workflow_service.get_workflow_instance(wf_instance_id)
+
         s_id = action.data.args['subscription_id']
 
-        if self._subscription_batch_trigger_exists(s_id):
+        if wf_instance.data.trigger_type == 'subscription_batch':
             state = SubscriptionElementState.RESERVED
             batch_id = self._find_next_batch_id(s_id)
             if not batch_id:
