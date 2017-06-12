@@ -296,6 +296,10 @@ class Dart(object):
             :rtype: dart.model.subscription.Subscription """
         return self._request('get', '/subscription/%s' % subscription_id, model_class=Subscription)
 
+    def assign_subscription_elements(self, action_id):
+        """ :type action_id: str """
+        return self._request('get', '/action/%s/subscription/assign' % action_id)
+
     def get_subscription_elements(self, action_id):
         """ :type action_id: str
             :rtype: list[dart.model.subscription.SubscriptionElement] """
