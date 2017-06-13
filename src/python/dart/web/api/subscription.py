@@ -197,8 +197,8 @@ def create_nudge_subscription(subscription, dataset):
         :type dataset: dart.model.dataset.Dataset
         :rtype str
     """
-    host_url = current_app.dart_context.config.get('nudge').get('url')
-    path = subscription.data.s3_path_start_prefix_inclusive if subscription.data.s3_path_start_prefix_inclusive else dataset.location
+    host_url = current_app.dart_context.config.get('nudge').get('host_url')
+    path = subscription.data.s3_path_start_prefix_inclusive if subscription.data.s3_path_start_prefix_inclusive else dataset.data.location
     json_body = {
         'Bucket': get_bucket_name(path),
         'Prefix': get_key_name(path),

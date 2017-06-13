@@ -237,7 +237,7 @@ def _upload_s3_copy_manifests_and_create_tracking_sql_files(action, dataset, dat
             schema_name, table_name = get_tracking_schema_and_table_name(action)
             if nudge:
                 sql = 'INSERT INTO %s.%s (s3_path, updated, batch_id) VALUES \n' % (schema_name, table_name)
-                sql += ',\n'.join(["('%s', %s)" % (s3_path, updated, batch_id) for s3_path, updated, batch_id in batch])
+                sql += ',\n'.join(["('%s', %s, '%s')" % (s3_path, updated.isoformat(), batch_id) for s3_path, updated, batch_id in batch])
             else:
                 sql = 'INSERT INTO %s.%s (s3_path, updated) VALUES \n' % (schema_name, table_name)
                 sql += ',\n'.join(["('%s', %s)" % (s3_path, "'%s'" % updated.isoformat() if updated else 'NULL') for s3_path, updated in batch])

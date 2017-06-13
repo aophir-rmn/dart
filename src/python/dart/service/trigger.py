@@ -92,7 +92,7 @@ class TriggerService(object):
 
         trigger_dao = TriggerDao()
         trigger_dao.id = random_id()
-        if trigger_type_name == self._subscription_batch_trigger_processor().name:
+        if trigger_type_name == 'subscription_batch':
             sub = self._subscription_service.get_subscription(trigger.data.args['subscription_id'])
             if sub.data.nudge_id:
                 response = self.update_nudge_with_trigger(sub.data.nudge_id,
@@ -231,7 +231,7 @@ class TriggerService(object):
             :type threshold: int
             :rtype requests.Response
         """
-        host_url = self._nudge_config.get('url')
+        host_url = self._nudge_config.get('host_url')
         endpoint = self._nudge_config.get('endpoint')
         json_body = {
             'SubscriptionId': nudge_id,

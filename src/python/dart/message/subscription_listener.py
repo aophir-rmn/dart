@@ -57,11 +57,12 @@ class SubscriptionListener(object):
             s3_path = 's3://' + record['s3']['bucket']['name'] + '/' + urllib.unquote(record['s3']['object']['key'])
             size = record['s3']['object']['size']
             for subscription in self._subscription_service.find_matching_subscriptions(s3_path):
-                success = self._subscription_element_service.conditional_insert_subscription_element(
-                    subscription, s3_path, size
-                )
-                if success:
-                    self._trigger_service.evaluate_subscription_triggers(subscription)
+                if not subscription.data.nudge_id:
+                    success = self._subscription_element_service.conditional_insert_subscription_element(
+                        subscription, s3_path, size
+                    )
+                    if success:
+                        self._trigger_service.evaluate_subscription_triggers(subscription)
 
     def _handle_create_subscription_call(self, message_id, message, previous_handler_failed):
         subscription = self._subscription_service.get_subscription(message['subscription_id'])

@@ -2621,6 +2621,10 @@ definitions:
         maxLength: 50
         pattern: ^[a-zA-Z0-9_-]+$
         type: string
+      nudge_id:
+        description: The corresponding nudge id for this subscription
+        type: string
+        x-nullable: true
       on_failure_email:
         default: []
         items:
