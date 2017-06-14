@@ -35,8 +35,7 @@ class SubscriptionService(object):
 
         subscription_dao = SubscriptionDao()
         subscription_dao.id = random_id()
-        subscription.data.state = SubscriptionState.QUEUED
-        subscription.data.queued_time = datetime.now()
+        subscription.data.state = SubscriptionState.ACTIVE
         subscription_dao.data = subscription.data.to_dict()
         db.session.add(subscription_dao)
         if flush:
@@ -45,7 +44,6 @@ class SubscriptionService(object):
         if commit_and_generate:
             db.session.commit()
             subscription = subscription_dao.to_model()
-            self._subscription_proxy.generate_subscription_elements(subscription)
         return subscription
 
     def generate_subscription_elements(self, subscription):

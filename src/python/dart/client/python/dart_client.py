@@ -16,7 +16,8 @@ from dart.model.exception import DartRequestException
 from dart.model.graph import Graph, SubGraphDefinition
 from dart.model.query import Filter
 from dart.model.query import Operator
-from dart.model.subscription import Subscription, SubscriptionElementStats, SubscriptionState, SubscriptionElement
+from dart.model.subscription import Subscription, SubscriptionElementStats, SubscriptionState, SubscriptionElement, \
+    SubscriptionElementState
 from dart.model.trigger import Trigger, TriggerType
 from dart.model.workflow import Workflow, WorkflowInstance, WorkflowInstanceState
 from dart.config.config import configuration
@@ -29,8 +30,8 @@ auth_config = config['auth']
 if auth_config.get('use_auth') and (auth_config.get('dart_server') == 'https://localhost:5000'):
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-class Dart(object):
 
+class Dart(object):
     def __init__(self, host, port=80, api_version=1):
         self._host = host
         self._port = port
@@ -47,7 +48,7 @@ class Dart(object):
             if auth_config.get('dart_client_key') and auth_config.get('dart_client_secret'):
                 self._credential = auth_config.get('dart_client_key')
                 self._secret = auth_config.get('dart_client_secret')
-                self._base_url = 'https' +  self._base_url
+                self._base_url = 'https' + self._base_url
             else:
                 raise DartRequestException("dart_client_key and dart_client_secret must both exist.")
         else:
@@ -56,7 +57,6 @@ class Dart(object):
             self._credential = "cred"
             self._secret = "secret"
             self._base_url = 'http' + self._base_url
-
 
     def save_engine(self, engine):
         """ :type engine: dart.model.engine.Engine
@@ -78,7 +78,8 @@ class Dart(object):
         """ :type engine_id: str
             :type subgraph_definition: dart.model.graph.SubGraphDefinition
             :rtype: dart.model.graph.SubGraphDefinition """
-        return self._request('post', '/engine/%s/subgraph_definition' % engine_id, data=subgraph_definition.to_dict(), model_class=SubGraphDefinition)
+        return self._request('post', '/engine/%s/subgraph_definition' % engine_id, data=subgraph_definition.to_dict(),
+                             model_class=SubGraphDefinition)
 
     def get_subgraph_definition(self, subgraph_definition_id):
         """ :type subgraph_definition_id: str
@@ -224,7 +225,8 @@ class Dart(object):
             return self._request('put', '/workflow/%s' % workflow.id, data=workflow.to_dict(), model_class=Workflow)
         datastore_id = datastore_id or workflow.data.datastore_id
         assert datastore_id, 'datastore_id must be provided to save a new workflow'
-        return self._request('post', '/datastore/%s/workflow' % datastore_id, data=workflow.to_dict(), model_class=Workflow)
+        return self._request('post', '/datastore/%s/workflow' % datastore_id, data=workflow.to_dict(),
+                             model_class=Workflow)
 
     def patch_workflow(self, workflow, **data_properties):
         """ :type workflow: dart.model.workflow.Workflow
@@ -271,10 +273,12 @@ class Dart(object):
             :type dataset_id: str
             :rtype: dart.model.subscription.Subscription """
         if subscription.id:
-            return self._request('put', '/subscription/%s' % subscription.id, data=subscription.to_dict(), model_class=Subscription)
+            return self._request('put', '/subscription/%s' % subscription.id, data=subscription.to_dict(),
+                                 model_class=Subscription)
         dataset_id = dataset_id or subscription.data.dataset_id
         assert dataset_id, 'dataset_id must be provided to save a new subscription'
-        return self._request('post', '/dataset/%s/subscription' % subscription.data.dataset_id, data=subscription.to_dict(), model_class=Subscription)
+        return self._request('post', '/dataset/%s/subscription' % subscription.data.dataset_id,
+                             data=subscription.to_dict(), model_class=Subscription)
 
     def patch_subscription(self, subscription, **data_properties):
         """ :type subscription: dart.model.subscription.Subscription
@@ -300,6 +304,67 @@ class Dart(object):
         """ :type action_id: str """
         return self._request('get', '/action/%s/subscription/assign' % action_id)
 
+    @staticmethod
+    def create_nudge_batch(nudge_subscription_id):
+        """ :type nudge_subscription_id: str
+            :rtype dict"""
+        host_url = config.get('nudge').get('host_url')
+        json_body = {
+            'SubscriptionId': nudge_subscription_id
+        }
+        return requests.post(url='%s/CreateBatch' % host_url,
+                             json=json_body).json()
+
+    @staticmethod
+    def get_nudge_batch_elements(nudge_subscription_id, batch_id):
+        """ :type nudge_subscription_id: str
+            :type batch_id: str
+            :rtype Nudge.SubscriptionElement"""
+        limit = 10000
+        offset = 0
+        host_url = config.get('nudge').get('host_url')
+        json_body = {
+            'SubscriptionId': nudge_subscription_id,
+            'BatchId': batch_id,
+            'Limit': limit,
+            'Offset': offset
+        }
+        while True:
+            results = requests.post(url='%s/GetBatchElements' % host_url,
+                                    json=json_body).json()['Elements']
+            if len(results) == 0:
+                break
+            for e in results:
+                yield e
+            offset += limit
+
+    @staticmethod
+    def get_latest_nudge_batches(nudge_subscription_id, prev_batch_id=None):
+        """ :type nudge_subscription_id: str
+            :type prev_batch_id: str
+            :rtype list[str]"""
+        host_url = config.get('nudge').get('host_url')
+        json_body = {
+            'SubscriptionId': nudge_subscription_id,
+        }
+        if prev_batch_id:
+            json_body['PreviousBatchId'] = prev_batch_id
+        return requests.post(url='%s/GetSubscriptionBatches' % host_url,
+                             json=json_body).json()['Bathces']
+
+    @staticmethod
+    def ack_nudge_elements(nudge_subscription_id, batch_id):
+        """ :type nudge_subscription_id: str
+            :type batch_id: str
+            :rtype dict"""
+        host_url = config.get('nudge').get('host_url')
+        json_body = {
+            'SubscriptionId': nudge_subscription_id,
+            'BatchId': batch_id,
+        }
+        return requests.post(url='%s/Consume' % host_url,
+                             json=json_body).json()
+
     def get_subscription_elements(self, action_id):
         """ :type action_id: str
             :rtype: list[dart.model.subscription.SubscriptionElement] """
@@ -307,7 +372,8 @@ class Dart(object):
         offset = 0
         while True:
             params = {'limit': limit, 'offset': offset}
-            results = self._request_list('get', '/action/%s/subscription/elements' % action_id, params=params, model_class=SubscriptionElement)
+            results = self._request_list('get', '/action/%s/subscription/elements' % action_id, params=params,
+                                         model_class=SubscriptionElement)
             if len(results) == 0:
                 break
             for e in results:
@@ -328,7 +394,8 @@ class Dart(object):
                 'state': state,
                 'processed_after_s3_path': processed_after_s3_path if processed_after_s3_path else None
             }
-            results = self._request_list('get', '/subscription/%s/elements' % subscription_id, params=params, model_class=SubscriptionElement)
+            results = self._request_list('get', '/subscription/%s/elements' % subscription_id, params=params,
+                                         model_class=SubscriptionElement)
             if len(results) == 0:
                 break
             for e in results:
@@ -338,7 +405,8 @@ class Dart(object):
     def get_subscription_element_stats(self, subscription_id):
         """ :type subscription_id: str
             :rtype: list[dart.model.subscription.SubscriptionElementStats] """
-        return self._request_list('get', '/subscription/%s/element_stats' % subscription_id, model_class=SubscriptionElementStats)
+        return self._request_list('get', '/subscription/%s/element_stats' % subscription_id,
+                                  model_class=SubscriptionElementStats)
 
     def delete_subscription(self, subscription_id):
         """ :type subscription_id: str """
@@ -401,7 +469,8 @@ class Dart(object):
         headers = {
             'Authorization': basic_auth_signature
         }
-        response = requests.request(method, self._base_url + '/' + url_prefix.lstrip('/'), headers=headers, json=data, params=params, verify=False)
+        response = requests.request(method, self._base_url + '/' + url_prefix.lstrip('/'), headers=headers, json=data,
+                                    params=params, verify=False)
         try:
             data = response.json()
             if data['results'] == 'ERROR':

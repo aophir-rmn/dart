@@ -24,6 +24,8 @@ def create_tracking_schema_and_table(conn, action):
     schema_name, table_name = get_tracking_schema_and_table_name(action)
     conn.execute("CREATE SCHEMA IF NOT EXISTS %s" % schema_name)
     sql = "CREATE TABLE IF NOT EXISTS %s.%s (s3_path VARCHAR(1024), updated TIMESTAMP)" % (schema_name, table_name)
+    if action.data.action_type_name == RedshiftActionTypes.consume_subscription.name:
+        sql = "CREATE TABLE IF NOT EXISTS %s.%s (s3_path VARCHAR(1024), updated TIMESTAMP, batch_id VARCHAR(36))" % (schema_name, table_name)
     conn.execute(sql)
 
 

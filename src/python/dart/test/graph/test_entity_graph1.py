@@ -57,11 +57,11 @@ class TestEntityGraph(unittest.TestCase):
                                    tags=[])
         self.dataset2 = self.dart.save_dataset(Dataset(data=dataset_data))
 
-        s = Subscription(data=SubscriptionData('test-subscription0', self.dataset0.id))
-        self.subscription0 = self.dart.save_subscription(s)
-
-        s = Subscription(data=SubscriptionData('test-subscription2-no-show', self.dataset2.id))
-        self.subscription2 = self.dart.save_subscription(s)
+        # s = Subscription(data=SubscriptionData('test-subscription0', self.dataset0.id))
+        # self.subscription0 = self.dart.save_subscription(s)
+        #
+        # s = Subscription(data=SubscriptionData('test-subscription2-no-show', self.dataset2.id))
+        # self.subscription2 = self.dart.save_subscription(s)
 
         dst_args = {'action_sleep_time_in_seconds': 0}
         dst = Datastore(data=DatastoreData('test-datastore0', 'no_op_engine', args=dst_args, state=DatastoreState.TEMPLATE))
@@ -80,12 +80,12 @@ class TestEntityGraph(unittest.TestCase):
 
         a_args = {'source_hdfs_path': 'hdfs:///user/hive/warehouse/test', 'destination_s3_path': dataset1_location}
         a00 = Action(data=ActionData(NoOpActionTypes.action_that_succeeds.name, NoOpActionTypes.action_that_succeeds.name, state=ActionState.TEMPLATE))
-        a01 = Action(data=ActionData(NoOpActionTypes.consume_subscription.name, NoOpActionTypes.consume_subscription.name, {'subscription_id': self.subscription0.id}, state=ActionState.TEMPLATE))
+        # a01 = Action(data=ActionData(NoOpActionTypes.consume_subscription.name, NoOpActionTypes.consume_subscription.name, {'subscription_id': self.subscription0.id}, state=ActionState.TEMPLATE))
         a02 = Action(data=ActionData(NoOpActionTypes.action_that_succeeds.name, NoOpActionTypes.action_that_succeeds.name, state=ActionState.TEMPLATE))
         a03 = Action(data=ActionData(NoOpActionTypes.copy_hdfs_to_s3_action.name, NoOpActionTypes.copy_hdfs_to_s3_action.name, a_args, state=ActionState.TEMPLATE))
         a04 = Action(data=ActionData(NoOpActionTypes.action_that_succeeds.name, NoOpActionTypes.action_that_succeeds.name, state=ActionState.TEMPLATE))
-        self.action00, self.action01, self.action02, self.action03, self.action04 = \
-            self.dart.save_actions([a00, a01, a02, a03, a04], workflow_id=self.workflow0.id)
+        self.action00, self.action02, self.action03, self.action04 = \
+            self.dart.save_actions([a00, a02, a03, a04], workflow_id=self.workflow0.id)
 
         a10 = Action(data=ActionData(NoOpActionTypes.load_dataset.name, NoOpActionTypes.load_dataset.name, {'dataset_id': self.dataset1.id}, state=ActionState.TEMPLATE))
         self.action10 = self.dart.save_actions([a10], workflow_id=self.workflow1.id)
@@ -136,8 +136,8 @@ class TestEntityGraph(unittest.TestCase):
         self.dart.delete_datastore(self.datastore0.id)
         self.dart.delete_datastore(self.datastore1.id)
         self.dart.delete_datastore(self.datastore2.id)
-        self.dart.delete_subscription(self.subscription0.id)
-        self.dart.delete_subscription(self.subscription2.id)
+        # self.dart.delete_subscription(self.subscription0.id)
+        # self.dart.delete_subscription(self.subscription2.id)
         self.dart.delete_dataset(self.dataset0.id)
         self.dart.delete_dataset(self.dataset1.id)
         self.dart.delete_dataset(self.dataset2.id)

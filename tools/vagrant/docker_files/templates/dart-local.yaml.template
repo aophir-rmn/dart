@@ -282,3 +282,6 @@ auth:
         cccccccc-cccc-cccc-cccc-cccccccccccc
         cccccccc-cccc-cccc-cccc-cccccccccccc
 
+nudge:
+    host_url: blah
+    endpoint: some_sqs

@@ -25,7 +25,7 @@ core_counts_by_instance_type = {
 _logger = logging.getLogger(__name__)
 
 
-def copy_from_s3(dart, datastore, action, dataset, conn, batch_size, s3_path_and_updated_generator):
+def copy_from_s3(dart, datastore, action, dataset, conn, batch_size, s3_path_and_updated_generator, nudge=None):
     """
     :type dart: dart.client.python.dart_client.Dart
     :type datastore: dart.model.datastore.Datastore
@@ -46,7 +46,7 @@ def copy_from_s3(dart, datastore, action, dataset, conn, batch_size, s3_path_and
     _logger.info('getting manifests and tracking_sql_files')
     manifests, tracking_sql_files = \
         _upload_s3_copy_manifests_and_create_tracking_sql_files(action, dataset, datastore, safe_batch_size,
-                                                                s3_path_and_updated_generator)
+                                                                s3_path_and_updated_generator, nudge)
     stage_schema_name, stage_table_name = get_stage_schema_and_table_name(action, dataset)
     target_schema_name, target_table_name = get_target_schema_and_table_name(action, dataset)
     steps_total = len(manifests) + (5 if dataset.data.load_type == LoadType.MERGE else 4)
@@ -197,7 +197,7 @@ def _get_progress(step_num, steps_total):
 
 
 def _upload_s3_copy_manifests_and_create_tracking_sql_files(action, dataset, datastore, batch_size,
-                                                            s3_path_and_updated_generator):
+                                                            s3_path_and_updated_generator, nudge=None):
     """
     :type action: dart.model.action.Action
     :type dataset: dart.model.dataset.Dataset
@@ -235,8 +235,12 @@ def _upload_s3_copy_manifests_and_create_tracking_sql_files(action, dataset, dat
         with tempfile.NamedTemporaryFile(delete=False) as f:
             tracking_sql_files.append(f.name)
             schema_name, table_name = get_tracking_schema_and_table_name(action)
-            sql = 'INSERT INTO %s.%s (s3_path, updated) VALUES \n' % (schema_name, table_name)
-            sql += ',\n'.join(["('%s', %s)" % (e[0], "'%s'" % e[1].isoformat() if e[1] else 'NULL') for e in batch])
+            if nudge:
+                sql = 'INSERT INTO %s.%s (s3_path, updated, batch_id) VALUES \n' % (schema_name, table_name)
+                sql += ',\n'.join(["('%s', %s, '%s')" % (s3_path, updated.isoformat(), batch_id) for s3_path, updated, batch_id in batch])
+            else:
+                sql = 'INSERT INTO %s.%s (s3_path, updated) VALUES \n' % (schema_name, table_name)
+                sql += ',\n'.join(["('%s', %s)" % (s3_path, "'%s'" % updated.isoformat() if updated else 'NULL') for s3_path, updated in batch])
             f.write(sql)
 
         current_part += 1
