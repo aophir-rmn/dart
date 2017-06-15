@@ -20,7 +20,7 @@ def subscription_schema():
             'message_id': {'type': ['string', 'null'], 'default': None, 'readonly': True},
             'on_failure_email': email_list_schema(),
             'on_success_email': email_list_schema(),
-            'nudge_id': {'type': ['string', 'null'], 'default': None, 'description': 'The corresponding nudge id for this subscription'}
+            'nudge_id': {'type': ['string', 'null'], 'default': None, 'description': 'The corresponding nudge id for this subscription', 'readonly': True}
         },
         'additionalProperties': False,
         'required': ['name', 'dataset_id']
