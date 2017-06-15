@@ -96,7 +96,7 @@ class TriggerService(object):
             sub = self._subscription_service.get_subscription(trigger.data.args['subscription_id'])
             if sub.data.nudge_id:
                 response = self.update_nudge_with_trigger(sub.data.nudge_id,
-                                                          trigger.data.args['unconsumed_data_in_bytes'],
+                                                          trigger.data.args['unconsumed_data_size_in_bytes'],
                                                           trigger_dao.id,
                                                           trigger.data.trigger_type_name)
                 assert(response.status_code == 200)
