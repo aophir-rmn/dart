@@ -237,15 +237,20 @@ class TriggerService(object):
             'SubscriptionId': nudge_id,
             'Trigger': {
                 'Threshold': threshold,
-                'Endpoint': endpoint,
+                'Endpoint': {
+                    'Protocol': 'SQS',
+                    'Parameters': {
+                        'QueueUrl': endpoint,
+                    },
+                },
                 'Custom': {
                     'call': TriggerCall.PROCESS_TRIGGER,
                     'trigger_type_name': trigger_type_name,
                     'message': {
-                        'trigger_id': trigger_id
-                    }
-                }
-            }
+                        'trigger_id': trigger_id,
+                    },
+                },
+            },
         }
         return requests.post(url='{host_url}/AttachTrigger'.format(host_url=host_url), json=json_body)
 
