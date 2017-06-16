@@ -243,13 +243,13 @@ class TriggerService(object):
                         'QueueUrl': endpoint,
                     },
                 },
-                'Custom': {
+                'Custom': json.dumps({
                     'call': TriggerCall.PROCESS_TRIGGER,
                     'trigger_type_name': trigger_type_name,
                     'message': {
                         'trigger_id': trigger_id,
                     },
-                },
+                }),
             },
         }
         return requests.post(url='{host_url}/AttachTrigger'.format(host_url=host_url), json=json_body)
