@@ -351,19 +351,23 @@ class Dart(object):
         limit = 10000
         offset = 0
         host_url = config.get('nudge').get('host_url')
-        json_body = {
-            'SubscriptionId': nudge_subscription_id,
-            'BatchId': batch_id,
-            'Limit': limit,
-            'Offset': offset
-        }
         while True:
-            results = requests.post(url='%s/GetBatchElements' % host_url,
-                                    json=json_body).json()['Elements']
-            if len(results) == 0:
+            response = requests.post(
+                url='%s/GetBatchElements' % host_url,
+                json={
+                    'SubscriptionId': nudge_subscription_id,
+                    'BatchId': batch_id,
+                    'Limit': limit,
+                    'Offset': offset
+                },
+            )
+
+            elements = response.json()['Elements']
+            if len(elements) == 0:
                 break
-            for e in results:
+            for e in elements:
                 yield e
+
             offset += limit
 
     @staticmethod
