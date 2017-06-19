@@ -37,9 +37,7 @@ def consume_subscription(redshift_engine, datastore, action):
                 if new_batch['BatchId']:
                     new_batch['State'] = 'UNCONSUMED'
                     nudge_batches = [new_batch]
-            s3_path_and_updated_generator = _nudge_s3_path_and_updated_generator(dart,
-                                                                                 subscription.nudge_id,
-                                                                                 nudge_batches)
+            s3_path_and_updated_generator = _nudge_s3_path_and_updated_generator(dart, nudge_id, nudge_batches)
         else:
             most_recent_s3_path = get_most_recently_processed_s3_path(conn, action)
             s3_path_and_updated_generator = _s3_path_and_updated_generator(dart,
