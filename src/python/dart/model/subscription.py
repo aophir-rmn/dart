@@ -52,6 +52,7 @@ class SubscriptionData(BaseModel):
         :type on_failure_email: list[str]
         :type on_success_email: list[str]
         :type tags: list[str]
+        :type nudge_id: str
         """
         self.name = name
         self.dataset_id = dataset_id

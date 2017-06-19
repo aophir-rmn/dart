@@ -353,7 +353,7 @@ class Dart(object):
         if prev_batch_id:
             json_body['PreviousBatchId'] = prev_batch_id
         return requests.post(url='%s/GetSubscriptionBatches' % host_url,
-                             json=json_body).json()['Bathces']
+                             json=json_body).json()['Batches']
 
     @staticmethod
     def ack_nudge_elements(nudge_subscription_id, batch_id):

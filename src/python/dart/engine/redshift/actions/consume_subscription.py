@@ -19,7 +19,7 @@ def consume_subscription(redshift_engine, datastore, action):
     _logger.info('starting consume_subscription')
     dart = redshift_engine.dart
     subscription = dart.get_subscription(action.data.args['subscription_id'])
-    nudge_id = subscription.data.get('nudge_id', None)
+    nudge_id = subscription.data.nudge_id
     dataset = dart.get_dataset(subscription.data.dataset_id)
     cluster = RedshiftCluster(redshift_engine, datastore)
     batch_size = cluster.get_number_of_nodes() * core_counts_by_instance_type.get(datastore.data.args['node_type'])
