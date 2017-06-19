@@ -318,7 +318,7 @@ class Dart(object):
         """
         for _ in xrange(retries+1):
             response = requests.post(
-                url='{}/CreateBatch'.format(config.get('nudge').get('host_url')),
+                url='{}/GetSubscription'.format(config.get('nudge').get('host_url')),
                 json={'SubscriptionId': nudge_sub_id},
             )
 
