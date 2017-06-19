@@ -52,7 +52,7 @@ def consume_subscription(redshift_engine, datastore, action):
         copy_from_s3(dart, datastore, action, dataset, conn, batch_size, s3_path_and_updated_generator, nudge_id)
         if nudge_batches:
             for b in nudge_batches:
-                if b['State'] == 'CONSUMED':
+                if b['State'] != 'CONSUMED':
                     assert (dart.ack_nudge_elements(nudge_id, b['Id'])['Message'] == 'Success')
     finally:
         conn.close()
