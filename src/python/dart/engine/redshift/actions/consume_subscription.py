@@ -33,10 +33,12 @@ def consume_subscription(redshift_engine, datastore, action):
             most_recent_batch_id = get_most_recently_processed_nudge_batch(conn, action)
             nudge_batches = dart.get_latest_nudge_batches(nudge_id, most_recent_batch_id)
             if not nudge_batches:
-                new_batch = dart.create_nudge_batch(nudge_id)
-                if new_batch['BatchId']:
-                    new_batch['State'] = 'UNCONSUMED'
-                    nudge_batches = [new_batch]
+                response = dart.create_nudge_batch(nudge_id)
+                if response['BatchId']:
+                    nudge_batches = [{
+                        'Id': response['BatchId'],
+                        'State': 'UNCONSUMED',
+                    }]
             s3_path_and_updated_generator = _nudge_s3_path_and_updated_generator(dart, nudge_id, nudge_batches)
         else:
             most_recent_s3_path = get_most_recently_processed_s3_path(conn, action)
@@ -48,7 +50,7 @@ def consume_subscription(redshift_engine, datastore, action):
         if nudge_batches:
             for b in nudge_batches:
                 if b['State'] == 'CONSUMED':
-                    assert (dart.ack_nudge_elements(nudge_id, b['BatchId'])['Message'] == 'Success')
+                    assert (dart.ack_nudge_elements(nudge_id, b['Id'])['Message'] == 'Success')
     finally:
         conn.close()
 
@@ -80,7 +82,7 @@ def _s3_path_and_updated_generator(dart, subscription_id, action_id, processed_a
 
 def _nudge_s3_path_and_updated_generator(dart, nudge_subscription_id, batches):
     for batch in batches:
-        for e in dart.get_nudge_batch_elements(nudge_subscription_id, batch['BatchId']):
+        for e in dart.get_nudge_batch_elements(nudge_subscription_id, batch['Id']):
             yield 's3://{bucket}/{key}'.format(bucket=e['Bucket'], key=e['Key']), \
                   datetime.utcnow(), \
-                  batch['BatchId']
+                  batch['Id']
