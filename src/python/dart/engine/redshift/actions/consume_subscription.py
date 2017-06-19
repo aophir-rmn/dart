@@ -87,5 +87,5 @@ def _nudge_s3_path_and_updated_generator(dart, nudge_subscription_id, batches):
     for batch in batches:
         for e in dart.get_nudge_batch_elements(nudge_subscription_id, batch['Id']):
             yield 's3://{bucket}/{key}'.format(bucket=e['Bucket'], key=e['Key']), \
-                  datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), \
+                  datetime.utcnow(), \
                   batch['Id']
