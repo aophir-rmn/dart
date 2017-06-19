@@ -30,6 +30,9 @@ def consume_subscription(redshift_engine, datastore, action):
         create_tracking_schema_and_table(conn, action)
         nudge_batches = None
         if nudge_id:
+            if not dart.wait_for_nudge_activation(nudge_id):
+                raise Exception('Nudge subscription did not become active in allotted time')
+
             most_recent_batch_id = get_most_recently_processed_nudge_batch(conn, action)
             nudge_batches = dart.get_latest_nudge_batches(nudge_id, most_recent_batch_id)
             if not nudge_batches:

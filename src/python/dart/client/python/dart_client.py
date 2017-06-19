@@ -307,6 +307,31 @@ class Dart(object):
         """ :type action_id: str """
         return self._request('get', '/action/%s/subscription/assign' % action_id)
 
+    def wait_for_nudge_activation(self, nudge_sub_id, sleep_time=10, retries=9):
+        """Wait for a nudge subscription to become active.
+        
+        :type sleep_time: int
+        :type retries: int
+        :type nudge_subs_id: str
+        :rtype bool
+        :returns True if the subscription has activated
+        """
+        for _ in xrange(retries+1):
+            response = requests.post(
+                url='{}/CreateBatch'.format(config.get('nudge').get('host_url')),
+                json={'SubscriptionId': nudge_sub_id},
+            )
+
+            state = response.json()['State']
+            if state == 'INACTIVE':
+                raise Exception('Nudge subscription has been deactivated')
+            if state == 'ACTIVE':
+                return True
+
+            time.sleep(sleep_time)
+
+        return False
+
     @staticmethod
     def create_nudge_batch(nudge_subscription_id):
         """ :type nudge_subscription_id: str
