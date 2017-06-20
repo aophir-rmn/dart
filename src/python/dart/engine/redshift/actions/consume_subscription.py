@@ -67,7 +67,7 @@ def get_most_recently_processed_s3_path(conn, action):
 def get_most_recently_processed_nudge_batch(conn, action):
     sql = 'SELECT batch_id FROM %s.%s ORDER BY updated DESC LIMIT 1'
     result = list(conn.execute(sql % get_tracking_schema_and_table_name(action)))
-    return result[0] if result else None
+    return result[0][0] if result else None
 
 
 def _s3_path_and_updated_generator(dart, subscription_id, action_id, processed_after_s3_path):
