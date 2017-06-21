@@ -40,7 +40,10 @@ class NoOpEngine(ActionRunner):
 
         except Exception as e:
             state = ActionResultState.FAILURE
-            error_message = e.message + '\n\n\n' + traceback.format_exc()
+            error_message = '{m}\r\r\r{t}'.format(
+                m=str(e.message),
+                t=traceback.format_exc(),
+            )
 
         finally:
             self.dart.engine_action_checkin(action.id, ActionResult(state, error_message))
