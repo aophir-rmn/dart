@@ -513,7 +513,7 @@ class Dart(object):
 
     def _request(self, method, url_prefix=None, data=None, params=None, model_class=None):
         response_data = self._get_response_data(method, url_prefix, data, params)
-        return model_class.from_dict(response_data)
+        return None if not model_class else model_class.from_dict(response_data)
 
     def _request_list(self, method, url_prefix=None, data=None, params=None, model_class=None):
         elements = self._get_response_data(method, url_prefix, data, params)
