@@ -91,14 +91,14 @@ class Dart(object):
         """ :rtype: list[dart.model.graph.SubGraphDefinition] """
         return self._request_list('get', '/engine/%s/subgraph_definition' % engine_id, model_class=SubGraphDefinition)
 
-    @retry(wait_random_min=1000, wait_random_max=2000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def engine_action_checkout(self, action_id):
         """ :type action_id: str
             :rtype: dart.model.engine.ActionContext """
         assert action_id is not None, 'action_id must be provided'
         return self._request('put', '/engine/action/%s/checkout' % action_id, None, model_class=ActionContext)
 
-    @retry(wait_random_min=1000, wait_random_max=2000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def engine_action_checkin(self, action_id, action_result):
         """ :type action_id: str
             :type action_result: dart.model.engine.ActionResult
